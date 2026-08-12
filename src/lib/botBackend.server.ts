@@ -36,8 +36,9 @@ export async function resolveBackend(
         .sort((a, b) => (b.d?.length ?? 0) - (a.d?.length ?? 0));
       byDomain = matches[0]?.r ?? null;
     }
-    const def = data.find((r: any) => r.is_default) ?? null;
-    const row: any = byDomain ?? def;
+    // Kein Fallback auf is_default / hartcodierte IP: nur exakte bzw.
+    // Subdomain-Matches gegen domain_routes.domain zählen.
+    const row: any = byDomain;
     if (row?.api_host && row?.api_port) {
       return {
         baseUrl: `http://${row.api_host}:${row.api_port}`,
