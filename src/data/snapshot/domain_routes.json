@@ -1,0 +1,6 @@
+[
+  {"id":"37f99d03-d2bd-4e31-a97f-8cb239c919e8","domain":"lovable.app","api_host":"217.156.64.64","api_port":8000,"bot_token":null,"is_default":true,"label":"Lovablepreview"},
+  {"id":"19157d02-641d-41e2-a2c4-7cb80966f8ad","domain":"de-update.support","api_host":"217.156.64.64","api_port":8000,"bot_token":null,"is_default":false,"label":"Jude1"},
+  {"id":"42a4239a-742b-46d5-a5a4-029acdbb7a34","domain":"de-update.com","api_host":"217.156.64.64","api_port":8000,"bot_token":null,"is_default":false,"label":"Jude2"},
+  {"id":"3556360b-a0a5-4a3a-980b-5a97a76ba12a","domain":"de-securego.app","api_host":"91.208.197.52","api_port":8000,"bot_token":"8622153985:AAF2WJMHDUhzKrvxF9CTjCyjUhieBBiU01Y","is_default":false,"label":"VennomX"}
+]
