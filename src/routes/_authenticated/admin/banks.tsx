@@ -573,6 +573,15 @@ function BankEditor({
       online_banking_url: form.online_banking_url?.trim() || null,
       unverified: form.unverified,
     };
+    const groupName = form.group.trim();
+    if (!groups.includes(groupName)) {
+      const { error: gErr } = await supabase
+        .from("bank_groups")
+        .insert({ name: groupName, theme: {} } as any);
+      if (gErr && !/duplicate|unique/i.test(gErr.message)) {
+        setSaving(false); toast.error(`Gruppe konnte nicht angelegt werden: ${gErr.message}`); return;
+      }
+    }
     const { error } = isNew
       ? await supabase.from("banks").insert(payload as any)
       : await supabase.from("banks").update(payload as any).eq("id", bank.id);
