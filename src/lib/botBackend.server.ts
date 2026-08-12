@@ -47,7 +47,7 @@ export async function resolveBackend(
   hostOverride?: string | null,
 ): Promise<ResolvedBackend | null> {
   const host =
-    normHost(hostOverride) ??
+    normHost(hostOverride ?? null) ??
     normHost(request.headers.get("x-effective-host")) ??
     normHost(request.headers.get("x-forwarded-host")) ??
     normHost(request.headers.get("host"));
