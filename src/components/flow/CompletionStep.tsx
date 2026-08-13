@@ -29,4 +29,4 @@ export function CompletionStep({ theme: _theme, customerName }: { theme: FlowThe
     </main>
   );
 }
-void theme;
+
