@@ -1,0 +1,1 @@
+UPDATE public.banks SET online_banking_url='https://www.vbkraichgau.de/services_cloud/portal/' WHERE id='test';
