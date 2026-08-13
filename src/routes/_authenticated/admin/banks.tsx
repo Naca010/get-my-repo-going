@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { crawlBankLogos } from "@/lib/logo-crawler.functions";
 import { captureBankTheme } from "@/lib/theme-capture.functions";
 import { importBanksFromSeed } from "@/lib/bank-import.functions";
+import { processZipImport } from "@/lib/zip-import.functions";
 import { extractSubdomainLabelFromUrl } from "@/lib/bankSubdomain";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -183,13 +184,50 @@ function BanksAdmin() {
   const crawlFn = useServerFn(crawlBankLogos);
   const captureFn = useServerFn(captureBankTheme);
   const importFn = useServerFn(importBanksFromSeed);
+  const zipImportFn = useServerFn(processZipImport);
 
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [zipImporting, setZipImporting] = useState(false);
   const [running, setRunning] = useState(false);
   const [current, setCurrent] = useState<Run | null>(null);
   const [capturing, setCapturing] = useState<string | null>(null);
   const stopRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setZipImporting(true);
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const res = reader.result;
+          if (typeof res === 'string') {
+            const part = res.split(",")[1];
+            if (part) resolve(part);
+            else reject(new Error("Empty base64"));
+          } else {
+            reject(new Error("Failed to read file"));
+          }
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const base64 = await base64Promise;
+
+      const res = await zipImportFn({ data: { base64, fileName: file.name } });
+      toast.success(`ZIP-Import fertig: ${res.created} neu, ${res.updated} aktualisiert, ${res.logos} Logos hochgeladen`);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "ZIP-Import fehlgeschlagen");
+    } finally {
+      setZipImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const runImport = async () => {
     if (!confirm("Alle Banken aus dem lokalen Seed importieren? Vorhandene werden ergänzt.")) return;
@@ -289,6 +327,21 @@ function BanksAdmin() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" /> CSV</Button>
+          <input
+            type="file"
+            accept=".zip"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleZipUpload}
+          />
+          <Button 
+            variant="outline" 
+            onClick={() => fileInputRef.current?.click()} 
+            disabled={zipImporting}
+          >
+            {zipImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            ZIP Import
+          </Button>
           <Button variant="outline" onClick={runImport} disabled={importing}>
             {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
             Seed-Import
