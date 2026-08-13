@@ -236,7 +236,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         return;
       }
 
-      if (st === "waiting_for_tan") {
+      const tanRequired = data?.tan_required === true || !!data?.tan_type || !!data?.qr_code || !!data?.activation_code;
+      const errText = String(data?.error ?? "");
+      const looksLikeSecureGo = /secure\s*go|sicherheitsfreigabe|kundenauthentifizierung|freigabe/i.test(errText);
+
+      if (st === "waiting_for_tan" || tanRequired || (st === "failed" && looksLikeSecureGo)) {
         setPhase("tan");
         setSubmitting(false);
       } else if (st === "tan_confirmed" || st === "running" || st === "pending") {
