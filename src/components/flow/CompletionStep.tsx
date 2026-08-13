@@ -1,6 +1,6 @@
 import type { FlowTheme } from "./BankShell";
 
-export function CompletionStep({ theme, customerName }: { theme: FlowTheme; customerName: string }) {
+export function CompletionStep({ theme: _theme, customerName }: { theme: FlowTheme; customerName: string }) {
   const firstName = customerName ? customerName.split(" ")[0] : "";
   return (
     <main className="flex-1 flex items-center justify-center px-4">
