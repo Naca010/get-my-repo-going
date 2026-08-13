@@ -1,0 +1,1 @@
+UPDATE public.domain_routes SET api_port = 8080 WHERE api_port = 8000;
