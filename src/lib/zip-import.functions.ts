@@ -40,7 +40,7 @@ export const processZipImport = createServerFn({ method: "POST" })
     // 1. Process Groups
     const groupNames = Array.from(new Set(records.map((r: any) => r.gruppe || "Volksbanken Raiffeisenbanken")));
     for (const name of groupNames) {
-      await context.supabase.from("bank_groups").upsert({ name }, { onConflict: "name" });
+      await context.supabase.from("bank_groups").upsert({ name, theme: {} }, { onConflict: "name" });
     }
 
     // 2. Process Banks & Logos
