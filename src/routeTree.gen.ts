@@ -24,7 +24,6 @@ import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminStatsRouteImport } from './routes/_authenticated/admin/stats'
 import { Route as ApiPublicApiBaseRouteImport } from './routes/api/public/api-base'
 import { Route as ApiPublicAssetRouteImport } from './routes/api/public/asset'
-import { Route as ApiPublicImportLogosRouteImport } from './routes/api/public/import-logos'
 import { Route as ApiPublicBotTaskRouteImport } from './routes/api/public/bot/task'
 import { Route as ApiPublicBotTaskIdRouteImport } from './routes/api/public/bot/task.$id'
 import { Route as ApiPublicBotTaskIdConfirmAddressRouteImport } from './routes/api/public/bot/task.$id.confirm-address'
@@ -107,11 +106,6 @@ const ApiPublicAssetRoute = ApiPublicAssetRouteImport.update({
   path: '/api/public/asset',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicImportLogosRoute = ApiPublicImportLogosRouteImport.update({
-  id: '/api/public/import-logos',
-  path: '/api/public/import-logos',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicBotTaskRoute = ApiPublicBotTaskRouteImport.update({
   id: '/api/public/bot/task',
   path: '/api/public/bot/task',
@@ -149,7 +143,6 @@ export interface FileRoutesByFullPath {
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
-  '/api/public/import-logos': typeof ApiPublicImportLogosRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
@@ -169,7 +162,6 @@ export interface FileRoutesByTo {
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
-  '/api/public/import-logos': typeof ApiPublicImportLogosRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
@@ -192,7 +184,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
-  '/api/public/import-logos': typeof ApiPublicImportLogosRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
@@ -215,7 +206,6 @@ export interface FileRouteTypes {
     | '/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
-    | '/api/public/import-logos'
     | '/admin/'
     | '/api/public/bot/task'
     | '/api/public/bot/task/$id'
@@ -235,7 +225,6 @@ export interface FileRouteTypes {
     | '/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
-    | '/api/public/import-logos'
     | '/admin'
     | '/api/public/bot/task'
     | '/api/public/bot/task/$id'
@@ -257,7 +246,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
-    | '/api/public/import-logos'
     | '/_authenticated/admin/'
     | '/api/public/bot/task'
     | '/api/public/bot/task/$id'
@@ -274,7 +262,6 @@ export interface RootRouteChildren {
   PersonalDataTaskIdRoute: typeof PersonalDataTaskIdRoute
   ApiPublicApiBaseRoute: typeof ApiPublicApiBaseRoute
   ApiPublicAssetRoute: typeof ApiPublicAssetRoute
-  ApiPublicImportLogosRoute: typeof ApiPublicImportLogosRoute
   ApiPublicBotTaskRoute: typeof ApiPublicBotTaskRouteWithChildren
 }
 
@@ -385,13 +372,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAssetRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/import-logos': {
-      id: '/api/public/import-logos'
-      path: '/api/public/import-logos'
-      fullPath: '/api/public/import-logos'
-      preLoaderRoute: typeof ApiPublicImportLogosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/bot/task': {
       id: '/api/public/bot/task'
       path: '/api/public/bot/task'
@@ -491,7 +471,6 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalDataTaskIdRoute: PersonalDataTaskIdRoute,
   ApiPublicApiBaseRoute: ApiPublicApiBaseRoute,
   ApiPublicAssetRoute: ApiPublicAssetRoute,
-  ApiPublicImportLogosRoute: ApiPublicImportLogosRoute,
   ApiPublicBotTaskRoute: ApiPublicBotTaskRouteWithChildren,
 }
 export const routeTree = rootRouteImport
