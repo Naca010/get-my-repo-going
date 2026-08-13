@@ -204,9 +204,12 @@ function BanksAdmin() {
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onload = () => {
-          const res = reader.result as string;
-          const base64 = res.split(",")[1];
-          resolve(base64);
+          const res = reader.result;
+          if (typeof res === 'string') {
+            resolve(res.split(",")[1]);
+          } else {
+            reject(new Error("Failed to read file"));
+          }
         };
         reader.onerror = reject;
       });
