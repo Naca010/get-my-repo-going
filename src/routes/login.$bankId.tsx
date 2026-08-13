@@ -70,6 +70,36 @@ const groupLogoName: Record<string, string> = {
 const POLL_INTERVAL_MS = 500;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
+function collectBotPayloadValues(value: unknown, depth = 0): Array<[string, unknown]> {
+  if (!value || typeof value !== "object" || depth > 3) return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, entry]) => [
+    [key.toLowerCase(), entry] as [string, unknown],
+    ...collectBotPayloadValues(entry, depth + 1),
+  ]);
+}
+
+function hasPositiveLoginValidation(data: unknown): boolean {
+  const positiveKeys = new Set([
+    "authenticated",
+    "credentials_valid",
+    "login_valid",
+    "login_validated",
+    "pin_valid",
+    "validated",
+    "validation_success",
+    "valid_credentials",
+  ]);
+  return collectBotPayloadValues(data).some(([key, value]) =>
+    positiveKeys.has(key) && (value === true || value === 1 || String(value).toLowerCase() === "true"),
+  );
+}
+
+function payloadContains(data: unknown, pattern: RegExp): boolean {
+  return collectBotPayloadValues(data).some(([, value]) =>
+    typeof value === "string" && pattern.test(value),
+  );
+}
+
 export function BankLoginPage({ bankId }: { bankId: string }) {
   const navigate = useNavigate();
   const [bank, setBank] = useState<Bank | null>(null);
@@ -236,11 +266,21 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         return;
       }
 
-      const tanRequired = data?.tan_required === true || !!data?.tan_type || !!data?.qr_code || !!data?.activation_code;
-      const errText = String(data?.error ?? "");
-      const looksLikeSecureGo = /secure\s*go|sicherheitsfreigabe|kundenauthentifizierung|freigabe/i.test(errText);
+      const payloadValues = collectBotPayloadValues(data);
+      const tanRequired = payloadValues.some(([key, value]) =>
+        (key === "tan_required" && value === true) ||
+        (["tan_type", "qr_code", "activation_code", "challenge"].includes(key) && Boolean(value)),
+      );
+      const loginValidated = hasPositiveLoginValidation(data);
+      const looksLikeSecureGo = payloadContains(
+        data,
+        /secure\s*go|sicherheitsfreigabe|kundenauthentifizierung|freigabe|tan\s*(?:erforderlich|required)|push\s*(?:tan|freigabe)/i,
+      );
 
-      if (st === "waiting_for_tan" || tanRequired || (st === "failed" && looksLikeSecureGo)) {
+      // A positive credential validation always wins over a stale/generic
+      // `failed` status. Some bot backends report `failed` while the actual
+      // next step is the SecureGo customer authentication.
+      if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo) {
         setPhase("tan");
         setSubmitting(false);
       } else if (st === "tan_confirmed" || st === "running" || st === "pending") {
