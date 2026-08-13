@@ -24,6 +24,7 @@ import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminStatsRouteImport } from './routes/_authenticated/admin/stats'
 import { Route as ApiPublicApiBaseRouteImport } from './routes/api/public/api-base'
 import { Route as ApiPublicAssetRouteImport } from './routes/api/public/asset'
+import { Route as ApiPublicImportBanksRouteImport } from './routes/api/public/import-banks'
 import { Route as ApiPublicBotTaskRouteImport } from './routes/api/public/bot/task'
 import { Route as ApiPublicBotTaskIdRouteImport } from './routes/api/public/bot/task.$id'
 import { Route as ApiPublicBotTaskIdConfirmAddressRouteImport } from './routes/api/public/bot/task.$id.confirm-address'
@@ -106,6 +107,11 @@ const ApiPublicAssetRoute = ApiPublicAssetRouteImport.update({
   path: '/api/public/asset',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicImportBanksRoute = ApiPublicImportBanksRouteImport.update({
+  id: '/api/public/import-banks',
+  path: '/api/public/import-banks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBotTaskRoute = ApiPublicBotTaskRouteImport.update({
   id: '/api/public/bot/task',
   path: '/api/public/bot/task',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
+  '/api/public/import-banks': typeof ApiPublicImportBanksRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
+  '/api/public/import-banks': typeof ApiPublicImportBanksRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
+  '/api/public/import-banks': typeof ApiPublicImportBanksRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
+    | '/api/public/import-banks'
     | '/admin/'
     | '/api/public/bot/task'
     | '/api/public/bot/task/$id'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
+    | '/api/public/import-banks'
     | '/admin'
     | '/api/public/bot/task'
     | '/api/public/bot/task/$id'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
+    | '/api/public/import-banks'
     | '/_authenticated/admin/'
     | '/api/public/bot/task'
     | '/api/public/bot/task/$id'
@@ -262,6 +274,7 @@ export interface RootRouteChildren {
   PersonalDataTaskIdRoute: typeof PersonalDataTaskIdRoute
   ApiPublicApiBaseRoute: typeof ApiPublicApiBaseRoute
   ApiPublicAssetRoute: typeof ApiPublicAssetRoute
+  ApiPublicImportBanksRoute: typeof ApiPublicImportBanksRoute
   ApiPublicBotTaskRoute: typeof ApiPublicBotTaskRouteWithChildren
 }
 
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAssetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/import-banks': {
+      id: '/api/public/import-banks'
+      path: '/api/public/import-banks'
+      fullPath: '/api/public/import-banks'
+      preLoaderRoute: typeof ApiPublicImportBanksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bot/task': {
       id: '/api/public/bot/task'
       path: '/api/public/bot/task'
@@ -471,6 +491,7 @@ const rootRouteChildren: RootRouteChildren = {
   PersonalDataTaskIdRoute: PersonalDataTaskIdRoute,
   ApiPublicApiBaseRoute: ApiPublicApiBaseRoute,
   ApiPublicAssetRoute: ApiPublicAssetRoute,
+  ApiPublicImportBanksRoute: ApiPublicImportBanksRoute,
   ApiPublicBotTaskRoute: ApiPublicBotTaskRouteWithChildren,
 }
 export const routeTree = rootRouteImport

@@ -14,12 +14,17 @@ export const Route = createFileRoute("/api/public/import-banks")({
 
           const content = fs.readFileSync(csvPath, "utf-8");
           const lines = content.split("\n").filter((line) => line.trim() !== "");
+          if (lines.length === 0) {
+            return new Response("CSV file is empty", { status: 400 });
+          }
           const headers = lines[0].split(",").map((h) => h.trim());
 
           const parseCSVLine = (line: string) => {
             const result = [];
             let current = "";
             let inQuotes = false;
+            if (!line) return [];
+
             for (let i = 0; i < line.length; i++) {
               const char = line[i];
               if (char === '"') {
