@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { proxyToBackend } from "@/lib/botProxy.server";
+import { botProxyOptionsResponse, proxyToBackend } from "@/lib/botProxy.server";
 
 export const Route = createFileRoute("/api/public/bot/task/$id/confirm-address")({
   server: {
     handlers: {
+      OPTIONS: async () => botProxyOptionsResponse(),
       POST: async ({ params, request }) =>
         proxyToBackend(
           request,

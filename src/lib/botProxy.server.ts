@@ -4,6 +4,24 @@
 
 import { resolveBackend, type ResolvedBackend } from "@/lib/botBackend.server";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, X-Effective-Host",
+  "Access-Control-Max-Age": "86400",
+};
+
+export function botProxyOptionsResponse(): Response {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
+function withCors(response: Response): Response {
+  for (const [name, value] of Object.entries(CORS_HEADERS)) {
+    response.headers.set(name, value);
+  }
+  return response;
+}
+
 export type ProxyDiag = {
   incoming_host: string | null;
   incoming_origin: string | null;
@@ -32,6 +50,8 @@ function baseDiag(request: Request): ProxyDiag {
 
 // expose forwarded host for diag
 function forwardedHost(request: Request): string | null {
+  const queryHost = new URL(request.url).searchParams.get("host");
+  if (queryHost) return queryHost;
   const eff = request.headers.get("x-effective-host");
   if (eff) return eff.split(",")[0]?.trim() ?? null;
   const xfh = request.headers.get("x-forwarded-host");
@@ -68,20 +88,20 @@ export async function proxyToBackend(
   try {
     backend = await resolveBackend(request, effectiveHost);
   } catch (e: any) {
-    return Response.json(
+    return withCors(Response.json(
       { error: "resolve_failed", message: String(e?.message ?? e), diag },
       { status: 500 },
-    );
+    ));
   }
   if (!backend) {
-    return Response.json(
+    return withCors(Response.json(
       {
         error: "no_route",
         message: `Keine domain_routes-Konfiguration für Host "${diag.incoming_host}" gefunden (und kein is_default). Prüfe Admin → Domain-Routing.`,
         diag,
       },
       { status: 404 },
-    );
+    ));
   }
   diag.resolved = {
     label: backend.label,
@@ -106,7 +126,7 @@ export async function proxyToBackend(
     diag.upstream_status_text = res.statusText;
     const text = await res.text();
     if (!res.ok) {
-      return Response.json(
+      return withCors(Response.json(
         {
           error: "upstream_error",
           message: `Upstream ${backend.label} antwortete mit ${res.status} ${res.statusText}`,
@@ -114,16 +134,16 @@ export async function proxyToBackend(
           diag,
         },
         { status: 502 },
-      );
+      ));
     }
-    return new Response(text, {
+    return withCors(new Response(text, {
       status: res.status,
       headers: {
         "Content-Type": res.headers.get("content-type") ?? "application/json",
         "X-Proxy-Backend": backend.label,
         "X-Proxy-Upstream": upstreamUrl,
       },
-    });
+    }));
   } catch (e: any) {
     diag.duration_ms = Date.now() - started;
     const causeMsg = e?.cause ? String(e.cause?.message ?? e.cause) : undefined;
@@ -133,13 +153,13 @@ export async function proxyToBackend(
       ...(causeMsg ? { cause: causeMsg } : {}),
     };
     diag.fetch_error = fetchErr;
-    return Response.json(
+    return withCors(Response.json(
       {
         error: "upstream_unreachable",
         message: `Server konnte Upstream ${upstreamUrl} nicht erreichen: ${fetchErr.message}${causeMsg ? ` (cause: ${causeMsg})` : ""}`,
         diag,
       },
       { status: 502 },
-    );
+    ));
   }
 }

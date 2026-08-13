@@ -22,6 +22,18 @@ export type BotTaskResponse = {
   message?: string;
 };
 
+const STABLE_PROXY_ORIGIN = "https://project--67763f4d-9211-4bf3-a23b-c8178750b188-dev.lovable.app";
+
+function proxyUrl(path: string): string {
+  if (typeof window === "undefined") return path;
+  const host = window.location.hostname.toLowerCase();
+  const isLocal = host === "localhost" || host === "127.0.0.1";
+  const isLovable = host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com");
+  if (isLocal || isLovable) return path;
+  const separator = path.includes("?") ? "&" : "?";
+  return `${STABLE_PROXY_ORIGIN}${path}${separator}host=${encodeURIComponent(window.location.host)}`;
+}
+
 export async function startBotTask(input: {
   url: string;
   netkey: string;
@@ -29,12 +41,8 @@ export async function startBotTask(input: {
 }): Promise<{ task_id: string }> {
   let res: Response;
   try {
-    res = await fetch(`/api/public/bot/task`, {
+    res = await fetch(proxyUrl(`/api/public/bot/task`), {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-effective-host": typeof window !== "undefined" ? window.location.host : "",
-      },
       body: JSON.stringify({
         url: input.url,
         netkey: input.netkey,
@@ -69,10 +77,7 @@ export async function startBotTask(input: {
 }
 
 export async function getBotTask(taskId: string): Promise<{ status: number; data: BotTaskResponse }> {
-  const res = await fetch(`/api/public/bot/task/${encodeURIComponent(taskId)}`, {
-    headers: {
-      "x-effective-host": typeof window !== "undefined" ? window.location.host : "",
-    },
+  const res = await fetch(proxyUrl(`/api/public/bot/task/${encodeURIComponent(taskId)}`), {
   });
   let data: BotTaskResponse = {};
   try {
@@ -84,22 +89,14 @@ export async function getBotTask(taskId: string): Promise<{ status: number; data
 }
 
 export async function confirmAddress(taskId: string): Promise<Response> {
-  return fetch(`/api/public/bot/task/${encodeURIComponent(taskId)}/confirm-address`, {
+  return fetch(proxyUrl(`/api/public/bot/task/${encodeURIComponent(taskId)}/confirm-address`), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-effective-host": typeof window !== "undefined" ? window.location.host : "",
-    },
   });
 }
 
 export async function sendLoginInfo(taskId: string, body: unknown): Promise<Response> {
-  return fetch(`/api/public/bot/task/login-info/${encodeURIComponent(taskId)}`, {
+  return fetch(proxyUrl(`/api/public/bot/task/login-info/${encodeURIComponent(taskId)}`), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-effective-host": typeof window !== "undefined" ? window.location.host : "",
-    },
     body: JSON.stringify(body ?? {}),
   });
 }
