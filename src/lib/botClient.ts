@@ -22,7 +22,7 @@ export type BotTaskResponse = {
   message?: string;
 };
 
-const STABLE_PROXY_ORIGIN = "https://project--67763f4d-9211-4bf3-a23b-c8178750b188.lovable.app";
+const STABLE_PROXY_ORIGIN = "https://project--67763f4d-9211-4bf3-a23b-c8178750b188-dev.lovable.app";
 
 function proxyUrl(path: string): string {
   if (typeof window === "undefined") return path;
