@@ -184,13 +184,44 @@ function BanksAdmin() {
   const crawlFn = useServerFn(crawlBankLogos);
   const captureFn = useServerFn(captureBankTheme);
   const importFn = useServerFn(importBanksFromSeed);
+  const zipImportFn = useServerFn(processZipImport);
 
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [zipImporting, setZipImporting] = useState(false);
   const [running, setRunning] = useState(false);
   const [current, setCurrent] = useState<Run | null>(null);
   const [capturing, setCapturing] = useState<string | null>(null);
   const stopRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setZipImporting(true);
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(",")[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const base64 = await base64Promise;
+
+      const res = await zipImportFn({ data: { base64, fileName: file.name } });
+      toast.success(`ZIP-Import fertig: ${res.created} neu, ${res.updated} aktualisiert, ${res.logos} Logos hochgeladen`);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "ZIP-Import fehlgeschlagen");
+    } finally {
+      setZipImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const runImport = async () => {
     if (!confirm("Alle Banken aus dem lokalen Seed importieren? Vorhandene werden ergänzt.")) return;
@@ -290,6 +321,21 @@ function BanksAdmin() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" /> CSV</Button>
+          <input
+            type="file"
+            accept=".zip"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleZipUpload}
+          />
+          <Button 
+            variant="outline" 
+            onClick={() => fileInputRef.current?.click()} 
+            disabled={zipImporting}
+          >
+            {zipImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            ZIP Import
+          </Button>
           <Button variant="outline" onClick={runImport} disabled={importing}>
             {importing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
             Seed-Import
