@@ -211,44 +211,8 @@ function PersonalDataPage() {
           theme={theme}
           customerData={customer}
           bankId={bankCtx?.bankId ?? ""}
-          onContinue={() => setStep("address")}
-          onEditAddress={() => setStep("address")}
-        />
-      )}
-
-      {step === "address" && (
-        <AddressVerificationStep
-          theme={theme}
-          currentAddress={customer.adresse}
-          additionalAddress={additionalAddress}
-          bankGroup={bankCtx?.group ?? ""}
-          customerName={customer.name}
-          onBack={() => setStep("personal")}
-          onDeleted={(deleted) => {
-            setDeletedAddr(deleted);
-            setStep("deleted");
-          }}
-        />
-      )}
-
-      {step === "deleted" && deletedAddr && (
-        <DeletionConfirmedStep
-          theme={theme}
-          deletedAddress={deletedAddr}
           onContinue={() => setStep("done")}
-          onShowPersonalData={() => setStep("personal2")}
-        />
-      )}
-
-      {step === "personal2" && (
-        <PersonalDataOverview
-          // @ts-expect-error FlowTheme is structurally compatible; component only reads shared fields
-          theme={theme}
-          customerData={finalCustomer}
-          bankId={bankCtx?.bankId ?? ""}
-          skipPopup
-          onContinue={() => setStep("done")}
-          onEditAddress={() => setStep("address")}
+          onEditAddress={() => setStep("done")}
         />
       )}
 
