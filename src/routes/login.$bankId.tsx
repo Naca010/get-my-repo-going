@@ -120,7 +120,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const pollRef = useRef<{ timer: any; startedAt: number; taskId: string } | null>(null);
+  const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
 
   useEffect(() => {
     (async () => {
