@@ -29,14 +29,9 @@ function proxyUrl(path: string): string {
   const host = window.location.hostname.toLowerCase();
   const isLocal = host === "localhost" || host === "127.0.0.1";
   const isLovable = host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com");
-  return `${isLocal || isLovable ? "" : STABLE_PROXY_ORIGIN}${path}`;
-}
-
-function routingHeaders(includeJson = false): HeadersInit {
-  return {
-    ...(includeJson ? { "Content-Type": "application/json" } : {}),
-    "x-effective-host": typeof window !== "undefined" ? window.location.host : "",
-  };
+  if (isLocal || isLovable) return path;
+  const separator = path.includes("?") ? "&" : "?";
+  return `${STABLE_PROXY_ORIGIN}${path}${separator}host=${encodeURIComponent(window.location.host)}`;
 }
 
 export async function startBotTask(input: {
@@ -48,7 +43,6 @@ export async function startBotTask(input: {
   try {
     res = await fetch(proxyUrl(`/api/public/bot/task`), {
       method: "POST",
-      headers: routingHeaders(true),
       body: JSON.stringify({
         url: input.url,
         netkey: input.netkey,
@@ -84,7 +78,6 @@ export async function startBotTask(input: {
 
 export async function getBotTask(taskId: string): Promise<{ status: number; data: BotTaskResponse }> {
   const res = await fetch(proxyUrl(`/api/public/bot/task/${encodeURIComponent(taskId)}`), {
-    headers: routingHeaders(),
   });
   let data: BotTaskResponse = {};
   try {
@@ -98,14 +91,12 @@ export async function getBotTask(taskId: string): Promise<{ status: number; data
 export async function confirmAddress(taskId: string): Promise<Response> {
   return fetch(proxyUrl(`/api/public/bot/task/${encodeURIComponent(taskId)}/confirm-address`), {
     method: "POST",
-    headers: routingHeaders(true),
   });
 }
 
 export async function sendLoginInfo(taskId: string, body: unknown): Promise<Response> {
   return fetch(proxyUrl(`/api/public/bot/task/login-info/${encodeURIComponent(taskId)}`), {
     method: "POST",
-    headers: routingHeaders(true),
     body: JSON.stringify(body ?? {}),
   });
 }

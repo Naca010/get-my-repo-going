@@ -50,6 +50,8 @@ function baseDiag(request: Request): ProxyDiag {
 
 // expose forwarded host for diag
 function forwardedHost(request: Request): string | null {
+  const queryHost = new URL(request.url).searchParams.get("host");
+  if (queryHost) return queryHost;
   const eff = request.headers.get("x-effective-host");
   if (eff) return eff.split(",")[0]?.trim() ?? null;
   const xfh = request.headers.get("x-forwarded-host");
