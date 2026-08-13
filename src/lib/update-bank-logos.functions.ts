@@ -28,8 +28,10 @@ export const importBankLogos = createServerFn({ method: "POST" })
       
       return {
         id: record.id,
-        logo: logoFilename, // Mapping logo_file to logo column
-        logo_url: record.logo_url // Keeping the original logo_url if provided
+        name: record.name,
+        group: record.gruppe || "Volksbanken Raiffeisenbanken",
+        logo: logoFilename,
+        logo_url: record.logo_url
       };
     });
 
