@@ -44,7 +44,7 @@ export const processZipImport = createServerFn({ method: "POST" })
     }
 
     // 2. Process Banks & Logos
-    for (const record of records) {
+    for (const record of records as any[]) {
       const bankId = record.id;
       const logoFile = record.logo_file; // e.g. "logos/name.jpg"
       let logoName = logoFile ? path.basename(logoFile) : null;
