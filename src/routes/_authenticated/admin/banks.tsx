@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { crawlBankLogos } from "@/lib/logo-crawler.functions";
 import { captureBankTheme } from "@/lib/theme-capture.functions";
 import { importBanksFromSeed } from "@/lib/bank-import.functions";
+import { processZipImport } from "@/lib/zip-import.functions";
 import { extractSubdomainLabelFromUrl } from "@/lib/bankSubdomain";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
