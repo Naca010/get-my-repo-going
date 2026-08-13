@@ -14,6 +14,14 @@ function normHost(h: string | null): string | null {
   return (h.split(":")[0] ?? "").trim().toLowerCase() || null;
 }
 
+function workerSafeApiHost(apiHost: string): string {
+  const host = apiHost.trim();
+  const ipv4 = /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host);
+  // Published server requests cannot fetch a literal IP address (Cloudflare
+  // error 1003). nip.io resolves this hostname directly to the same IP.
+  return ipv4 ? `${host}.nip.io` : host;
+}
+
 export async function resolveBackend(
   request: Request,
   hostOverride?: string | null,
@@ -40,8 +48,9 @@ export async function resolveBackend(
     // Subdomain-Matches gegen domain_routes.domain zählen.
     const row: any = byDomain;
     if (row?.api_host && row?.api_port) {
+      const apiHost = workerSafeApiHost(String(row.api_host));
       return {
-        baseUrl: `http://${row.api_host}:${row.api_port}`,
+        baseUrl: `http://${apiHost}:${row.api_port}`,
         token: row.bot_token ?? null,
         label: row.label,
       };
