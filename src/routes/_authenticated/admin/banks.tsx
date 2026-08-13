@@ -206,7 +206,9 @@ function BanksAdmin() {
         reader.onload = () => {
           const res = reader.result;
           if (typeof res === 'string') {
-            resolve(res.split(",")[1]);
+            const part = res.split(",")[1];
+            if (part) resolve(part);
+            else reject(new Error("Empty base64"));
           } else {
             reject(new Error("Failed to read file"));
           }
