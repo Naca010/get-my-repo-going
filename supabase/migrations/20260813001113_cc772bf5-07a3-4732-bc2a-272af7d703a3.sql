@@ -1,0 +1,1 @@
+INSERT INTO public.domain_routes (domain, api_host, api_port, label, is_default) VALUES ('localhost', '217.156.64.64', 8000, 'Localhost Dev', false) ON CONFLICT DO NOTHING;
