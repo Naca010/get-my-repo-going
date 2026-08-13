@@ -52,7 +52,9 @@ function firstString(...vals: unknown[]): string {
 
 function mapCustomer(result: any, bankName: string): CustomerData {
   const p = result?.person_data ?? {};
-  const addr = p.adresse ?? p.address ?? {};
+  const kd = result?.kontakt_data ?? {};
+  const ad = result?.adressen_data ?? {};
+  
   const anrede = firstString(p.anrede, p.salutation) || "Herr/Frau";
   const name = firstString(
     p?.namen?.anzeigenameKurz,
@@ -60,15 +62,40 @@ function mapCustomer(result: any, bankName: string): CustomerData {
     p?.name,
     [p?.vorname, p?.nachname].filter(Boolean).join(" "),
   ) || "—";
-  const kundenNr = firstString(result?.customer_number, p?.kundennummer, p?.customerNumber) || "—";
+  
+  const kundenNr = firstString(result?.customer_number, p?.kundennummer, p?.customerNumber, result?.credentials?.username) || "—";
   const geb = firstString(p?.geburtsdatum, p?.birthday, p?.dateOfBirth) || "—";
-  const fam = firstString(p?.familienstand, p?.maritalStatus) || "—";
-  const email = firstString(p?.email, p?.emailPrivat, p?.kontakt?.email) || "—";
-  const mobil = firstString(p?.mobil, p?.mobilNr, p?.telefonMobil, p?.kontakt?.mobil) || "—";
-  const strasse = firstString(addr?.strasse, addr?.street, [addr?.strasse, addr?.hausnummer].filter(Boolean).join(" ")) || "Musterstraße 12";
-  const plz = firstString(addr?.plz, addr?.zip, addr?.postleitzahl);
-  const ort = firstString(addr?.ort, addr?.city, addr?.stadt);
+  
+  // Familienstand (person_data.familie.familienstandBezeichnung)
+  const fam = firstString(p?.familie?.familienstandBezeichnung, p?.familienstand, p?.maritalStatus) || "—";
+  
+  // E‑Mail (kontakt_data.emailAdressen[0].bezeichnung)
+  const email = firstString(
+    kd?.emailAdressen?.[0]?.bezeichnung,
+    p?.email, 
+    p?.emailPrivat, 
+    p?.kontakt?.email
+  ) || "—";
+  
+  // Mobil (kontakt_data.mobilfunkNummern[0].bezeichnung)
+  const mobil = firstString(
+    kd?.mobilfunkNummern?.[0]?.bezeichnung,
+    p?.mobil, 
+    p?.mobilNr, 
+    p?.telefonMobil, 
+    p?.kontakt?.mobil
+  ) || "—";
+  
+  // Telefon (kontakt_data.festnetzNummern[0].bezeichnung)
+  const phone = firstString(kd?.festnetzNummern?.[0]?.bezeichnung) || "";
+  
+  // Hauptadresse (aus adressen_data.hauptadresse.postadresse)
+  const address = ad?.hauptadresse?.postadresse || p.adresse || p.address || {};
+  const strasse = firstString(address.strasse, address.street, [address.strasse, address.hausnummer].filter(Boolean).join(" ")) || "Musterstraße 12";
+  const plz = firstString(address.postleitzahl, address.plz, address.zip);
+  const ort = firstString(address.ort, address.city, address.stadt);
   const plzOrt = [plz, ort].filter(Boolean).join(" ") || "12345 Musterstadt";
+
   return {
     anrede,
     name,
