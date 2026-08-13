@@ -1,4 +1,3 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -16,19 +15,21 @@ const BankSchema = z.object({
 export const importBanks = createServerFn({ method: "POST" })
   .inputValidator((data) => z.array(BankSchema).parse(data))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     // 1. Get unique groups
     const groups = Array.from(new Set(data.map((b) => b.gruppe)));
 
     // 2. Ensure all groups exist
     for (const groupName of groups) {
-      const { data: existingGroup } = await supabase
+      const { data: existingGroup } = await supabaseAdmin
         .from("bank_groups")
         .select("name")
         .eq("name", groupName)
         .single();
 
       if (!existingGroup) {
-        await supabase.from("bank_groups").insert({
+        await supabaseAdmin.from("bank_groups").insert({
           name: groupName,
           theme: {},
         });
@@ -49,7 +50,7 @@ export const importBanks = createServerFn({ method: "POST" })
         unverified: b.unverified,
       }));
 
-      const { error } = await supabase.from("banks").upsert(batch, {
+      const { error } = await supabaseAdmin.from("banks").upsert(batch, {
         onConflict: "id",
       });
 
