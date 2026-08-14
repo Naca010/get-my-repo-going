@@ -191,7 +191,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
-      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages";
+      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages,footer_partners,footer_socials,footer_ctas,footer_columns,footer_disclaimer";
       // Resolve the suffix using only lightweight columns. Selecting every
       // bank including cached legal-page HTML can exceed the DB timeout.
       const { data: candidates, error: candidatesError } = await supabase
