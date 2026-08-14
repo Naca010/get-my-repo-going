@@ -69,6 +69,7 @@ type Bank = {
   logo_storage_path: string | null;
   hide_name_in_header: boolean;
   custom_theme: Partial<BankTheme> | null;
+  footer_links: Record<string, { label: string; url: string }> | null;
 };
 
 function QrPersonalDataPage() {
