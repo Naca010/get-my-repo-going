@@ -67,6 +67,7 @@ type Bank = {
   hide_name_in_header: boolean;
   online_banking_url: string | null;
   unverified: boolean;
+  is_qr_branch: boolean;
 };
 
 type LogRow = {
