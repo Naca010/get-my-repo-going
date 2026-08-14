@@ -2,6 +2,21 @@
 @source "../src";
 @import "tw-animate-css";
 
+@font-face {
+  font-family: "GenosGFG";
+  src: url("/__l5e/assets-v1/141a7615-275e-4f33-a052-fad58e5273cf/genosgfg_regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "GenosGFG";
+  src: url("/__l5e/assets-v1/36eddb53-d389-42bf-b1c7-485b1ee27523/genosgfg_bold.woff2") format("woff2");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -48,6 +63,7 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: "GenosGFG", Arial, sans-serif;
   }
 }
 
