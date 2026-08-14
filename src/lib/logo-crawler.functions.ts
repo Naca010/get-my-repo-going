@@ -703,7 +703,9 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
   let target = rawUrl.trim();
   if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
   const base = new URL(target);
-  const emptyFooter: FooterExtract = { links: {}, language: null };
+  const emptyFooter: FooterExtract = {
+    links: {}, language: null, partners: [], socials: [], ctas: [], columns: [], disclaimer: null,
+  };
   let bestFooter: FooterExtract = emptyFooter;
   let bestTheme: ThemeExtract | null = null;
   const mergeFooter = (f?: FooterExtract | null) => {
@@ -711,6 +713,11 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
     bestFooter = {
       links: { ...f.links, ...bestFooter.links },
       language: bestFooter.language ?? f.language,
+      partners: bestFooter.partners.length ? bestFooter.partners : f.partners,
+      socials: bestFooter.socials.length ? bestFooter.socials : f.socials,
+      ctas: bestFooter.ctas.length ? bestFooter.ctas : f.ctas,
+      columns: bestFooter.columns.length ? bestFooter.columns : f.columns,
+      disclaimer: bestFooter.disclaimer ?? f.disclaimer,
     };
   };
   const mergeTheme = (t?: ThemeExtract | null) => {
