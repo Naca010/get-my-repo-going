@@ -182,6 +182,11 @@ export default function BankSearch() {
     setRecent(getRecentBanks());
     setQuery(bank.name);
     setIsFocused(false);
+    if (bank.is_qr_branch) {
+      void notifyBranchSelected({
+        data: { bankId: bank.id, bankName: bank.name, group: bank.group, blz: bank.blz },
+      }).catch((err) => console.error("[BankSearch] notify failed", err));
+    }
     const target = buildBankLoginTarget(bank.id, bank.online_banking_url);
     if (target.internal) {
       navigate({ to: "/login/$bankId", params: { bankId: target.suffix } });
@@ -189,6 +194,7 @@ export default function BankSearch() {
       window.location.assign(target.href);
     }
   }, [navigate]);
+
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
