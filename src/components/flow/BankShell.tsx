@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronUp, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FlowTheme = {
@@ -117,14 +118,8 @@ export function BankShell({
                 );
               })}
             </nav>
-            <div className="flex items-center gap-2 text-sm">
-              <span aria-hidden className="inline-block w-5 h-3.5 rounded-sm overflow-hidden border border-white/20">
-                <span className="block h-1/3 bg-black" />
-                <span className="block h-1/3 bg-[#DD0000]" />
-                <span className="block h-1/3 bg-[#FFCE00]" />
-              </span>
-              <span>Deutsch</span>
-            </div>
+            <LanguageSwitcher />
+
           </div>
         </div>
 
@@ -157,6 +152,81 @@ export function BankShell({
           </div>
         )}
       </footer>
+    </div>
+  );
+}
+
+type Lang = { code: "de" | "en"; label: string; flag: ReactNode };
+const FLAG_DE = (
+  <span aria-hidden className="inline-block w-6 h-6 rounded-full overflow-hidden border border-white/30 shrink-0">
+    <span className="block h-1/3 bg-black" />
+    <span className="block h-1/3 bg-[#DD0000]" />
+    <span className="block h-1/3 bg-[#FFCE00]" />
+  </span>
+);
+const FLAG_EN = (
+  <span aria-hidden className="inline-block w-6 h-6 rounded-full overflow-hidden border border-white/30 shrink-0 relative bg-[#012169]">
+    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">EN</span>
+  </span>
+);
+const LANGS: Lang[] = [
+  { code: "de", label: "Deutsch", flag: FLAG_DE },
+  { code: "en", label: "English", flag: FLAG_EN },
+];
+
+function LanguageSwitcher() {
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState<Lang["code"]>("de");
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+  const active = LANGS.find((l) => l.code === current) ?? LANGS[0]!;
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 text-sm hover:opacity-90"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        {active.flag}
+        <span>{active.label}</span>
+        <ChevronUp className={`w-4 h-4 transition-transform ${open ? "" : "rotate-180"}`} />
+      </button>
+      {open && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 bg-white text-gray-900 rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
+          <p className="px-4 pt-4 pb-3 text-center text-[15px] leading-snug">
+            Bitte beachten Sie, dass die rechtlich verbindliche Sprache Deutsch ist.
+          </p>
+          <ul role="listbox" className="p-2">
+            {LANGS.map((l) => {
+              const isActive = l.code === current;
+              return (
+                <li key={l.code}>
+                  <button
+                    type="button"
+                    onClick={() => { setCurrent(l.code); setOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left ${
+                      isActive ? "bg-blue-50 ring-1 ring-blue-300" : "hover:bg-gray-50"
+                    }`}
+                  >
+                    {l.flag}
+                    <span className="flex-1 text-[15px]">{l.label}</span>
+                    {isActive && <Check className="w-5 h-5 text-blue-600" />}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
