@@ -21,6 +21,11 @@ type BankCtx = {
   bigLogo: boolean;
   footerLinks?: Record<string, { label: string; url: string }> | null;
   footerPages?: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
+  footerPartners?: any;
+  footerSocials?: any;
+  footerCtas?: any;
+  footerColumns?: any;
+  footerDisclaimer?: string | null;
 };
 
 const DEFAULT_THEME: FlowTheme = {
