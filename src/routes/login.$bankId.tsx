@@ -182,7 +182,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
-      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,online_banking_url";
+      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,online_banking_url,is_qr_branch";
       // Look up by Online-Banking suffix; fall back to bank id for legacy links.
       const { data: all } = await supabase
         .from("banks").select(cols).not("online_banking_url", "is", null);
