@@ -296,8 +296,8 @@ export default function BankSearch() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-foreground truncate">{bank.name}</div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {bank.group}
-                      {bank.blz ? ` · BLZ ${bank.blz}` : ""}
+                      {bank.group === "Spezifische Banken" ? "" : bank.group}
+                      {bank.group !== "Spezifische Banken" && bank.blz ? ` · BLZ ${bank.blz}` : bank.blz && bank.group === "Spezifische Banken" ? `BLZ ${bank.blz}` : ""}
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
