@@ -13,6 +13,8 @@ import { startBotTask, getBotTask } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
 import type { BankTheme } from "@/data/banks";
+import { deriveFlowTheme } from "@/lib/deriveTheme";
+
 
 
 export const Route = createFileRoute("/login/$bankId")({
