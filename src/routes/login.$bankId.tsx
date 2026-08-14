@@ -49,6 +49,7 @@ type Bank = {
   online_banking_url: string | null;
   is_qr_branch: boolean | null;
   footer_links: Record<string, { label: string; url: string }> | null;
+  footer_pages: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
 };
 
 
@@ -185,7 +186,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
-      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links";
+      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages";
       // Look up by Online-Banking suffix; fall back to bank id for legacy links.
       const { data: all } = await supabase
         .from("banks").select(cols).not("online_banking_url", "is", null);
@@ -358,6 +359,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             theme, logoSrc, fallbackLogoSrc: getLogo(groupLogoName[bank?.group ?? ""]) || vrLogoGeneric,
             showName, bigLogo: bank?.group === "BBBank",
             footerLinks: bank?.footer_links ?? null,
+            footerPages: bank?.footer_pages ?? null,
           }));
         } catch {}
         clearTask();
@@ -519,7 +521,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const fallbackLogoSrc = getLogo(groupLogoName[bank.group]) || vrLogoGeneric;
   const isBBBank = bank.group === "BBBank";
-  const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any };
+  const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any, footerPages: (bank.footer_pages ?? null) as any };
 
 
 

@@ -13,6 +13,8 @@ export type FlowTheme = {
 
 export type FooterLink = { label: string; url: string };
 export type FooterLinks = Partial<Record<"impressum" | "datenschutz" | "agb" | "sicherheit", FooterLink>>;
+export type FooterPage = { title: string; html: string; url: string; fetched_at: string };
+export type FooterPages = Partial<Record<"impressum" | "datenschutz" | "agb" | "sicherheit", FooterPage>>;
 
 type Partner = { id: string; name: string; logo_url: string; link_url: string | null };
 
@@ -31,6 +33,7 @@ export function BankShell({
   showName,
   bigLogo = false,
   footerLinks,
+  footerPages,
   children,
 }: {
   theme: FlowTheme;
@@ -40,6 +43,7 @@ export function BankShell({
   showName: boolean;
   bigLogo?: boolean;
   footerLinks?: FooterLinks | null;
+  footerPages?: FooterPages | null;
   children: ReactNode;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
@@ -67,7 +71,7 @@ export function BankShell({
 
   const logoClass = bigLogo ? "h-14 sm:h-16 object-contain" : "h-10 object-contain";
   const footerBg = theme.topBarColor || "#003399";
-  const [popup, setPopup] = useState<{ url: string; title: string } | null>(null);
+  const [popup, setPopup] = useState<{ url: string; title: string; html?: string | null } | null>(null);
 
 
   return (
@@ -99,11 +103,18 @@ export function BankShell({
             <nav className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm sm:text-base font-medium">
               {FOOTER_ORDER.map((entry, idx) => {
                 const link = footerLinks?.[entry.key];
+                const page = footerPages?.[entry.key];
                 const label = link?.label || entry.fallback;
-                const node = link ? (
+                const node = link || page ? (
                   <button
                     type="button"
-                    onClick={() => setPopup({ url: link.url, title: label })}
+                    onClick={() =>
+                      setPopup({
+                        url: page?.url || link?.url || "",
+                        title: label,
+                        html: page?.html ?? null,
+                      })
+                    }
                     className="hover:underline"
                   >
                     {label}
@@ -177,12 +188,30 @@ export function BankShell({
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <iframe
-              src={popup.url}
-              title={popup.title}
-              className="flex-1 w-full bg-white"
-              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-            />
+            {popup.html ? (
+              <div className="flex-1 overflow-auto bg-white">
+                <div
+                  className="max-w-3xl mx-auto px-6 py-6 prose prose-sm sm:prose-base prose-a:text-blue-700"
+                  // Content is server-side sanitized before being stored.
+                  dangerouslySetInnerHTML={{ __html: popup.html }}
+                />
+                {popup.url && (
+                  <div className="max-w-3xl mx-auto px-6 pb-6 text-xs text-gray-500">
+                    Quelle:{" "}
+                    <a href={popup.url} target="_blank" rel="noopener noreferrer" className="underline break-all">
+                      {popup.url}
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <iframe
+                src={popup.url}
+                title={popup.title}
+                className="flex-1 w-full bg-white"
+                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+              />
+            )}
           </div>
         </div>
       )}
