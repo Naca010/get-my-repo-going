@@ -453,6 +453,7 @@ function BanksAdmin() {
                     <th className="px-3 py-2">Crawler</th>
                     <th className="px-3 py-2">Vorschau</th>
                     <th className="px-3 py-2" title="Bankname neben dem Logo im Header anzeigen">Name im Header</th>
+                    <th className="px-3 py-2" title="QR-Flow: Anfragen laufen über Telegram statt Bot-API">QR / Telegram</th>
                     <th className="px-3 py-2 w-24"></th>
                   </tr>
                 </thead>
