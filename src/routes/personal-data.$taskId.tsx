@@ -21,6 +21,11 @@ type BankCtx = {
   bigLogo: boolean;
   footerLinks?: Record<string, { label: string; url: string }> | null;
   footerPages?: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
+  footerPartners?: any;
+  footerSocials?: any;
+  footerCtas?: any;
+  footerColumns?: any;
+  footerDisclaimer?: string | null;
 };
 
 const DEFAULT_THEME: FlowTheme = {
@@ -201,6 +206,11 @@ function PersonalDataPage() {
     bigLogo: bankCtx?.bigLogo ?? false,
     footerLinks: (bankCtx?.footerLinks ?? null) as any,
     footerPages: (bankCtx?.footerPages ?? null) as any,
+    footerPartners: (bankCtx?.footerPartners ?? null) as any,
+    footerSocials: (bankCtx?.footerSocials ?? null) as any,
+    footerCtas: (bankCtx?.footerCtas ?? null) as any,
+    footerColumns: (bankCtx?.footerColumns ?? null) as any,
+    footerDisclaimer: bankCtx?.footerDisclaimer ?? null,
   };
 
   const finalCustomer: CustomerData = step === "personal2" || step === "done"

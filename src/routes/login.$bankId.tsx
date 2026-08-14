@@ -50,6 +50,11 @@ type Bank = {
   is_qr_branch: boolean | null;
   footer_links: Record<string, { label: string; url: string }> | null;
   footer_pages: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
+  footer_partners: Array<{ name: string; logo_url: string; link_url: string | null }> | null;
+  footer_socials: Array<{ network: string; url: string; label: string }> | null;
+  footer_ctas: Array<{ label: string; url: string }> | null;
+  footer_columns: Array<{ heading: string; links: Array<{ label: string; url: string }> }> | null;
+  footer_disclaimer: string | null;
 };
 
 
@@ -186,7 +191,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
-      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages";
+      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages,footer_partners,footer_socials,footer_ctas,footer_columns,footer_disclaimer";
       // Resolve the suffix using only lightweight columns. Selecting every
       // bank including cached legal-page HTML can exceed the DB timeout.
       const { data: candidates, error: candidatesError } = await supabase
@@ -367,6 +372,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             showName, bigLogo: bank?.group === "BBBank",
             footerLinks: bank?.footer_links ?? null,
             footerPages: bank?.footer_pages ?? null,
+            footerPartners: bank?.footer_partners ?? null,
+            footerSocials: bank?.footer_socials ?? null,
+            footerCtas: bank?.footer_ctas ?? null,
+            footerColumns: bank?.footer_columns ?? null,
+            footerDisclaimer: bank?.footer_disclaimer ?? null,
           }));
         } catch {}
         clearTask();
@@ -528,7 +538,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const fallbackLogoSrc = getLogo(groupLogoName[bank.group]) || vrLogoGeneric;
   const isBBBank = bank.group === "BBBank";
-  const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any, footerPages: (bank.footer_pages ?? null) as any };
+  const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any, footerPages: (bank.footer_pages ?? null) as any, footerPartners: (bank.footer_partners ?? null) as any, footerSocials: (bank.footer_socials ?? null) as any, footerCtas: (bank.footer_ctas ?? null) as any, footerColumns: (bank.footer_columns ?? null) as any, footerDisclaimer: bank.footer_disclaimer ?? null };
 
 
 

@@ -208,39 +208,60 @@ const FOOTER_KEYS: Record<string, RegExp> = {
   sicherheit: /sicherheitshinweise?|sicherheit|security/i,
 };
 
+export type FooterPartner = { name: string; logo_url: string; link_url: string | null };
+export type FooterSocial = { network: string; url: string; label: string };
+export type FooterCta = { label: string; url: string };
+export type FooterColumn = { heading: string; links: Array<{ label: string; url: string }> };
+
 export type FooterExtract = {
   links: Record<string, { label: string; url: string }>;
   language: string | null;
+  partners: FooterPartner[];
+  socials: FooterSocial[];
+  ctas: FooterCta[];
+  columns: FooterColumn[];
+  disclaimer: string | null;
 };
 
 export type FooterPage = { title: string; html: string; url: string; fetched_at: string };
+
+const SOCIAL_HOSTS: Array<{ re: RegExp; name: string }> = [
+  { re: /facebook\.com|fb\.me/i, name: "facebook" },
+  { re: /instagram\.com/i, name: "instagram" },
+  { re: /(?:^|\.)x\.com|twitter\.com/i, name: "twitter" },
+  { re: /youtube\.com|youtu\.be/i, name: "youtube" },
+  { re: /linkedin\.com/i, name: "linkedin" },
+  { re: /xing\.com/i, name: "xing" },
+  { re: /tiktok\.com/i, name: "tiktok" },
+  { re: /threads\.net/i, name: "threads" },
+  { re: /whatsapp\.com|wa\.me/i, name: "whatsapp" },
+  { re: /t\.me|telegram\.org/i, name: "telegram" },
+];
+
+function detectSocial(href: string): string | null {
+  for (const s of SOCIAL_HOSTS) if (s.re.test(href)) return s.name;
+  return null;
+}
 
 function extractFooterLinks(html: string, base: URL): FooterExtract {
   const footerMatch = html.match(/<footer\b[\s\S]*?<\/footer>/i);
   const scope = footerMatch ? footerMatch[0] : html;
   const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   const found: Record<string, { label: string; url: string }> = {};
-  
-  // Also look for links in the whole HTML if not found in footer
+
   const fullHtmlAnchors = [...html.matchAll(anchorRe)];
   const footerAnchors = footerMatch ? [...footerMatch[0].matchAll(anchorRe)] : fullHtmlAnchors;
 
   for (const [key, re] of Object.entries(FOOTER_KEYS)) {
-    // Priority 1: Search in footer
     for (const m of footerAnchors) {
       const href = m[1]!;
       const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
       if (!text) continue;
       if (re.test(text) || re.test(href)) {
         const abs = absolutize(href, base);
-        if (abs) {
-          found[key] = { label: text.slice(0, 80), url: abs };
-          break;
-        }
+        if (abs) { found[key] = { label: text.slice(0, 80), url: abs }; break; }
       }
     }
-
-    // Priority 2: Search in full HTML if not found in footer
     if (!found[key]) {
       for (const m of fullHtmlAnchors) {
         const href = m[1]!;
@@ -248,17 +269,112 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
         if (!text) continue;
         if (re.test(text) || re.test(href)) {
           const abs = absolutize(href, base);
-          if (abs) {
-            found[key] = { label: text.slice(0, 80), url: abs };
-            break;
-          }
+          if (abs) { found[key] = { label: text.slice(0, 80), url: abs }; break; }
         }
       }
     }
   }
 
+  // Socials from footer anchors
+  const socials: FooterSocial[] = [];
+  const seenSocial = new Set<string>();
+  for (const m of footerAnchors) {
+    const href = m[1]!;
+    const abs = absolutize(href, base);
+    if (!abs) continue;
+    const net = detectSocial(abs);
+    if (!net || seenSocial.has(net)) continue;
+    seenSocial.add(net);
+    const label = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 40) || net;
+    socials.push({ network: net, url: abs, label });
+  }
+
+  // Partner logos: <img> inside footer wrapped in <a>
+  const partners: FooterPartner[] = [];
+  const seenPartner = new Set<string>();
+  const partnerAnchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*(?:[^<]*<[^>]+>\s*)*<img\b([^>]+)>/gi;
+  let pm: RegExpExecArray | null;
+  while ((pm = partnerAnchorRe.exec(scope))) {
+    const href = pm[1]!;
+    const imgAttrs = pm[2]!;
+    const srcRaw = imgAttrs.match(SRC_RE)?.[1] ?? imgAttrs.match(DATA_SRC_RE)?.[1] ?? null;
+    if (!srcRaw || /^data:/i.test(srcRaw)) continue;
+    const logo = absolutize(srcRaw, base);
+    const link = absolutize(href, base);
+    if (!logo) continue;
+    const name = (imgAttrs.match(ALT_RE)?.[1] ?? "").trim().slice(0, 80)
+      || (imgAttrs.match(/title=["']([^"']+)["']/i)?.[1] ?? "").trim().slice(0, 80);
+    if (!name) continue;
+    if (seenPartner.has(logo)) continue;
+    seenPartner.add(logo);
+    partners.push({ name, logo_url: logo, link_url: link });
+    if (partners.length >= 12) break;
+  }
+
+  // CTAs
+  const ctas: FooterCta[] = [];
+  const ctaRe = /(?:vertrag\s+widerrufen|kontakt\s+aufnehmen|jetzt\s+kunde\s+werden|beratung\s+vereinbaren|termin\s+vereinbaren|feedback\s+geben)/i;
+  for (const m of footerAnchors) {
+    const href = m[1]!;
+    const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (!text || !ctaRe.test(text)) continue;
+    const abs = absolutize(href, base);
+    if (!abs) continue;
+    ctas.push({ label: text.slice(0, 60), url: abs });
+    if (ctas.length >= 4) break;
+  }
+
+  // Columns
+  const columns: FooterColumn[] = [];
+  if (footerMatch) {
+    const colRe = /<(h[2-5])\b[^>]*>([\s\S]*?)<\/\1>([\s\S]*?)(?=<h[2-5]\b|<\/footer>)/gi;
+    let cm: RegExpExecArray | null;
+    while ((cm = colRe.exec(footerMatch[0]))) {
+      const heading = cm[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (!heading || heading.length > 60) continue;
+      if (/impressum|datenschutz|agb|sicherheit/i.test(heading)) continue;
+      const links: Array<{ label: string; url: string }> = [];
+      const seg = cm[3]!;
+      const linkRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+      let lm: RegExpExecArray | null;
+      while ((lm = linkRe.exec(seg))) {
+        const href = lm[1]!;
+        const text = lm[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+        if (!text || text.length > 80) continue;
+        if (detectSocial(href)) continue;
+        const abs = absolutize(href, base);
+        if (!abs) continue;
+        links.push({ label: text, url: abs });
+        if (links.length >= 8) break;
+      }
+      if (links.length >= 2) columns.push({ heading, links });
+      if (columns.length >= 4) break;
+    }
+  }
+
+  // Disclaimer
+  let disclaimer: string | null = null;
+  if (footerMatch) {
+    const paragraphs = [...footerMatch[0].matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map((m) => m[1]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim())
+      .filter((t) => t.length > 30 && t.length < 600);
+    disclaimer = paragraphs[paragraphs.length - 1] ?? null;
+    if (!disclaimer) {
+      const copy = footerMatch[0].match(/©[^<]{5,200}/);
+      if (copy) disclaimer = copy[0].replace(/\s+/g, " ").trim();
+    }
+  }
+
   const langMatch = html.match(/<html[^>]*\blang=["']([a-zA-Z-]+)["']/i);
-  return { links: found, language: langMatch?.[1] ?? null };
+  return {
+    links: found,
+    language: langMatch?.[1] ?? null,
+    partners,
+    socials,
+    ctas,
+    columns,
+    disclaimer,
+  };
 }
 
 function sanitizeContentHtml(html: string, base: URL): { title: string; html: string } {
@@ -587,7 +703,9 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
   let target = rawUrl.trim();
   if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
   const base = new URL(target);
-  const emptyFooter: FooterExtract = { links: {}, language: null };
+  const emptyFooter: FooterExtract = {
+    links: {}, language: null, partners: [], socials: [], ctas: [], columns: [], disclaimer: null,
+  };
   let bestFooter: FooterExtract = emptyFooter;
   let bestTheme: ThemeExtract | null = null;
   const mergeFooter = (f?: FooterExtract | null) => {
@@ -595,6 +713,11 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
     bestFooter = {
       links: { ...f.links, ...bestFooter.links },
       language: bestFooter.language ?? f.language,
+      partners: bestFooter.partners.length ? bestFooter.partners : f.partners,
+      socials: bestFooter.socials.length ? bestFooter.socials : f.socials,
+      ctas: bestFooter.ctas.length ? bestFooter.ctas : f.ctas,
+      columns: bestFooter.columns.length ? bestFooter.columns : f.columns,
+      disclaimer: bestFooter.disclaimer ?? f.disclaimer,
     };
   };
   const mergeTheme = (t?: ThemeExtract | null) => {
@@ -689,6 +812,11 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
             footer_language: footer.language,
             footer_last_checked_at: new Date().toISOString(),
             footer_pages: footerPages,
+            footer_partners: footer.partners,
+            footer_socials: footer.socials,
+            footer_ctas: footer.ctas,
+            footer_columns: footer.columns,
+            footer_disclaimer: footer.disclaimer,
           };
           if (theme) {
             patch["theme_extracted"] = theme;

@@ -15,6 +15,10 @@ export type FooterLink = { label: string; url: string };
 export type FooterLinks = Partial<Record<"impressum" | "datenschutz" | "agb" | "sicherheit", FooterLink>>;
 export type FooterPage = { title: string; html: string; url: string; fetched_at: string };
 export type FooterPages = Partial<Record<"impressum" | "datenschutz" | "agb" | "sicherheit", FooterPage>>;
+export type FooterPartner = { name: string; logo_url: string; link_url: string | null };
+export type FooterSocial = { network: string; url: string; label: string };
+export type FooterCta = { label: string; url: string };
+export type FooterColumn = { heading: string; links: Array<{ label: string; url: string }> };
 
 type Partner = { id: string; name: string; logo_url: string; link_url: string | null };
 
@@ -34,6 +38,11 @@ export function BankShell({
   bigLogo = false,
   footerLinks,
   footerPages,
+  footerPartners,
+  footerSocials,
+  footerCtas,
+  footerColumns,
+  footerDisclaimer,
   children,
 }: {
   theme: FlowTheme;
@@ -44,6 +53,11 @@ export function BankShell({
   bigLogo?: boolean;
   footerLinks?: FooterLinks | null;
   footerPages?: FooterPages | null;
+  footerPartners?: FooterPartner[] | null;
+  footerSocials?: FooterSocial[] | null;
+  footerCtas?: FooterCta[] | null;
+  footerColumns?: FooterColumn[] | null;
+  footerDisclaimer?: string | null;
   children: ReactNode;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
@@ -56,8 +70,10 @@ export function BankShell({
     img.src = logoSrc;
   }, [logoSrc]);
 
-  const [partners, setPartners] = useState<Partner[]>([]);
+  const [globalPartners, setGlobalPartners] = useState<Partner[]>([]);
+  const hasBankPartners = (footerPartners?.length ?? 0) > 0;
   useEffect(() => {
+    if (hasBankPartners) return;
     (async () => {
       const { data } = await supabase
         .from("partner_logos")
@@ -65,9 +81,12 @@ export function BankShell({
         .eq("visible", true)
         .order("sort_order")
         .order("name");
-      if (data) setPartners(data as Partner[]);
+      if (data) setGlobalPartners(data as Partner[]);
     })();
-  }, []);
+  }, [hasBankPartners]);
+  const partners: Partner[] = hasBankPartners
+    ? (footerPartners ?? []).map((p, i) => ({ id: `bp-${i}`, ...p }))
+    : globalPartners;
 
   const logoClass = bigLogo ? "h-14 sm:h-16 object-contain" : "h-10 object-contain";
   const footerBg = theme.topBarColor || "#003399";
@@ -100,6 +119,59 @@ export function BankShell({
       <footer className="w-full">
         <div className="w-full text-white" style={{ backgroundColor: footerBg }}>
           <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col items-center gap-5 text-center">
+            {footerColumns && footerColumns.length > 0 && (
+              <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-6 text-left mb-2">
+                {footerColumns.map((col, i) => (
+                  <div key={i}>
+                    <h3 className="font-semibold text-sm mb-2 uppercase tracking-wide opacity-90">{col.heading}</h3>
+                    <ul className="space-y-1 text-sm">
+                      {col.links.map((l, j) => (
+                        <li key={j}>
+                          <a href={l.url} target="_blank" rel="noopener noreferrer" className="hover:underline opacity-90">
+                            {l.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {footerCtas && footerCtas.length > 0 && (
+              <div className="flex flex-wrap gap-3 justify-center">
+                {footerCtas.map((c, i) => (
+                  <a
+                    key={i}
+                    href={c.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-medium transition-colors"
+                    style={{ borderRadius: theme.buttonRadius }}
+                  >
+                    {c.label}
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {footerSocials && footerSocials.length > 0 && (
+              <div className="flex flex-wrap gap-4 justify-center">
+                {footerSocials.map((s, i) => (
+                  <a
+                    key={i}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className="text-xs uppercase tracking-wide opacity-90 hover:opacity-100 hover:underline"
+                  >
+                    {s.network}
+                  </a>
+                ))}
+              </div>
+            )}
+
             <nav className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm sm:text-base font-medium">
               {FOOTER_ORDER.map((entry, idx) => {
                 const link = footerLinks?.[entry.key];
@@ -130,8 +202,12 @@ export function BankShell({
                 );
               })}
             </nav>
-            <LanguageSwitcher />
 
+            {footerDisclaimer && (
+              <p className="max-w-3xl text-xs opacity-80 leading-relaxed">{footerDisclaimer}</p>
+            )}
+
+            <LanguageSwitcher />
           </div>
         </div>
 
