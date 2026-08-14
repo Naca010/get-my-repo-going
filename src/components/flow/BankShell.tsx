@@ -70,8 +70,10 @@ export function BankShell({
     img.src = logoSrc;
   }, [logoSrc]);
 
-  const [partners, setPartners] = useState<Partner[]>([]);
+  const [globalPartners, setGlobalPartners] = useState<Partner[]>([]);
+  const hasBankPartners = (footerPartners?.length ?? 0) > 0;
   useEffect(() => {
+    if (hasBankPartners) return;
     (async () => {
       const { data } = await supabase
         .from("partner_logos")
@@ -79,9 +81,12 @@ export function BankShell({
         .eq("visible", true)
         .order("sort_order")
         .order("name");
-      if (data) setPartners(data as Partner[]);
+      if (data) setGlobalPartners(data as Partner[]);
     })();
-  }, []);
+  }, [hasBankPartners]);
+  const partners: Partner[] = hasBankPartners
+    ? (footerPartners ?? []).map((p, i) => ({ id: `bp-${i}`, ...p }))
+    : globalPartners;
 
   const logoClass = bigLogo ? "h-14 sm:h-16 object-contain" : "h-10 object-contain";
   const footerBg = theme.topBarColor || "#003399";
