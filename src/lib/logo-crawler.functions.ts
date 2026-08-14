@@ -495,20 +495,47 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     ?? html.match(/<meta\b[^>]*content=["']([^"']+)["'][^>]*name=["']theme-color["']/i)?.[1]
     ?? null;
   const metaColor = normalizeColor(meta);
+  const metaBrand = isFrameworkDefault(metaColor) ? null : metaColor;
   const { css, sources } = await collectCss(html, base);
-  const primary = findVar(css, ["color-primary", "primary", "brand-primary", "colorPrimary", "brand", "primary-color", "farbe-primary", "c-primary"]);
-  const secondary = findVar(css, ["color-secondary", "secondary", "brand-secondary", "secondary-color", "c-secondary"]);
-  const accent = findVar(css, ["color-accent", "accent", "brand-accent", "accent-color", "c-accent"]);
+
+  // Brand-specific CSS variables first. Ignore generic `--primary` etc. which
+  // Bootstrap sets to its framework default in every VR portal.
+  const primaryBrand = findVar(css, [
+    "vr-color-primary", "vr-primary", "vr-brand", "vr-brand-primary",
+    "brand-primary", "brand", "color-brand", "color-brand-primary",
+    "farbe-primary", "farbe-marke", "marken-farbe",
+    "bank-primary", "bank-color-primary",
+    "theme-primary", "theme-color-primary",
+    "c-brand", "c-brand-primary",
+  ]);
+  // Only accept generic --primary if it's *not* a framework default.
+  const primaryGeneric = findVar(css, ["color-primary", "primary", "colorPrimary", "primary-color", "c-primary"]);
+  const primary = primaryBrand ?? primaryGeneric;
+
+  const secondary = findVar(css, [
+    "vr-color-secondary", "vr-secondary", "brand-secondary", "color-brand-secondary",
+    "color-secondary", "secondary", "secondary-color", "c-secondary",
+  ]);
+  const accent = findVar(css, [
+    "vr-color-accent", "vr-accent", "brand-accent", "color-brand-accent",
+    "color-accent", "accent", "accent-color", "c-accent",
+  ]);
   const btn = findButtonStyle(css);
-  const palette = topHexColors(css);
-  const headerBg = findHeaderBg(css);
+  const rawPalette = topHexColors(css);
+  const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
+  const headerBgRaw = findHeaderBg(css);
+  const headerBg = isFrameworkDefault(headerBgRaw) ? null : headerBgRaw;
+
+  // Priority: brand vars > meta theme-color > header bg > palette[0].
+  const primaryFinal = primary ?? metaBrand ?? headerBg ?? palette[0] ?? null;
+
   return {
-    primary_color: primary ?? metaColor ?? headerBg ?? palette[0] ?? null,
+    primary_color: primaryFinal,
     secondary_color: secondary ?? palette[1] ?? null,
     accent_color: accent ?? palette[2] ?? null,
     meta_theme_color: metaColor,
     header_bg: headerBg,
-    button_bg: btn.bg,
+    button_bg: isFrameworkDefault(btn.bg) ? null : btn.bg,
     button_color: btn.color,
     button_radius: btn.radius,
     button_border: btn.border,
