@@ -119,6 +119,59 @@ export function BankShell({
       <footer className="w-full">
         <div className="w-full text-white" style={{ backgroundColor: footerBg }}>
           <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col items-center gap-5 text-center">
+            {footerColumns && footerColumns.length > 0 && (
+              <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-6 text-left mb-2">
+                {footerColumns.map((col, i) => (
+                  <div key={i}>
+                    <h3 className="font-semibold text-sm mb-2 uppercase tracking-wide opacity-90">{col.heading}</h3>
+                    <ul className="space-y-1 text-sm">
+                      {col.links.map((l, j) => (
+                        <li key={j}>
+                          <a href={l.url} target="_blank" rel="noopener noreferrer" className="hover:underline opacity-90">
+                            {l.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {footerCtas && footerCtas.length > 0 && (
+              <div className="flex flex-wrap gap-3 justify-center">
+                {footerCtas.map((c, i) => (
+                  <a
+                    key={i}
+                    href={c.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-medium transition-colors"
+                    style={{ borderRadius: theme.buttonRadius }}
+                  >
+                    {c.label}
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {footerSocials && footerSocials.length > 0 && (
+              <div className="flex flex-wrap gap-4 justify-center">
+                {footerSocials.map((s, i) => (
+                  <a
+                    key={i}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className="text-xs uppercase tracking-wide opacity-90 hover:opacity-100 hover:underline"
+                  >
+                    {s.network}
+                  </a>
+                ))}
+              </div>
+            )}
+
             <nav className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm sm:text-base font-medium">
               {FOOTER_ORDER.map((entry, idx) => {
                 const link = footerLinks?.[entry.key];
@@ -149,8 +202,12 @@ export function BankShell({
                 );
               })}
             </nav>
-            <LanguageSwitcher />
 
+            {footerDisclaimer && (
+              <p className="max-w-3xl text-xs opacity-80 leading-relaxed">{footerDisclaimer}</p>
+            )}
+
+            <LanguageSwitcher />
           </div>
         </div>
 
