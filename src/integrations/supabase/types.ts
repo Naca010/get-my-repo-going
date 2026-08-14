@@ -71,12 +71,16 @@ export type Database = {
           blz: string | null
           created_at: string
           custom_theme: Json | null
+          footer_language: string | null
+          footer_last_checked_at: string | null
+          footer_links: Json
           group: string
           hide_name_in_header: boolean
           id: string
           is_qr_branch: boolean
           keywords: Json | null
           logo: string | null
+          logo_source_url: string | null
           logo_storage_path: string | null
           logo_url: string | null
           name: string
@@ -92,12 +96,16 @@ export type Database = {
           blz?: string | null
           created_at?: string
           custom_theme?: Json | null
+          footer_language?: string | null
+          footer_last_checked_at?: string | null
+          footer_links?: Json
           group: string
           hide_name_in_header?: boolean
           id: string
           is_qr_branch?: boolean
           keywords?: Json | null
           logo?: string | null
+          logo_source_url?: string | null
           logo_storage_path?: string | null
           logo_url?: string | null
           name: string
@@ -113,12 +121,16 @@ export type Database = {
           blz?: string | null
           created_at?: string
           custom_theme?: Json | null
+          footer_language?: string | null
+          footer_last_checked_at?: string | null
+          footer_links?: Json
           group?: string
           hide_name_in_header?: boolean
           id?: string
           is_qr_branch?: boolean
           keywords?: Json | null
           logo?: string | null
+          logo_source_url?: string | null
           logo_storage_path?: string | null
           logo_url?: string | null
           name?: string
