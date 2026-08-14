@@ -339,7 +339,7 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
     await Promise.all(
       data.banks.map(async (b) => {
         try {
-          const { logo, sourceUrl } = await findLogoForUrl(b.url);
+          const { logo, sourceUrl, footer } = await findLogoForUrl(b.url);
           let storedUrl: string | null = null;
           let storedPath: string | null = null;
           if (logo) {
@@ -348,20 +348,26 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
               storedUrl = stored.publicUrl;
               storedPath = stored.path;
             }
-            const patch = {
-              logo,
-              ...(storedUrl ? { logo_url: storedUrl } : {}),
-              ...(storedPath ? { logo_storage_path: storedPath } : {}),
-            };
-            const { error } = await context.supabase.from("banks").update(patch as any).eq("id", b.id);
-            if (error) {
-              await context.supabase.from("logo_crawl_log").upsert({
-                bank_id: b.id, status: "db_error", logo: null, error: error.message,
-                source_url: sourceUrl, checked_at: new Date().toISOString(),
-              });
-              results.push({ id: b.id, logo: null, error: error.message });
-              return;
-            }
+          }
+          const patch: Record<string, unknown> = {
+            footer_links: footer.links,
+            footer_language: footer.language,
+            footer_last_checked_at: new Date().toISOString(),
+          };
+          if (logo) {
+            patch.logo = logo;
+            patch.logo_source_url = sourceUrl;
+            if (storedUrl) patch.logo_url = storedUrl;
+            if (storedPath) patch.logo_storage_path = storedPath;
+          }
+          const { error } = await context.supabase.from("banks").update(patch as any).eq("id", b.id);
+          if (error) {
+            await context.supabase.from("logo_crawl_log").upsert({
+              bank_id: b.id, status: "db_error", logo: null, error: error.message,
+              source_url: sourceUrl, checked_at: new Date().toISOString(),
+            });
+            results.push({ id: b.id, logo: null, error: error.message });
+            return;
           }
           await context.supabase.from("logo_crawl_log").upsert({
             bank_id: b.id,
