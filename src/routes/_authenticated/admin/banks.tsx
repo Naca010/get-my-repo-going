@@ -182,6 +182,14 @@ function BanksAdmin() {
     toast.success(hide ? "Bankname im Header ausgeblendet" : "Bankname im Header eingeblendet");
   };
 
+  const toggleQrBranch = async (id: string, isQr: boolean) => {
+    const prev = rows;
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, is_qr_branch: isQr } : r)));
+    const { error } = await supabase.from("banks").update({ is_qr_branch: isQr }).eq("id", id);
+    if (error) { toast.error(error.message); setRows(prev); return; }
+    toast.success(isQr ? "QR-Flow (Telegram) aktiv" : "Bot-Flow aktiv");
+  };
+
   const crawlFn = useServerFn(crawlBankLogos);
   const captureFn = useServerFn(captureBankTheme);
   const importFn = useServerFn(importBanksFromSeed);
