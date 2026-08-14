@@ -349,6 +349,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             bankId, bankName: bank?.name ?? "", group: bank?.group ?? "",
             theme, logoSrc, fallbackLogoSrc: getLogo(groupLogoName[bank?.group ?? ""]) || vrLogoGeneric,
             showName, bigLogo: bank?.group === "BBBank",
+            footerLinks: bank?.footer_links ?? null,
           }));
         } catch {}
         clearTask();
