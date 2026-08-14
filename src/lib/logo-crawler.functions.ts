@@ -201,17 +201,52 @@ function pickJsonEmbeddedLogo(html: string, base: URL): string | null {
   return null;
 }
 
-async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string } | null> {
+const FOOTER_KEYS: Record<string, RegExp> = {
+  impressum: /impressum|imprint/i,
+  datenschutz: /datenschutz|privacy/i,
+  agb: /\bagb\b|allgemeine\s+geschäftsbedingungen|sonderbedingungen|terms/i,
+  sicherheit: /sicherheitshinweise?|sicherheit|security/i,
+};
+
+export type FooterExtract = {
+  links: Record<string, { label: string; url: string }>;
+  language: string | null;
+};
+
+function extractFooterLinks(html: string, base: URL): FooterExtract {
+  const footerMatch = html.match(/<footer\b[\s\S]*?<\/footer>/i);
+  const scope = footerMatch ? footerMatch[0] : html;
+  const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  const found: Record<string, { label: string; url: string }> = {};
+  let m: RegExpExecArray | null;
+  while ((m = anchorRe.exec(scope))) {
+    const href = m[1]!;
+    const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    for (const [key, re] of Object.entries(FOOTER_KEYS)) {
+      if (found[key]) continue;
+      if (re.test(text) || re.test(href)) {
+        const abs = absolutize(href, base);
+        if (abs) found[key] = { label: text.slice(0, 80), url: abs };
+      }
+    }
+  }
+  const langMatch = html.match(/<html[^>]*\blang=["']([a-zA-Z-]+)["']/i);
+  return { links: found, language: langMatch?.[1] ?? null };
+}
+
+async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract } | null> {
   try {
     const res = await fetchWithTimeout(url, 9000);
     if (!res.ok) return null;
     const html = (await res.text()).slice(0, 800_000);
     const finalBase = new URL(res.url || url);
+    const footer = extractFooterLinks(html, finalBase);
     const embedded = pickJsonEmbeddedLogo(html, finalBase);
-    if (embedded) return { logo: embedded, sourceUrl: res.url || url };
+    if (embedded) return { logo: embedded, sourceUrl: res.url || url, footer };
     const header = pickHeaderLogo(html, finalBase);
-    if (header) return { logo: header, sourceUrl: res.url || url };
-    return null;
+    if (header) return { logo: header, sourceUrl: res.url || url, footer };
+    return { logo: null, sourceUrl: res.url || url, footer };
   } catch { return null; }
 }
 
