@@ -71,10 +71,15 @@ export type Database = {
           blz: string | null
           created_at: string
           custom_theme: Json | null
+          footer_columns: Json
+          footer_ctas: Json
+          footer_disclaimer: string | null
           footer_language: string | null
           footer_last_checked_at: string | null
           footer_links: Json
           footer_pages: Json | null
+          footer_partners: Json
+          footer_socials: Json
           group: string
           hide_name_in_header: boolean
           id: string
@@ -99,10 +104,15 @@ export type Database = {
           blz?: string | null
           created_at?: string
           custom_theme?: Json | null
+          footer_columns?: Json
+          footer_ctas?: Json
+          footer_disclaimer?: string | null
           footer_language?: string | null
           footer_last_checked_at?: string | null
           footer_links?: Json
           footer_pages?: Json | null
+          footer_partners?: Json
+          footer_socials?: Json
           group: string
           hide_name_in_header?: boolean
           id: string
@@ -127,10 +137,15 @@ export type Database = {
           blz?: string | null
           created_at?: string
           custom_theme?: Json | null
+          footer_columns?: Json
+          footer_ctas?: Json
+          footer_disclaimer?: string | null
           footer_language?: string | null
           footer_last_checked_at?: string | null
           footer_links?: Json
           footer_pages?: Json | null
+          footer_partners?: Json
+          footer_socials?: Json
           group?: string
           hide_name_in_header?: boolean
           id?: string
