@@ -131,7 +131,7 @@ export default function BankSearch() {
     (async () => {
       const { data, error } = await supabase
         .from("banks")
-        .select("id,name,group,blz,aliases,keywords,logo,online_banking_url");
+        .select("id,name,group,blz,aliases,keywords,logo,online_banking_url,is_qr_branch");
       if (!error && data) setAllBanks(data as any);
       setLoading(false);
     })();
