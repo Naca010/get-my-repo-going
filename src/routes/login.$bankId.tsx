@@ -372,6 +372,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             showName, bigLogo: bank?.group === "BBBank",
             footerLinks: bank?.footer_links ?? null,
             footerPages: bank?.footer_pages ?? null,
+            footerPartners: bank?.footer_partners ?? null,
+            footerSocials: bank?.footer_socials ?? null,
+            footerCtas: bank?.footer_ctas ?? null,
+            footerColumns: bank?.footer_columns ?? null,
+            footerDisclaimer: bank?.footer_disclaimer ?? null,
           }));
         } catch {}
         clearTask();
