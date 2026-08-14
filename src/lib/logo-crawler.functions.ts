@@ -332,12 +332,31 @@ export type ThemeExtract = {
 };
 
 
+// Bootstrap / kf-theme defaults shipped by Atruvia to every VR portal.
+// Never treat these as brand-specific colors.
+const FRAMEWORK_BLACKLIST = new Set([
+  "#007bff", "#0069d9", "#0062cc",
+  "#6c757d", "#5a6268", "#545b62",
+  "#28a745", "#218838", "#1e7e34",
+  "#dc3545", "#c82333", "#bd2130",
+  "#ffc107", "#e0a800",
+  "#17a2b8", "#138496",
+  "#a8dab5", "#c3e6cb",
+  "#f8f9fa", "#e9ecef", "#343a40", "#212529",
+]);
+const isFrameworkDefault = (hex: string | null): boolean =>
+  !!hex && FRAMEWORK_BLACKLIST.has(hex.toLowerCase());
+
 function normalizeColor(v: string | null | undefined): string | null {
   if (!v) return null;
   const s = v.trim().toLowerCase();
   if (!s || s === "transparent" || s === "inherit" || s === "currentcolor" || s === "none") return null;
   const hex = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b/i);
-  if (hex) return "#" + hex[1]!.toLowerCase();
+  if (hex) {
+    let c = hex[1]!.toLowerCase();
+    if (c.length === 3) c = c.split("").map((x) => x + x).join("");
+    return "#" + c.slice(0, 6);
+  }
   const rgb = s.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
   if (rgb) {
     const r = Math.max(0, Math.min(255, parseInt(rgb[1]!, 10)));
@@ -348,15 +367,13 @@ function normalizeColor(v: string | null | undefined): string | null {
   return null;
 }
 
-function findVar(css: string, names: string[]): string | null {
+function findVar(css: string, names: string[], opts: { allowFrameworkDefaults?: boolean } = {}): string | null {
   for (const n of names) {
     const re = new RegExp(`--${n}\\s*:\\s*([^;\\}]+)[;\\}]`, "i");
     const m = css.match(re);
     if (m) {
-      const v = m[1]!.trim();
-      const norm = normalizeColor(v);
-      if (norm) return norm;
-      // could reference another var — skip
+      const norm = normalizeColor(m[1]!.trim());
+      if (norm && (opts.allowFrameworkDefaults || !isFrameworkDefault(norm))) return norm;
     }
   }
   return null;
