@@ -19,6 +19,7 @@ type BankCtx = {
   fallbackLogoSrc: string;
   showName: boolean;
   bigLogo: boolean;
+  footerLinks?: Record<string, { label: string; url: string }> | null;
 };
 
 const DEFAULT_THEME: FlowTheme = {
