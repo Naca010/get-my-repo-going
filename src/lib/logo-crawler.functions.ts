@@ -355,10 +355,10 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
             footer_last_checked_at: new Date().toISOString(),
           };
           if (logo) {
-            patch.logo = logo;
-            patch.logo_source_url = sourceUrl;
-            if (storedUrl) patch.logo_url = storedUrl;
-            if (storedPath) patch.logo_storage_path = storedPath;
+            patch["logo"] = logo;
+            patch["logo_source_url"] = sourceUrl;
+            if (storedUrl) patch["logo_url"] = storedUrl;
+            if (storedPath) patch["logo_storage_path"] = storedPath;
           }
           const { error } = await context.supabase.from("banks").update(patch as any).eq("id", b.id);
           if (error) {
