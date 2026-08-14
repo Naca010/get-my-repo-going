@@ -812,6 +812,11 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
             footer_language: footer.language,
             footer_last_checked_at: new Date().toISOString(),
             footer_pages: footerPages,
+            footer_partners: footer.partners,
+            footer_socials: footer.socials,
+            footer_ctas: footer.ctas,
+            footer_columns: footer.columns,
+            footer_disclaimer: footer.disclaimer,
           };
           if (theme) {
             patch["theme_extracted"] = theme;
