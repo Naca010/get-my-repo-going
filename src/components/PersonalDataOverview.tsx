@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useRef, useEffect } from "react";
 import { ChevronRight, Plus, Pencil, MoreVertical, Cake, Heart, Check, X, Mail, Smartphone, Phone, ChevronDown, CheckCircle2, ArrowLeft, Info, Trash2 } from "lucide-react";
 import { BankTheme } from "@/data/banks";
@@ -75,8 +74,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
     const match = cleaned.match(/^(.+?),\s*(\d{4,5})\s+(.+)$/);
     if (!match) return null;
     return {
-      strasse: match[1].trim(),
-      plzOrt: `${match[2].trim()} ${match[3].trim()}`,
+      strasse: match[1]!.trim(),
+      plzOrt: `${match[2]!.trim()} ${match[3]!.trim()}`,
     };
   };
   
@@ -160,7 +159,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
   const mobilLabelDisplay = mobilLabelLocal || "Mobil (privat)";
   const extractNutzung = (label: string | undefined, fallback = "privat") => {
     const m = label?.match(/\(([^)]+)\)/);
-    return m ? m[1].trim() : fallback;
+    return m ? m[1]!.trim() : fallback;
   };
 
   // Add contact flow

