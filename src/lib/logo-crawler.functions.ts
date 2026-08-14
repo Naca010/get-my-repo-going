@@ -240,6 +240,7 @@ export type ThemeExtract = {
   secondary_color: string | null;
   accent_color: string | null;
   meta_theme_color: string | null;
+  header_bg: string | null;
   button_bg: string | null;
   button_color: string | null;
   button_radius: string | null;
@@ -247,6 +248,7 @@ export type ThemeExtract = {
   palette: string[];
   css_sources: string[];
 };
+
 
 function normalizeColor(v: string | null | undefined): string | null {
   if (!v) return null;
@@ -316,6 +318,30 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
   return { bg, color, radius, border };
 }
 
+function findHeaderBg(css: string): string | null {
+  const selectors = [
+    /(?:^|[\s,}])header\s*\{([^}]+)\}/gi,
+    /\.header\b[^{}]*\{([^}]+)\}/gi,
+    /\.site-header\b[^{}]*\{([^}]+)\}/gi,
+    /\.main-header\b[^{}]*\{([^}]+)\}/gi,
+    /\.navbar\b[^{}]*\{([^}]+)\}/gi,
+    /\.nav-bar\b[^{}]*\{([^}]+)\}/gi,
+    /(?:^|[\s,}])nav\s*\{([^}]+)\}/gi,
+  ];
+  for (const re of selectors) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(css))) {
+      const b = m[1]!.match(/background(?:-color)?\s*:\s*([^;]+);/i);
+      if (b) {
+        const c = normalizeColor(b[1]!);
+        if (c) return c;
+      }
+    }
+  }
+  return null;
+}
+
+
 function topHexColors(css: string, limit = 6): string[] {
   const counts = new Map<string, number>();
   const re = /#([0-9a-f]{6}|[0-9a-f]{3})\b/gi;
@@ -376,11 +402,13 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const accent = findVar(css, ["color-accent", "accent", "brand-accent", "accent-color", "c-accent"]);
   const btn = findButtonStyle(css);
   const palette = topHexColors(css);
+  const headerBg = findHeaderBg(css);
   return {
-    primary_color: primary ?? metaColor ?? palette[0] ?? null,
+    primary_color: primary ?? metaColor ?? headerBg ?? palette[0] ?? null,
     secondary_color: secondary ?? palette[1] ?? null,
     accent_color: accent ?? palette[2] ?? null,
     meta_theme_color: metaColor,
+    header_bg: headerBg,
     button_bg: btn.bg,
     button_color: btn.color,
     button_radius: btn.radius,
@@ -389,6 +417,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     css_sources: sources,
   };
 }
+
 
 async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null } | null> {
   try {
@@ -450,6 +479,8 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
       secondary_color: bestTheme.secondary_color ?? t.secondary_color,
       accent_color: bestTheme.accent_color ?? t.accent_color,
       meta_theme_color: bestTheme.meta_theme_color ?? t.meta_theme_color,
+      header_bg: bestTheme.header_bg ?? t.header_bg,
+
       button_bg: bestTheme.button_bg ?? t.button_bg,
       button_color: bestTheme.button_color ?? t.button_color,
       button_radius: bestTheme.button_radius ?? t.button_radius,
