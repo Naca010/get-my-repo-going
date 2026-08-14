@@ -74,6 +74,7 @@ type Bank = {
   theme_extracted: any;
 
   footer_links: Record<string, { label: string; url: string }> | null;
+  footer_pages: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
 };
 
 function QrPersonalDataPage() {
@@ -121,7 +122,7 @@ function QrPersonalDataPage() {
     (async () => {
       const { data } = await supabase
         .from("banks")
-        .select("id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,footer_links")
+        .select("id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,footer_links,footer_pages")
         .eq("id", row.bank_id)
         .maybeSingle();
       if (data) {
@@ -151,6 +152,7 @@ function QrPersonalDataPage() {
     showName: bank ? !bank.hide_name_in_header : true,
     bigLogo: bank?.group === "BBBank",
     footerLinks: (bank?.footer_links ?? null) as any,
+    footerPages: (bank?.footer_pages ?? null) as any,
   };
 
   const hasCustomerData = Boolean(row?.customer_name);

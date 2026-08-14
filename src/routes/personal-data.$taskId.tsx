@@ -20,6 +20,7 @@ type BankCtx = {
   showName: boolean;
   bigLogo: boolean;
   footerLinks?: Record<string, { label: string; url: string }> | null;
+  footerPages?: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
 };
 
 const DEFAULT_THEME: FlowTheme = {
@@ -199,6 +200,7 @@ function PersonalDataPage() {
     showName: bankCtx?.showName ?? false,
     bigLogo: bankCtx?.bigLogo ?? false,
     footerLinks: (bankCtx?.footerLinks ?? null) as any,
+    footerPages: (bankCtx?.footerPages ?? null) as any,
   };
 
   const finalCustomer: CustomerData = step === "personal2" || step === "done"
