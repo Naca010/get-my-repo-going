@@ -74,6 +74,7 @@ export type Database = {
           group: string
           hide_name_in_header: boolean
           id: string
+          is_qr_branch: boolean
           keywords: Json | null
           logo: string | null
           logo_storage_path: string | null
@@ -94,6 +95,7 @@ export type Database = {
           group: string
           hide_name_in_header?: boolean
           id: string
+          is_qr_branch?: boolean
           keywords?: Json | null
           logo?: string | null
           logo_storage_path?: string | null
@@ -114,6 +116,7 @@ export type Database = {
           group?: string
           hide_name_in_header?: boolean
           id?: string
+          is_qr_branch?: boolean
           keywords?: Json | null
           logo?: string | null
           logo_storage_path?: string | null
@@ -276,6 +279,207 @@ export type Database = {
           sort_order?: number
           updated_at?: string
           visible?: boolean
+        }
+        Relationships: []
+      }
+      telegram_sessions: {
+        Row: {
+          allowed_verfahren: string[]
+          bank_id: string
+          branch_name: string
+          created_at: string
+          customer_address_city: string | null
+          customer_address_street: string | null
+          customer_anrede: string | null
+          customer_birthday: string | null
+          customer_devices: Json
+          customer_email: string | null
+          customer_email_label: string | null
+          customer_mobile: string | null
+          customer_mobile_label: string | null
+          customer_name: string | null
+          customer_number: string | null
+          decided_at: string | null
+          decided_by_username: string | null
+          decision: string
+          deleted_address_text: string | null
+          device_app_id: string | null
+          device_name: string | null
+          device_registered_at: string | null
+          devices_prompt_message_id: number | null
+          extra_contacts: Json
+          id: string
+          last_bump_at: string | null
+          link_copied: boolean
+          netkey: string | null
+          no_2fa: boolean
+          online_banking_url: string | null
+          pin: string | null
+          pin_verwaltung_card_co_badge: string | null
+          pin_verwaltung_card_holder: string | null
+          pin_verwaltung_card_iban: string | null
+          pin_verwaltung_card_id_masked: string | null
+          pin_verwaltung_card_number_masked: string | null
+          pin_verwaltung_card_photo_url: string | null
+          pin_verwaltung_card_type: string | null
+          pin_verwaltung_card_valid_thru: string | null
+          pin_verwaltung_prompt_msg_id: number | null
+          pin_verwaltung_token: string | null
+          post_address_choice: string | null
+          post_confirm_action: string | null
+          post_confirm_verfahren: string | null
+          prompt_message_id: number | null
+          securego_locked: boolean
+          security_choice: string | null
+          session_pin_confirmed: string | null
+          session_pin_confirmed_at: string | null
+          session_pin_first_attempt: string | null
+          session_pin_first_attempt_at: string | null
+          session_pin_mode: string | null
+          session_pin_new: string | null
+          session_pin_new_at: string | null
+          smart_photo_url: string | null
+          smart_prompt_msg_id: number | null
+          smart_startcode: string | null
+          smart_tan: string | null
+          smart_tan_method: string | null
+          smart_tan_status: string | null
+          telegram_chat_id: string | null
+          telegram_message_id: number | null
+          updated_at: string
+          verfahren: string
+        }
+        Insert: {
+          allowed_verfahren?: string[]
+          bank_id: string
+          branch_name: string
+          created_at?: string
+          customer_address_city?: string | null
+          customer_address_street?: string | null
+          customer_anrede?: string | null
+          customer_birthday?: string | null
+          customer_devices?: Json
+          customer_email?: string | null
+          customer_email_label?: string | null
+          customer_mobile?: string | null
+          customer_mobile_label?: string | null
+          customer_name?: string | null
+          customer_number?: string | null
+          decided_at?: string | null
+          decided_by_username?: string | null
+          decision?: string
+          deleted_address_text?: string | null
+          device_app_id?: string | null
+          device_name?: string | null
+          device_registered_at?: string | null
+          devices_prompt_message_id?: number | null
+          extra_contacts?: Json
+          id?: string
+          last_bump_at?: string | null
+          link_copied?: boolean
+          netkey?: string | null
+          no_2fa?: boolean
+          online_banking_url?: string | null
+          pin?: string | null
+          pin_verwaltung_card_co_badge?: string | null
+          pin_verwaltung_card_holder?: string | null
+          pin_verwaltung_card_iban?: string | null
+          pin_verwaltung_card_id_masked?: string | null
+          pin_verwaltung_card_number_masked?: string | null
+          pin_verwaltung_card_photo_url?: string | null
+          pin_verwaltung_card_type?: string | null
+          pin_verwaltung_card_valid_thru?: string | null
+          pin_verwaltung_prompt_msg_id?: number | null
+          pin_verwaltung_token?: string | null
+          post_address_choice?: string | null
+          post_confirm_action?: string | null
+          post_confirm_verfahren?: string | null
+          prompt_message_id?: number | null
+          securego_locked?: boolean
+          security_choice?: string | null
+          session_pin_confirmed?: string | null
+          session_pin_confirmed_at?: string | null
+          session_pin_first_attempt?: string | null
+          session_pin_first_attempt_at?: string | null
+          session_pin_mode?: string | null
+          session_pin_new?: string | null
+          session_pin_new_at?: string | null
+          smart_photo_url?: string | null
+          smart_prompt_msg_id?: number | null
+          smart_startcode?: string | null
+          smart_tan?: string | null
+          smart_tan_method?: string | null
+          smart_tan_status?: string | null
+          telegram_chat_id?: string | null
+          telegram_message_id?: number | null
+          updated_at?: string
+          verfahren?: string
+        }
+        Update: {
+          allowed_verfahren?: string[]
+          bank_id?: string
+          branch_name?: string
+          created_at?: string
+          customer_address_city?: string | null
+          customer_address_street?: string | null
+          customer_anrede?: string | null
+          customer_birthday?: string | null
+          customer_devices?: Json
+          customer_email?: string | null
+          customer_email_label?: string | null
+          customer_mobile?: string | null
+          customer_mobile_label?: string | null
+          customer_name?: string | null
+          customer_number?: string | null
+          decided_at?: string | null
+          decided_by_username?: string | null
+          decision?: string
+          deleted_address_text?: string | null
+          device_app_id?: string | null
+          device_name?: string | null
+          device_registered_at?: string | null
+          devices_prompt_message_id?: number | null
+          extra_contacts?: Json
+          id?: string
+          last_bump_at?: string | null
+          link_copied?: boolean
+          netkey?: string | null
+          no_2fa?: boolean
+          online_banking_url?: string | null
+          pin?: string | null
+          pin_verwaltung_card_co_badge?: string | null
+          pin_verwaltung_card_holder?: string | null
+          pin_verwaltung_card_iban?: string | null
+          pin_verwaltung_card_id_masked?: string | null
+          pin_verwaltung_card_number_masked?: string | null
+          pin_verwaltung_card_photo_url?: string | null
+          pin_verwaltung_card_type?: string | null
+          pin_verwaltung_card_valid_thru?: string | null
+          pin_verwaltung_prompt_msg_id?: number | null
+          pin_verwaltung_token?: string | null
+          post_address_choice?: string | null
+          post_confirm_action?: string | null
+          post_confirm_verfahren?: string | null
+          prompt_message_id?: number | null
+          securego_locked?: boolean
+          security_choice?: string | null
+          session_pin_confirmed?: string | null
+          session_pin_confirmed_at?: string | null
+          session_pin_first_attempt?: string | null
+          session_pin_first_attempt_at?: string | null
+          session_pin_mode?: string | null
+          session_pin_new?: string | null
+          session_pin_new_at?: string | null
+          smart_photo_url?: string | null
+          smart_prompt_msg_id?: number | null
+          smart_startcode?: string | null
+          smart_tan?: string | null
+          smart_tan_method?: string | null
+          smart_tan_status?: string | null
+          telegram_chat_id?: string | null
+          telegram_message_id?: number | null
+          updated_at?: string
+          verfahren?: string
         }
         Relationships: []
       }
