@@ -577,7 +577,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     </label>
                   </div>
                   {vrNetKeyError && (
-                    <p className="mt-1 text-sm text-red-600">{aliasFieldLabel} erforderlich</p>
+                    <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4" />
+                      {credentialsInvalid ? "VR-NetKey / Alias oder PIN falsch" : `${aliasFieldLabel} erforderlich`}
+                    </p>
+
                   )}
                 </div>
 
