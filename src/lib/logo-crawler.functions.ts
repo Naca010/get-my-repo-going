@@ -402,11 +402,13 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const accent = findVar(css, ["color-accent", "accent", "brand-accent", "accent-color", "c-accent"]);
   const btn = findButtonStyle(css);
   const palette = topHexColors(css);
+  const headerBg = findHeaderBg(css);
   return {
-    primary_color: primary ?? metaColor ?? palette[0] ?? null,
+    primary_color: primary ?? metaColor ?? headerBg ?? palette[0] ?? null,
     secondary_color: secondary ?? palette[1] ?? null,
     accent_color: accent ?? palette[2] ?? null,
     meta_theme_color: metaColor,
+    header_bg: headerBg,
     button_bg: btn.bg,
     button_color: btn.color,
     button_radius: btn.radius,
@@ -415,6 +417,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     css_sources: sources,
   };
 }
+
 
 async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null } | null> {
   try {
