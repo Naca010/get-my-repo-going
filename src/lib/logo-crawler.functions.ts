@@ -516,7 +516,7 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
     await Promise.all(
       data.banks.map(async (b) => {
         try {
-          const { logo, sourceUrl, footer } = await findLogoForUrl(b.url);
+          const { logo, sourceUrl, footer, theme } = await findLogoForUrl(b.url);
           let storedUrl: string | null = null;
           let storedPath: string | null = null;
           if (logo) {
@@ -531,6 +531,10 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
             footer_language: footer.language,
             footer_last_checked_at: new Date().toISOString(),
           };
+          if (theme) {
+            patch["theme_extracted"] = theme;
+            patch["theme_extracted_at"] = new Date().toISOString();
+          }
           if (logo) {
             patch["logo"] = logo;
             patch["logo_source_url"] = sourceUrl;
