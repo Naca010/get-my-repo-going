@@ -15,6 +15,10 @@ export type FooterLink = { label: string; url: string };
 export type FooterLinks = Partial<Record<"impressum" | "datenschutz" | "agb" | "sicherheit", FooterLink>>;
 export type FooterPage = { title: string; html: string; url: string; fetched_at: string };
 export type FooterPages = Partial<Record<"impressum" | "datenschutz" | "agb" | "sicherheit", FooterPage>>;
+export type FooterPartner = { name: string; logo_url: string; link_url: string | null };
+export type FooterSocial = { network: string; url: string; label: string };
+export type FooterCta = { label: string; url: string };
+export type FooterColumn = { heading: string; links: Array<{ label: string; url: string }> };
 
 type Partner = { id: string; name: string; logo_url: string; link_url: string | null };
 
@@ -34,6 +38,11 @@ export function BankShell({
   bigLogo = false,
   footerLinks,
   footerPages,
+  footerPartners,
+  footerSocials,
+  footerCtas,
+  footerColumns,
+  footerDisclaimer,
   children,
 }: {
   theme: FlowTheme;
@@ -44,6 +53,11 @@ export function BankShell({
   bigLogo?: boolean;
   footerLinks?: FooterLinks | null;
   footerPages?: FooterPages | null;
+  footerPartners?: FooterPartner[] | null;
+  footerSocials?: FooterSocial[] | null;
+  footerCtas?: FooterCta[] | null;
+  footerColumns?: FooterColumn[] | null;
+  footerDisclaimer?: string | null;
   children: ReactNode;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
