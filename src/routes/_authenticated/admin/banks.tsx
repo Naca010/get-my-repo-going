@@ -647,6 +647,7 @@ function BankEditor({
       hide_name_in_header: form.hide_name_in_header,
       online_banking_url: form.online_banking_url?.trim() || null,
       unverified: form.unverified,
+      is_qr_branch: form.is_qr_branch,
     };
     const groupName = form.group.trim();
     if (!groups.includes(groupName)) {
