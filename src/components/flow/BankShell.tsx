@@ -167,51 +167,54 @@ export function BankShell({
 
       {popup && (
         <div
-          className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 sm:p-6"
           onClick={() => setPopup(null)}
         >
           <div
-            className="bg-white w-full max-w-5xl h-[85vh] rounded-lg shadow-2xl flex flex-col overflow-hidden"
+            className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="flex items-center justify-between px-4 py-3 border-b"
-              style={{ backgroundColor: footerBg, color: "#fff" }}
-            >
-              <h2 className="text-base font-semibold truncate">{popup.title}</h2>
+            <div className="flex items-center justify-between px-6 py-5 border-b bg-white sticky top-0 z-10">
+              <div className="flex items-center gap-4">
+                <img src={src} alt={bankName} className="h-8 object-contain" />
+              </div>
               <button
                 type="button"
                 onClick={() => setPopup(null)}
-                className="p-1 rounded hover:bg-white/10"
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
                 aria-label="Schließen"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
-            {popup.html ? (
-              <div className="flex-1 overflow-auto bg-white">
-                <div
-                  className="max-w-3xl mx-auto px-6 py-6 prose prose-sm sm:prose-base prose-a:text-blue-700"
-                  // Content is server-side sanitized before being stored.
-                  dangerouslySetInnerHTML={{ __html: popup.html }}
-                />
-                {popup.url && (
-                  <div className="max-w-3xl mx-auto px-6 pb-6 text-xs text-gray-500">
-                    Quelle:{" "}
-                    <a href={popup.url} target="_blank" rel="noopener noreferrer" className="underline break-all">
-                      {popup.url}
-                    </a>
+
+            <div className="flex-1 overflow-auto bg-white px-8 py-8 custom-scrollbar">
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">{popup.title}</h2>
+                {popup.html ? (
+                  <div
+                    className="prose prose-blue max-w-none text-gray-700 leading-relaxed font-sans"
+                    dangerouslySetInnerHTML={{ __html: popup.html }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                    <X className="w-12 h-12 mb-4 opacity-20" />
+                    <p>Inhalt konnte nicht geladen werden.</p>
                   </div>
                 )}
               </div>
-            ) : (
-              <iframe
-                src={popup.url}
-                title={popup.title}
-                className="flex-1 w-full bg-white"
-                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-              />
-            )}
+            </div>
+
+            <div className="px-8 py-6 border-t bg-gray-50 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setPopup(null)}
+                className="px-8 py-3 bg-[#005ea8] text-white font-semibold rounded-full hover:bg-[#004a85] transition-colors min-w-[160px]"
+                style={{ backgroundColor: theme.buttonBg, borderRadius: theme.buttonRadius }}
+              >
+                Alle annehmen
+              </button>
+            </div>
           </div>
         </div>
       )}
