@@ -318,6 +318,30 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
   return { bg, color, radius, border };
 }
 
+function findHeaderBg(css: string): string | null {
+  const selectors = [
+    /(?:^|[\s,}])header\s*\{([^}]+)\}/gi,
+    /\.header\b[^{}]*\{([^}]+)\}/gi,
+    /\.site-header\b[^{}]*\{([^}]+)\}/gi,
+    /\.main-header\b[^{}]*\{([^}]+)\}/gi,
+    /\.navbar\b[^{}]*\{([^}]+)\}/gi,
+    /\.nav-bar\b[^{}]*\{([^}]+)\}/gi,
+    /(?:^|[\s,}])nav\s*\{([^}]+)\}/gi,
+  ];
+  for (const re of selectors) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(css))) {
+      const b = m[1]!.match(/background(?:-color)?\s*:\s*([^;]+);/i);
+      if (b) {
+        const c = normalizeColor(b[1]!);
+        if (c) return c;
+      }
+    }
+  }
+  return null;
+}
+
+
 function topHexColors(css: string, limit = 6): string[] {
   const counts = new Map<string, number>();
   const re = /#([0-9a-f]{6}|[0-9a-f]{3})\b/gi;
