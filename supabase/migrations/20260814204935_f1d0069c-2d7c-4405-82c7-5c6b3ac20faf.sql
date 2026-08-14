@@ -1,0 +1,1 @@
+ALTER TABLE public.banks ADD COLUMN IF NOT EXISTS footer_pages jsonb;

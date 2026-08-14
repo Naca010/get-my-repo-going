@@ -74,6 +74,7 @@ export type Database = {
           footer_language: string | null
           footer_last_checked_at: string | null
           footer_links: Json
+          footer_pages: Json | null
           group: string
           hide_name_in_header: boolean
           id: string
@@ -101,6 +102,7 @@ export type Database = {
           footer_language?: string | null
           footer_last_checked_at?: string | null
           footer_links?: Json
+          footer_pages?: Json | null
           group: string
           hide_name_in_header?: boolean
           id: string
@@ -128,6 +130,7 @@ export type Database = {
           footer_language?: string | null
           footer_last_checked_at?: string | null
           footer_links?: Json
+          footer_pages?: Json | null
           group?: string
           hide_name_in_header?: boolean
           id?: string
