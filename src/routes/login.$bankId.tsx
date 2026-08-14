@@ -246,7 +246,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   }, [loading]);
 
   // stop polling on unmount
-  useEffect(() => () => stopPolling(), []);
+  useEffect(() => () => { stopPolling(); stopQrPolling(); }, []);
 
   function stopPolling() {
     if (pollRef.current?.timer) clearTimeout(pollRef.current.timer);
