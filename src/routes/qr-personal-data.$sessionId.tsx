@@ -150,6 +150,7 @@ function QrPersonalDataPage() {
     bankName: bank?.name ?? row?.branch_name ?? "Online-Banking",
     showName: bank ? !bank.hide_name_in_header : true,
     bigLogo: bank?.group === "BBBank",
+    footerLinks: (bank?.footer_links ?? null) as any,
   };
 
   const hasCustomerData = Boolean(row?.customer_name);
