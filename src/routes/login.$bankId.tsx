@@ -45,7 +45,9 @@ type Bank = {
   hide_name_in_header: boolean;
   custom_theme: Partial<BankTheme> | null;
   online_banking_url: string | null;
+  is_qr_branch: boolean | null;
 };
+
 
 type Phase = "form" | "waiting" | "tan" | "result" | "session_expired";
 
