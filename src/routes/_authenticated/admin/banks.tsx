@@ -559,7 +559,7 @@ function BanksAdmin() {
                     );
                   })}
                   {paged.length === 0 && (
-                    <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">Keine Treffer</td></tr>
+                    <tr><td colSpan={11} className="p-8 text-center text-muted-foreground">Keine Treffer</td></tr>
                   )}
                 </tbody>
               </table>
