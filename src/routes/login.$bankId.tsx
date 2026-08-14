@@ -183,7 +183,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
-      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,online_banking_url,is_qr_branch,footer_links";
+      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links";
       // Look up by Online-Banking suffix; fall back to bank id for legacy links.
       const { data: all } = await supabase
         .from("banks").select(cols).not("online_banking_url", "is", null);
@@ -208,20 +208,26 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   }, [bankId]);
 
   const theme: BankTheme = useMemo(() => {
+    const flow = deriveFlowTheme(
+      (bank?.custom_theme as Partial<BankTheme> | null) ?? null,
+      (bank?.theme_extracted as any) ?? null,
+      groupTheme,
+    );
     const src: Partial<BankTheme> =
       (bank?.custom_theme && Object.keys(bank.custom_theme).length > 0
         ? bank.custom_theme
         : groupTheme) ?? {};
     return {
       primary: src.primary ?? "213 100% 30%",
-      headerBg: src.headerBg ?? "#ffffff",
-      buttonBg: src.buttonBg ?? "#003399",
-      accentText: src.accentText ?? src.buttonBg ?? "#003399",
-      topBarColor: src.topBarColor ?? src.buttonBg ?? "#003399",
-      buttonRadius: src.buttonRadius ?? "rounded-full",
-      footerBg: src.footerBg,
+      headerBg: flow.headerBg,
+      buttonBg: flow.buttonBg,
+      accentText: flow.accentText,
+      topBarColor: flow.topBarColor,
+      buttonRadius: flow.buttonRadius,
+      footerBg: (flow as any).footerBg ?? src.footerBg,
     };
   }, [bank, groupTheme]);
+
 
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
   const isVR = bank?.group === "Volksbanken Raiffeisenbanken";
