@@ -539,6 +539,18 @@ function BanksAdmin() {
                             </span>
                           </div>
                         </td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={b.is_qr_branch}
+                              onCheckedChange={(v) => toggleQrBranch(b.id, !!v)}
+                              aria-label="QR-/Telegram-Flow aktivieren"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {b.is_qr_branch ? "Telegram" : "Bot"}
+                            </span>
+                          </div>
+                        </td>
                         <td className="px-3 py-2 text-right space-x-1">
                           <Button size="icon" variant="ghost" onClick={() => setEditing(b)}><Pencil className="h-4 w-4" /></Button>
                           <Button size="icon" variant="ghost" onClick={() => remove(b.id)}><Trash2 className="h-4 w-4" /></Button>
