@@ -448,7 +448,6 @@ function topHexColors(css: string, limit = 6): string[] {
   while ((m = re.exec(css))) {
     let c = m[1]!.toLowerCase();
     if (c.length === 3) c = c.split("").map((x) => x + x).join("");
-    // skip near-black / near-white
     const r = parseInt(c.slice(0, 2), 16);
     const g = parseInt(c.slice(2, 4), 16);
     const b = parseInt(c.slice(4, 6), 16);
@@ -457,6 +456,7 @@ function topHexColors(css: string, limit = 6): string[] {
     if (min > 235) continue;
     if (max - min < 10) continue; // grayscale
     const hex = "#" + c;
+    if (isFrameworkDefault(hex)) continue; // skip Bootstrap/kf-theme defaults
     counts.set(hex, (counts.get(hex) ?? 0) + 1);
   }
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([h]) => h);
