@@ -10,6 +10,8 @@ import PersonalDataOverview, { type CustomerData } from "@/components/flow/Perso
 import { DeviceManagementStep, type Device } from "@/components/flow/DeviceManagementStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 import type { BankTheme } from "@/data/banks";
+import { deriveFlowTheme } from "@/lib/deriveTheme";
+
 
 const LOADER_MESSAGES = ["Vorgang wird geladen...", "Geräte werden geprüft...", "Gleich fertig..."];
 
