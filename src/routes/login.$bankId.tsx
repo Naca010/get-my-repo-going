@@ -538,7 +538,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const fallbackLogoSrc = getLogo(groupLogoName[bank.group]) || vrLogoGeneric;
   const isBBBank = bank.group === "BBBank";
-  const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any, footerPages: (bank.footer_pages ?? null) as any };
+  const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any, footerPages: (bank.footer_pages ?? null) as any, footerPartners: (bank.footer_partners ?? null) as any, footerSocials: (bank.footer_socials ?? null) as any, footerCtas: (bank.footer_ctas ?? null) as any, footerColumns: (bank.footer_columns ?? null) as any, footerDisclaimer: bank.footer_disclaimer ?? null };
 
 
 
