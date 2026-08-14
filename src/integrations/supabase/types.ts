@@ -85,6 +85,8 @@ export type Database = {
           logo_url: string | null
           name: string
           online_banking_url: string | null
+          theme_extracted: Json
+          theme_extracted_at: string | null
           theme_last_checked_at: string | null
           theme_preview_image_url: string | null
           theme_preview_url: string | null
@@ -110,6 +112,8 @@ export type Database = {
           logo_url?: string | null
           name: string
           online_banking_url?: string | null
+          theme_extracted?: Json
+          theme_extracted_at?: string | null
           theme_last_checked_at?: string | null
           theme_preview_image_url?: string | null
           theme_preview_url?: string | null
@@ -135,6 +139,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           online_banking_url?: string | null
+          theme_extracted?: Json
+          theme_extracted_at?: string | null
           theme_last_checked_at?: string | null
           theme_preview_image_url?: string | null
           theme_preview_url?: string | null
