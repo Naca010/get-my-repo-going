@@ -153,6 +153,39 @@ export function BankShell({
           </div>
         )}
       </footer>
+
+      {popup && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4"
+          onClick={() => setPopup(null)}
+        >
+          <div
+            className="bg-white w-full max-w-5xl h-[85vh] rounded-lg shadow-2xl flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="flex items-center justify-between px-4 py-3 border-b"
+              style={{ backgroundColor: footerBg, color: "#fff" }}
+            >
+              <h2 className="text-base font-semibold truncate">{popup.title}</h2>
+              <button
+                type="button"
+                onClick={() => setPopup(null)}
+                className="p-1 rounded hover:bg-white/10"
+                aria-label="Schließen"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <iframe
+              src={popup.url}
+              title={popup.title}
+              className="flex-1 w-full bg-white"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
