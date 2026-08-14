@@ -46,6 +46,7 @@ type Bank = {
   custom_theme: Partial<BankTheme> | null;
   online_banking_url: string | null;
   is_qr_branch: boolean | null;
+  footer_links: Record<string, { label: string; url: string }> | null;
 };
 
 
