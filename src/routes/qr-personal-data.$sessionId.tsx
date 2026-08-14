@@ -75,6 +75,11 @@ type Bank = {
 
   footer_links: Record<string, { label: string; url: string }> | null;
   footer_pages: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
+  footer_partners: any;
+  footer_socials: any;
+  footer_ctas: any;
+  footer_columns: any;
+  footer_disclaimer: string | null;
 };
 
 function QrPersonalDataPage() {
