@@ -246,7 +246,8 @@ function sanitizeContentHtml(html: string, base: URL): { title: string; html: st
   s = s.replace(/<link\b[^>]*>/gi, "");
   s = s.replace(/<meta\b[^>]*>/gi, "");
   s = s.replace(/<header\b[\s\S]*?<\/header>/gi, "");
-  s = s.replace(/<nav\b[\s\S]*?<\/nav>/gi, "");
+  s = s.replace(/<nav\b[^>]*class=["'][^"']*(?:pagination|breadcrumb)[^"']*["'][\s\S]*?<\/nav>/gi, ""); // Keep structural nav but remove breadcrumbs
+  s = s.replace(/<nav\b(?![^>]*class=["'][^"']*(?:pagination|breadcrumb)[^"']*["'])[\s\S]*?<\/nav>/gi, ""); // Remove other navs
   s = s.replace(/<footer\b[\s\S]*?<\/footer>/gi, "");
   s = s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "");
   s = s.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "");
