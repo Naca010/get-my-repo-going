@@ -198,6 +198,7 @@ function PersonalDataPage() {
     bankName: bankCtx?.bankName ?? "Online-Banking",
     showName: bankCtx?.showName ?? false,
     bigLogo: bankCtx?.bigLogo ?? false,
+    footerLinks: (bankCtx?.footerLinks ?? null) as any,
   };
 
   const finalCustomer: CustomerData = step === "personal2" || step === "done"
