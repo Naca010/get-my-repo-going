@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronUp, Check } from "lucide-react";
+import { ChevronUp, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FlowTheme = {
