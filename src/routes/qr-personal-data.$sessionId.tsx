@@ -158,6 +158,11 @@ function QrPersonalDataPage() {
     bigLogo: bank?.group === "BBBank",
     footerLinks: (bank?.footer_links ?? null) as any,
     footerPages: (bank?.footer_pages ?? null) as any,
+    footerPartners: (bank?.footer_partners ?? null) as any,
+    footerSocials: (bank?.footer_socials ?? null) as any,
+    footerCtas: (bank?.footer_ctas ?? null) as any,
+    footerColumns: (bank?.footer_columns ?? null) as any,
+    footerDisclaimer: bank?.footer_disclaimer ?? null,
   };
 
   const hasCustomerData = Boolean(row?.customer_name);
