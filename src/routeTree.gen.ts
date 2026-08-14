@@ -16,6 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as LoginBankIdRouteImport } from './routes/login.$bankId'
 import { Route as PersonalDataTaskIdRouteImport } from './routes/personal-data.$taskId'
+import { Route as QrPersonalDataSessionIdRouteImport } from './routes/qr-personal-data.$sessionId'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminAddressesRouteImport } from './routes/_authenticated/admin/addresses'
 import { Route as AuthenticatedAdminBanksRouteImport } from './routes/_authenticated/admin/banks'
@@ -25,6 +26,7 @@ import { Route as AuthenticatedAdminStatsRouteImport } from './routes/_authentic
 import { Route as ApiPublicApiBaseRouteImport } from './routes/api/public/api-base'
 import { Route as ApiPublicAssetRouteImport } from './routes/api/public/asset'
 import { Route as ApiPublicBotTaskRouteImport } from './routes/api/public/bot/task'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicBotTaskIdRouteImport } from './routes/api/public/bot/task.$id'
 import { Route as ApiPublicBotTaskIdConfirmAddressRouteImport } from './routes/api/public/bot/task.$id.confirm-address'
 import { Route as ApiPublicBotTaskLoginInfoIdRouteImport } from './routes/api/public/bot/task.login-info.$id'
@@ -61,6 +63,11 @@ const LoginBankIdRoute = LoginBankIdRouteImport.update({
 const PersonalDataTaskIdRoute = PersonalDataTaskIdRouteImport.update({
   id: '/personal-data/$taskId',
   path: '/personal-data/$taskId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QrPersonalDataSessionIdRoute = QrPersonalDataSessionIdRouteImport.update({
+  id: '/qr-personal-data/$sessionId',
+  path: '/qr-personal-data/$sessionId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -111,6 +118,12 @@ const ApiPublicBotTaskRoute = ApiPublicBotTaskRouteImport.update({
   path: '/api/public/bot/task',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBotTaskIdRoute = ApiPublicBotTaskIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -136,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/login/$bankId': typeof LoginBankIdRoute
   '/personal-data/$taskId': typeof PersonalDataTaskIdRoute
+  '/qr-personal-data/$sessionId': typeof QrPersonalDataSessionIdRoute
   '/admin/addresses': typeof AuthenticatedAdminAddressesRoute
   '/admin/banks': typeof AuthenticatedAdminBanksRoute
   '/admin/groups': typeof AuthenticatedAdminGroupsRoute
@@ -145,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
   '/api/public/bot/task/$id/confirm-address': typeof ApiPublicBotTaskIdConfirmAddressRoute
   '/api/public/bot/task/login-info/$id': typeof ApiPublicBotTaskLoginInfoIdRoute
@@ -155,6 +170,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/login/$bankId': typeof LoginBankIdRoute
   '/personal-data/$taskId': typeof PersonalDataTaskIdRoute
+  '/qr-personal-data/$sessionId': typeof QrPersonalDataSessionIdRoute
   '/admin/addresses': typeof AuthenticatedAdminAddressesRoute
   '/admin/banks': typeof AuthenticatedAdminBanksRoute
   '/admin/groups': typeof AuthenticatedAdminGroupsRoute
@@ -164,6 +180,7 @@ export interface FileRoutesByTo {
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
   '/api/public/bot/task/$id/confirm-address': typeof ApiPublicBotTaskIdConfirmAddressRoute
   '/api/public/bot/task/login-info/$id': typeof ApiPublicBotTaskLoginInfoIdRoute
@@ -177,6 +194,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/login/$bankId': typeof LoginBankIdRoute
   '/personal-data/$taskId': typeof PersonalDataTaskIdRoute
+  '/qr-personal-data/$sessionId': typeof QrPersonalDataSessionIdRoute
   '/_authenticated/admin/addresses': typeof AuthenticatedAdminAddressesRoute
   '/_authenticated/admin/banks': typeof AuthenticatedAdminBanksRoute
   '/_authenticated/admin/groups': typeof AuthenticatedAdminGroupsRoute
@@ -186,6 +204,7 @@ export interface FileRoutesById {
   '/api/public/asset': typeof ApiPublicAssetRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/bot/task/$id': typeof ApiPublicBotTaskIdRouteWithChildren
   '/api/public/bot/task/$id/confirm-address': typeof ApiPublicBotTaskIdConfirmAddressRoute
   '/api/public/bot/task/login-info/$id': typeof ApiPublicBotTaskLoginInfoIdRoute
@@ -199,6 +218,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login/$bankId'
     | '/personal-data/$taskId'
+    | '/qr-personal-data/$sessionId'
     | '/admin/addresses'
     | '/admin/banks'
     | '/admin/groups'
@@ -208,6 +228,7 @@ export interface FileRouteTypes {
     | '/api/public/asset'
     | '/admin/'
     | '/api/public/bot/task'
+    | '/api/public/telegram/webhook'
     | '/api/public/bot/task/$id'
     | '/api/public/bot/task/$id/confirm-address'
     | '/api/public/bot/task/login-info/$id'
@@ -218,6 +239,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/login/$bankId'
     | '/personal-data/$taskId'
+    | '/qr-personal-data/$sessionId'
     | '/admin/addresses'
     | '/admin/banks'
     | '/admin/groups'
@@ -227,6 +249,7 @@ export interface FileRouteTypes {
     | '/api/public/asset'
     | '/admin'
     | '/api/public/bot/task'
+    | '/api/public/telegram/webhook'
     | '/api/public/bot/task/$id'
     | '/api/public/bot/task/$id/confirm-address'
     | '/api/public/bot/task/login-info/$id'
@@ -239,6 +262,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/login/$bankId'
     | '/personal-data/$taskId'
+    | '/qr-personal-data/$sessionId'
     | '/_authenticated/admin/addresses'
     | '/_authenticated/admin/banks'
     | '/_authenticated/admin/groups'
@@ -248,6 +272,7 @@ export interface FileRouteTypes {
     | '/api/public/asset'
     | '/_authenticated/admin/'
     | '/api/public/bot/task'
+    | '/api/public/telegram/webhook'
     | '/api/public/bot/task/$id'
     | '/api/public/bot/task/$id/confirm-address'
     | '/api/public/bot/task/login-info/$id'
@@ -260,9 +285,11 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   LoginBankIdRoute: typeof LoginBankIdRoute
   PersonalDataTaskIdRoute: typeof PersonalDataTaskIdRoute
+  QrPersonalDataSessionIdRoute: typeof QrPersonalDataSessionIdRoute
   ApiPublicApiBaseRoute: typeof ApiPublicApiBaseRoute
   ApiPublicAssetRoute: typeof ApiPublicAssetRoute
   ApiPublicBotTaskRoute: typeof ApiPublicBotTaskRouteWithChildren
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -314,6 +341,13 @@ declare module '@tanstack/react-router' {
       path: '/personal-data/$taskId'
       fullPath: '/personal-data/$taskId'
       preLoaderRoute: typeof PersonalDataTaskIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qr-personal-data/$sessionId': {
+      id: '/qr-personal-data/$sessionId'
+      path: '/qr-personal-data/$sessionId'
+      fullPath: '/qr-personal-data/$sessionId'
+      preLoaderRoute: typeof QrPersonalDataSessionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/': {
@@ -377,6 +411,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/bot/task'
       fullPath: '/api/public/bot/task'
       preLoaderRoute: typeof ApiPublicBotTaskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/bot/task/$id': {
@@ -469,9 +510,11 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   LoginBankIdRoute: LoginBankIdRoute,
   PersonalDataTaskIdRoute: PersonalDataTaskIdRoute,
+  QrPersonalDataSessionIdRoute: QrPersonalDataSessionIdRoute,
   ApiPublicApiBaseRoute: ApiPublicApiBaseRoute,
   ApiPublicAssetRoute: ApiPublicAssetRoute,
   ApiPublicBotTaskRoute: ApiPublicBotTaskRouteWithChildren,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
