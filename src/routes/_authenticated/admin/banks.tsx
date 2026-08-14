@@ -89,6 +89,7 @@ type Filter = "all" | "with_logo" | "without_logo" | "with_url" | "without_url" 
 const PAGE_SIZE = 50;
 const BATCH_SIZE = 20;
 const PAUSE_MS = 400;
+const BANK_LIST_COLUMNS = "id,name,group,blz,aliases,keywords,custom_theme,logo,logo_url,logo_storage_path,theme_preview_url,theme_preview_image_url,theme_screenshot_url,theme_last_checked_at,hide_name_in_header,online_banking_url,unverified,is_qr_branch";
 
 const empty: Bank = {
   id: "", name: "", group: "", blz: "",
@@ -122,7 +123,8 @@ function BanksAdmin() {
   const load = async () => {
     setLoading(true);
     const [b, g, l, r] = await Promise.all([
-      supabase.from("banks").select("*").order("name"),
+      // Keep large cached footer HTML out of the overview query.
+      supabase.from("banks").select(BANK_LIST_COLUMNS).order("name"),
       supabase.from("bank_groups").select("name").order("name"),
       supabase.from("logo_crawl_log").select("*"),
       supabase.from("crawl_runs").select("*").order("started_at", { ascending: false }).limit(10),

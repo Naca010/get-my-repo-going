@@ -187,15 +187,22 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
       const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages";
-      // Look up by Online-Banking suffix; fall back to bank id for legacy links.
-      const { data: all } = await supabase
-        .from("banks").select(cols).not("online_banking_url", "is", null);
-      let match = (all ?? []).find(
-        (b: any) => extractSubdomainLabelFromUrl(b.online_banking_url) === bankId,
-      ) as any;
-      if (!match) {
-        const { data } = await supabase.from("banks").select(cols).eq("id", bankId).maybeSingle();
-        match = data as any;
+      // Resolve the suffix using only lightweight columns. Selecting every
+      // bank including cached legal-page HTML can exceed the DB timeout.
+      const { data: candidates, error: candidatesError } = await supabase
+        .from("banks")
+        .select("id,online_banking_url")
+        .not("online_banking_url", "is", null);
+      const resolvedId = (candidates ?? []).find(
+        (candidate) => extractSubdomainLabelFromUrl(candidate.online_banking_url) === bankId,
+      )?.id ?? bankId;
+      const { data: match, error: matchError } = await supabase
+        .from("banks")
+        .select(cols)
+        .eq("id", resolvedId)
+        .maybeSingle();
+      if (candidatesError || matchError) {
+        setErrorMsg("Bankdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
       }
       if (!match) {
         setNotFound(true);
