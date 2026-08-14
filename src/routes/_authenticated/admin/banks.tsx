@@ -767,6 +767,10 @@ function BankEditor({
             <Checkbox checked={form.unverified} onCheckedChange={(v) => set("unverified", !!v)} />
             Als unverifiziert markieren
           </label>
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <Checkbox checked={form.is_qr_branch} onCheckedChange={(v) => set("is_qr_branch", !!v)} />
+            QR-/Telegram-Flow (statt Bot-API) für diese Filiale
+          </label>
           <div className="space-y-2 sm:col-span-2">
             <Label>Custom Theme (JSON, optional)</Label>
             <Textarea rows={4}
