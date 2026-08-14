@@ -240,6 +240,7 @@ export type ThemeExtract = {
   secondary_color: string | null;
   accent_color: string | null;
   meta_theme_color: string | null;
+  header_bg: string | null;
   button_bg: string | null;
   button_color: string | null;
   button_radius: string | null;
@@ -247,6 +248,7 @@ export type ThemeExtract = {
   palette: string[];
   css_sources: string[];
 };
+
 
 function normalizeColor(v: string | null | undefined): string | null {
   if (!v) return null;
