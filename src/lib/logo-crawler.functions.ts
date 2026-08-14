@@ -213,6 +213,8 @@ export type FooterExtract = {
   language: string | null;
 };
 
+export type FooterPage = { title: string; html: string; url: string; fetched_at: string };
+
 function extractFooterLinks(html: string, base: URL): FooterExtract {
   const footerMatch = html.match(/<footer\b[\s\S]*?<\/footer>/i);
   const scope = footerMatch ? footerMatch[0] : html;
@@ -233,6 +235,60 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
   }
   const langMatch = html.match(/<html[^>]*\blang=["']([a-zA-Z-]+)["']/i);
   return { links: found, language: langMatch?.[1] ?? null };
+}
+
+function sanitizeContentHtml(html: string, base: URL): { title: string; html: string } {
+  let s = html;
+  s = s.replace(/<script\b[\s\S]*?<\/script>/gi, "");
+  s = s.replace(/<style\b[\s\S]*?<\/style>/gi, "");
+  s = s.replace(/<noscript\b[\s\S]*?<\/noscript>/gi, "");
+  s = s.replace(/<iframe\b[\s\S]*?<\/iframe>/gi, "");
+  s = s.replace(/<link\b[^>]*>/gi, "");
+  s = s.replace(/<meta\b[^>]*>/gi, "");
+  s = s.replace(/<header\b[\s\S]*?<\/header>/gi, "");
+  s = s.replace(/<nav\b[\s\S]*?<\/nav>/gi, "");
+  s = s.replace(/<footer\b[\s\S]*?<\/footer>/gi, "");
+  s = s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "");
+  s = s.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "");
+
+  const pick =
+    s.match(/<main\b[\s\S]*?<\/main>/i)?.[0] ??
+    s.match(/<article\b[\s\S]*?<\/article>/i)?.[0] ??
+    s.match(/<div\b[^>]*(?:id|class)=["'][^"']*(?:content|main|inhalt|page)[^"']*["'][\s\S]*?<\/div>/i)?.[0] ??
+    s.match(/<body\b[\s\S]*?<\/body>/i)?.[0] ??
+    s;
+
+  let body = pick.replace(/\s(href|src)=["']([^"']+)["']/gi, (_m, attr, val) => {
+    const abs = absolutize(val, base);
+    return abs ? ` ${attr}="${abs}"` : "";
+  });
+  body = body.replace(/<a\b([^>]*)>/gi, (_m, attrs) => `<a${attrs} target="_blank" rel="noopener noreferrer">`);
+
+  const title = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, " ").trim().slice(0, 120) ?? "";
+  return { title, html: body.slice(0, 300_000) };
+}
+
+async function fetchFooterPage(url: string): Promise<FooterPage | null> {
+  try {
+    const res = await fetchWithTimeout(url, 9000);
+    if (!res.ok) return null;
+    const ct = res.headers.get("content-type") || "";
+    if (ct && !/text\/html|application\/xhtml/i.test(ct)) return null;
+    const html = (await res.text()).slice(0, 800_000);
+    const finalBase = new URL(res.url || url);
+    const { title, html: clean } = sanitizeContentHtml(html, finalBase);
+    return { title, html: clean, url: res.url || url, fetched_at: new Date().toISOString() };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchFooterPages(links: Record<string, { label: string; url: string }>): Promise<Record<string, FooterPage>> {
+  const entries = Object.entries(links);
+  const results = await Promise.all(entries.map(async ([k, v]) => [k, await fetchFooterPage(v.url)] as const));
+  const out: Record<string, FooterPage> = {};
+  for (const [k, p] of results) if (p) out[k] = p;
+  return out;
 }
 
 export type ThemeExtract = {
