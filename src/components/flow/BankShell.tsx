@@ -101,14 +101,13 @@ export function BankShell({
                 const link = footerLinks?.[entry.key];
                 const label = link?.label || entry.fallback;
                 const node = link ? (
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => setPopup({ url: link.url, title: label })}
                     className="hover:underline"
                   >
                     {label}
-                  </a>
+                  </button>
                 ) : (
                   <Link to="/" className="hover:underline">{label}</Link>
                 );
