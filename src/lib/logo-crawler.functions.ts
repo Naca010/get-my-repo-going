@@ -201,17 +201,52 @@ function pickJsonEmbeddedLogo(html: string, base: URL): string | null {
   return null;
 }
 
-async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string } | null> {
+const FOOTER_KEYS: Record<string, RegExp> = {
+  impressum: /impressum|imprint/i,
+  datenschutz: /datenschutz|privacy/i,
+  agb: /\bagb\b|allgemeine\s+geschäftsbedingungen|sonderbedingungen|terms/i,
+  sicherheit: /sicherheitshinweise?|sicherheit|security/i,
+};
+
+export type FooterExtract = {
+  links: Record<string, { label: string; url: string }>;
+  language: string | null;
+};
+
+function extractFooterLinks(html: string, base: URL): FooterExtract {
+  const footerMatch = html.match(/<footer\b[\s\S]*?<\/footer>/i);
+  const scope = footerMatch ? footerMatch[0] : html;
+  const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  const found: Record<string, { label: string; url: string }> = {};
+  let m: RegExpExecArray | null;
+  while ((m = anchorRe.exec(scope))) {
+    const href = m[1]!;
+    const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    for (const [key, re] of Object.entries(FOOTER_KEYS)) {
+      if (found[key]) continue;
+      if (re.test(text) || re.test(href)) {
+        const abs = absolutize(href, base);
+        if (abs) found[key] = { label: text.slice(0, 80), url: abs };
+      }
+    }
+  }
+  const langMatch = html.match(/<html[^>]*\blang=["']([a-zA-Z-]+)["']/i);
+  return { links: found, language: langMatch?.[1] ?? null };
+}
+
+async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract } | null> {
   try {
     const res = await fetchWithTimeout(url, 9000);
     if (!res.ok) return null;
     const html = (await res.text()).slice(0, 800_000);
     const finalBase = new URL(res.url || url);
+    const footer = extractFooterLinks(html, finalBase);
     const embedded = pickJsonEmbeddedLogo(html, finalBase);
-    if (embedded) return { logo: embedded, sourceUrl: res.url || url };
+    if (embedded) return { logo: embedded, sourceUrl: res.url || url, footer };
     const header = pickHeaderLogo(html, finalBase);
-    if (header) return { logo: header, sourceUrl: res.url || url };
-    return null;
+    if (header) return { logo: header, sourceUrl: res.url || url, footer };
+    return { logo: null, sourceUrl: res.url || url, footer };
   } catch { return null; }
 }
 
@@ -236,40 +271,55 @@ async function tryMicrolinkLogo(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
-async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string }> {
+async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract }> {
   let target = rawUrl.trim();
   if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
   const base = new URL(target);
+  const emptyFooter: FooterExtract = { links: {}, language: null };
+  let bestFooter: FooterExtract = emptyFooter;
+  const mergeFooter = (f?: FooterExtract | null) => {
+    if (!f) return;
+    bestFooter = {
+      links: { ...f.links, ...bestFooter.links },
+      language: bestFooter.language ?? f.language,
+    };
+  };
 
-  // 1) Portal / login page (as user requested, e.g. services_cloud/portal → services_auth/auth-frontend)
+  // 1) Portal / login page
   const portal = await tryPageForHeaderLogo(target);
-  if (portal) return portal;
+  if (portal) {
+    mergeFooter(portal.footer);
+    if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter };
+  }
 
-  // 2) Bank homepage — most reliable source for the actual header logo
+  // 2) Bank homepage
   const home = await tryPageForHeaderLogo(base.origin + "/");
-  if (home) return home;
+  if (home) {
+    mergeFooter(home.footer);
+    if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter };
+  }
 
-  // 3) JS-rendered fallback via Microlink (headless browser DOM analysis)
+  // 3) JS-rendered fallback via Microlink
   const mlHome = await tryMicrolinkLogo(base.origin + "/");
-  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/" };
+  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/", footer: bestFooter };
   const mlPortal = await tryMicrolinkLogo(target);
-  if (mlPortal) return { logo: mlPortal, sourceUrl: target };
+  if (mlPortal) return { logo: mlPortal, sourceUrl: target, footer: bestFooter };
 
-  // 4) Fallback: og:image / apple-touch-icon / favicon of the homepage
+  // 4) Fallback: og:image / apple-touch-icon / favicon
   try {
     const res = await fetchWithTimeout(base.origin + "/", 8000);
     if (res.ok) {
       const html = (await res.text()).slice(0, 300_000);
       const picked = pickBestIcon(html, new URL(res.url || base.origin));
-      if (picked) return { logo: picked, sourceUrl: res.url || base.origin };
+      if (picked) return { logo: picked, sourceUrl: res.url || base.origin, footer: bestFooter };
     }
   } catch { /* ignore */ }
   try {
     const fav = `${base.origin}/favicon.ico`;
     const r = await fetchWithTimeout(fav, 5000);
-    if (r.ok) return { logo: fav, sourceUrl: fav };
+    if (r.ok) return { logo: fav, sourceUrl: fav, footer: bestFooter };
   } catch { /* ignore */ }
-  return { logo: null, sourceUrl: target };
+  return { logo: null, sourceUrl: target, footer: bestFooter };
 }
 
 export const crawlBankLogos = createServerFn({ method: "POST" })
@@ -289,7 +339,7 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
     await Promise.all(
       data.banks.map(async (b) => {
         try {
-          const { logo, sourceUrl } = await findLogoForUrl(b.url);
+          const { logo, sourceUrl, footer } = await findLogoForUrl(b.url);
           let storedUrl: string | null = null;
           let storedPath: string | null = null;
           if (logo) {
@@ -298,20 +348,26 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
               storedUrl = stored.publicUrl;
               storedPath = stored.path;
             }
-            const patch = {
-              logo,
-              ...(storedUrl ? { logo_url: storedUrl } : {}),
-              ...(storedPath ? { logo_storage_path: storedPath } : {}),
-            };
-            const { error } = await context.supabase.from("banks").update(patch as any).eq("id", b.id);
-            if (error) {
-              await context.supabase.from("logo_crawl_log").upsert({
-                bank_id: b.id, status: "db_error", logo: null, error: error.message,
-                source_url: sourceUrl, checked_at: new Date().toISOString(),
-              });
-              results.push({ id: b.id, logo: null, error: error.message });
-              return;
-            }
+          }
+          const patch: Record<string, unknown> = {
+            footer_links: footer.links,
+            footer_language: footer.language,
+            footer_last_checked_at: new Date().toISOString(),
+          };
+          if (logo) {
+            patch["logo"] = logo;
+            patch["logo_source_url"] = sourceUrl;
+            if (storedUrl) patch["logo_url"] = storedUrl;
+            if (storedPath) patch["logo_storage_path"] = storedPath;
+          }
+          const { error } = await context.supabase.from("banks").update(patch as any).eq("id", b.id);
+          if (error) {
+            await context.supabase.from("logo_crawl_log").upsert({
+              bank_id: b.id, status: "db_error", logo: null, error: error.message,
+              source_url: sourceUrl, checked_at: new Date().toISOString(),
+            });
+            results.push({ id: b.id, logo: null, error: error.message });
+            return;
           }
           await context.supabase.from("logo_crawl_log").upsert({
             bank_id: b.id,

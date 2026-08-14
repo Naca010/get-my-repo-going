@@ -19,6 +19,7 @@ type BankCtx = {
   fallbackLogoSrc: string;
   showName: boolean;
   bigLogo: boolean;
+  footerLinks?: Record<string, { label: string; url: string }> | null;
 };
 
 const DEFAULT_THEME: FlowTheme = {
@@ -197,6 +198,7 @@ function PersonalDataPage() {
     bankName: bankCtx?.bankName ?? "Online-Banking",
     showName: bankCtx?.showName ?? false,
     bigLogo: bankCtx?.bigLogo ?? false,
+    footerLinks: (bankCtx?.footerLinks ?? null) as any,
   };
 
   const finalCustomer: CustomerData = step === "personal2" || step === "done"
