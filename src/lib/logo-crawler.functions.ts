@@ -613,10 +613,12 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
               storedPath = stored.path;
             }
           }
+          const footerPages = await fetchFooterPages(footer.links);
           const patch: Record<string, unknown> = {
             footer_links: footer.links,
             footer_language: footer.language,
             footer_last_checked_at: new Date().toISOString(),
+            footer_pages: footerPages,
           };
           if (theme) {
             patch["theme_extracted"] = theme;
