@@ -428,12 +428,13 @@ async function tryMicrolinkLogo(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
-async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract }> {
+async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null }> {
   let target = rawUrl.trim();
   if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
   const base = new URL(target);
   const emptyFooter: FooterExtract = { links: {}, language: null };
   let bestFooter: FooterExtract = emptyFooter;
+  let bestTheme: ThemeExtract | null = null;
   const mergeFooter = (f?: FooterExtract | null) => {
     if (!f) return;
     bestFooter = {
@@ -441,26 +442,44 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
       language: bestFooter.language ?? f.language,
     };
   };
+  const mergeTheme = (t?: ThemeExtract | null) => {
+    if (!t) return;
+    if (!bestTheme) { bestTheme = t; return; }
+    bestTheme = {
+      primary_color: bestTheme.primary_color ?? t.primary_color,
+      secondary_color: bestTheme.secondary_color ?? t.secondary_color,
+      accent_color: bestTheme.accent_color ?? t.accent_color,
+      meta_theme_color: bestTheme.meta_theme_color ?? t.meta_theme_color,
+      button_bg: bestTheme.button_bg ?? t.button_bg,
+      button_color: bestTheme.button_color ?? t.button_color,
+      button_radius: bestTheme.button_radius ?? t.button_radius,
+      button_border: bestTheme.button_border ?? t.button_border,
+      palette: bestTheme.palette.length ? bestTheme.palette : t.palette,
+      css_sources: [...bestTheme.css_sources, ...t.css_sources].slice(0, 8),
+    };
+  };
 
   // 1) Portal / login page
   const portal = await tryPageForHeaderLogo(target);
   if (portal) {
     mergeFooter(portal.footer);
-    if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter };
+    mergeTheme(portal.theme);
+    if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter, theme: bestTheme };
   }
 
   // 2) Bank homepage
   const home = await tryPageForHeaderLogo(base.origin + "/");
   if (home) {
     mergeFooter(home.footer);
-    if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter };
+    mergeTheme(home.theme);
+    if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter, theme: bestTheme };
   }
 
   // 3) JS-rendered fallback via Microlink
   const mlHome = await tryMicrolinkLogo(base.origin + "/");
-  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/", footer: bestFooter };
+  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/", footer: bestFooter, theme: bestTheme };
   const mlPortal = await tryMicrolinkLogo(target);
-  if (mlPortal) return { logo: mlPortal, sourceUrl: target, footer: bestFooter };
+  if (mlPortal) return { logo: mlPortal, sourceUrl: target, footer: bestFooter, theme: bestTheme };
 
   // 4) Fallback: og:image / apple-touch-icon / favicon
   try {
@@ -468,16 +487,17 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
     if (res.ok) {
       const html = (await res.text()).slice(0, 300_000);
       const picked = pickBestIcon(html, new URL(res.url || base.origin));
-      if (picked) return { logo: picked, sourceUrl: res.url || base.origin, footer: bestFooter };
+      if (picked) return { logo: picked, sourceUrl: res.url || base.origin, footer: bestFooter, theme: bestTheme };
     }
   } catch { /* ignore */ }
   try {
     const fav = `${base.origin}/favicon.ico`;
     const r = await fetchWithTimeout(fav, 5000);
-    if (r.ok) return { logo: fav, sourceUrl: fav, footer: bestFooter };
+    if (r.ok) return { logo: fav, sourceUrl: fav, footer: bestFooter, theme: bestTheme };
   } catch { /* ignore */ }
-  return { logo: null, sourceUrl: target, footer: bestFooter };
+  return { logo: null, sourceUrl: target, footer: bestFooter, theme: bestTheme };
 }
+
 
 export const crawlBankLogos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
