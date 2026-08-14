@@ -118,14 +118,8 @@ export function BankShell({
                 );
               })}
             </nav>
-            <div className="flex items-center gap-2 text-sm">
-              <span aria-hidden className="inline-block w-5 h-3.5 rounded-sm overflow-hidden border border-white/20">
-                <span className="block h-1/3 bg-black" />
-                <span className="block h-1/3 bg-[#DD0000]" />
-                <span className="block h-1/3 bg-[#FFCE00]" />
-              </span>
-              <span>Deutsch</span>
-            </div>
+            <LanguageSwitcher />
+
           </div>
         </div>
 
