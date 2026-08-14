@@ -220,19 +220,43 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
   const scope = footerMatch ? footerMatch[0] : html;
   const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   const found: Record<string, { label: string; url: string }> = {};
-  let m: RegExpExecArray | null;
-  while ((m = anchorRe.exec(scope))) {
-    const href = m[1]!;
-    const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-    if (!text) continue;
-    for (const [key, re] of Object.entries(FOOTER_KEYS)) {
-      if (found[key]) continue;
+  
+  // Also look for links in the whole HTML if not found in footer
+  const fullHtmlAnchors = [...html.matchAll(anchorRe)];
+  const footerAnchors = footerMatch ? [...footerMatch[0].matchAll(anchorRe)] : fullHtmlAnchors;
+
+  for (const [key, re] of Object.entries(FOOTER_KEYS)) {
+    // Priority 1: Search in footer
+    for (const m of footerAnchors) {
+      const href = m[1]!;
+      const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (!text) continue;
       if (re.test(text) || re.test(href)) {
         const abs = absolutize(href, base);
-        if (abs) found[key] = { label: text.slice(0, 80), url: abs };
+        if (abs) {
+          found[key] = { label: text.slice(0, 80), url: abs };
+          break;
+        }
+      }
+    }
+
+    // Priority 2: Search in full HTML if not found in footer
+    if (!found[key]) {
+      for (const m of fullHtmlAnchors) {
+        const href = m[1]!;
+        const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+        if (!text) continue;
+        if (re.test(text) || re.test(href)) {
+          const abs = absolutize(href, base);
+          if (abs) {
+            found[key] = { label: text.slice(0, 80), url: abs };
+            break;
+          }
+        }
       }
     }
   }
+
   const langMatch = html.match(/<html[^>]*\blang=["']([a-zA-Z-]+)["']/i);
   return { links: found, language: langMatch?.[1] ?? null };
 }
