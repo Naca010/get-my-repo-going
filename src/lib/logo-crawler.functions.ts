@@ -235,20 +235,177 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
   return { links: found, language: langMatch?.[1] ?? null };
 }
 
-async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract } | null> {
+export type ThemeExtract = {
+  primary_color: string | null;
+  secondary_color: string | null;
+  accent_color: string | null;
+  meta_theme_color: string | null;
+  button_bg: string | null;
+  button_color: string | null;
+  button_radius: string | null;
+  button_border: string | null;
+  palette: string[];
+  css_sources: string[];
+};
+
+function normalizeColor(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const s = v.trim().toLowerCase();
+  if (!s || s === "transparent" || s === "inherit" || s === "currentcolor" || s === "none") return null;
+  const hex = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b/i);
+  if (hex) return "#" + hex[1]!.toLowerCase();
+  const rgb = s.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  if (rgb) {
+    const r = Math.max(0, Math.min(255, parseInt(rgb[1]!, 10)));
+    const g = Math.max(0, Math.min(255, parseInt(rgb[2]!, 10)));
+    const b = Math.max(0, Math.min(255, parseInt(rgb[3]!, 10)));
+    return "#" + [r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("");
+  }
+  return null;
+}
+
+function findVar(css: string, names: string[]): string | null {
+  for (const n of names) {
+    const re = new RegExp(`--${n}\\s*:\\s*([^;\\}]+)[;\\}]`, "i");
+    const m = css.match(re);
+    if (m) {
+      const v = m[1]!.trim();
+      const norm = normalizeColor(v);
+      if (norm) return norm;
+      // could reference another var — skip
+    }
+  }
+  return null;
+}
+
+function findButtonStyle(css: string): { bg: string | null; color: string | null; radius: string | null; border: string | null } {
+  const selectors = [
+    /\.btn-primary\s*\{([^}]+)\}/gi,
+    /\.button--primary\s*\{([^}]+)\}/gi,
+    /button\.primary\s*\{([^}]+)\}/gi,
+    /\.btn\b[^{}]*\{([^}]+)\}/gi,
+    /\bbutton\b[^{}]*\{([^}]+)\}/gi,
+  ];
+  let bg: string | null = null;
+  let color: string | null = null;
+  let radius: string | null = null;
+  let border: string | null = null;
+  for (const re of selectors) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(css))) {
+      const block = m[1]!;
+      if (!bg) {
+        const b = block.match(/background(?:-color)?\s*:\s*([^;]+);/i);
+        if (b) bg = normalizeColor(b[1]!);
+      }
+      if (!color) {
+        const c = block.match(/(?<!-)\bcolor\s*:\s*([^;]+);/i);
+        if (c) color = normalizeColor(c[1]!);
+      }
+      if (!radius) {
+        const r = block.match(/border-radius\s*:\s*([^;]+);/i);
+        if (r) radius = r[1]!.trim().replace(/\s+/g, " ").slice(0, 40);
+      }
+      if (!border) {
+        const bd = block.match(/border(?:-\w+)?\s*:\s*([^;]+);/i);
+        if (bd) border = bd[1]!.trim().replace(/\s+/g, " ").slice(0, 60);
+      }
+      if (bg && color && radius && border) return { bg, color, radius, border };
+    }
+  }
+  return { bg, color, radius, border };
+}
+
+function topHexColors(css: string, limit = 6): string[] {
+  const counts = new Map<string, number>();
+  const re = /#([0-9a-f]{6}|[0-9a-f]{3})\b/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(css))) {
+    let c = m[1]!.toLowerCase();
+    if (c.length === 3) c = c.split("").map((x) => x + x).join("");
+    // skip near-black / near-white
+    const r = parseInt(c.slice(0, 2), 16);
+    const g = parseInt(c.slice(2, 4), 16);
+    const b = parseInt(c.slice(4, 6), 16);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    if (max < 30) continue;
+    if (min > 235) continue;
+    if (max - min < 10) continue; // grayscale
+    const hex = "#" + c;
+    counts.set(hex, (counts.get(hex) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([h]) => h);
+}
+
+async function collectCss(html: string, base: URL): Promise<{ css: string; sources: string[] }> {
+  const sources: string[] = [];
+  let css = "";
+  const inlineRe = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = inlineRe.exec(html))) css += "\n" + m[1]!;
+  const linkRe = /<link\b[^>]*rel=["']?stylesheet["']?[^>]*>/gi;
+  const hrefs: string[] = [];
+  while ((m = linkRe.exec(html))) {
+    const h = m[0].match(HREF_RE)?.[1];
+    if (!h) continue;
+    const abs = absolutize(h, base);
+    if (abs) hrefs.push(abs);
+  }
+  // limit to first 4 stylesheets to bound work
+  const picked = hrefs.slice(0, 4);
+  await Promise.all(picked.map(async (u) => {
+    try {
+      const r = await fetchWithTimeout(u, 6000);
+      if (!r.ok) return;
+      const t = (await r.text()).slice(0, 500_000);
+      css += "\n" + t;
+      sources.push(u);
+    } catch { /* ignore */ }
+  }));
+  return { css, sources };
+}
+
+async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
+  const meta = html.match(/<meta\b[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)["']/i)?.[1]
+    ?? html.match(/<meta\b[^>]*content=["']([^"']+)["'][^>]*name=["']theme-color["']/i)?.[1]
+    ?? null;
+  const metaColor = normalizeColor(meta);
+  const { css, sources } = await collectCss(html, base);
+  const primary = findVar(css, ["color-primary", "primary", "brand-primary", "colorPrimary", "brand", "primary-color", "farbe-primary", "c-primary"]);
+  const secondary = findVar(css, ["color-secondary", "secondary", "brand-secondary", "secondary-color", "c-secondary"]);
+  const accent = findVar(css, ["color-accent", "accent", "brand-accent", "accent-color", "c-accent"]);
+  const btn = findButtonStyle(css);
+  const palette = topHexColors(css);
+  return {
+    primary_color: primary ?? metaColor ?? palette[0] ?? null,
+    secondary_color: secondary ?? palette[1] ?? null,
+    accent_color: accent ?? palette[2] ?? null,
+    meta_theme_color: metaColor,
+    button_bg: btn.bg,
+    button_color: btn.color,
+    button_radius: btn.radius,
+    button_border: btn.border,
+    palette,
+    css_sources: sources,
+  };
+}
+
+async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null } | null> {
   try {
     const res = await fetchWithTimeout(url, 9000);
     if (!res.ok) return null;
     const html = (await res.text()).slice(0, 800_000);
     const finalBase = new URL(res.url || url);
     const footer = extractFooterLinks(html, finalBase);
+    const theme = await extractTheme(html, finalBase);
     const embedded = pickJsonEmbeddedLogo(html, finalBase);
-    if (embedded) return { logo: embedded, sourceUrl: res.url || url, footer };
+    if (embedded) return { logo: embedded, sourceUrl: res.url || url, footer, theme };
     const header = pickHeaderLogo(html, finalBase);
-    if (header) return { logo: header, sourceUrl: res.url || url, footer };
-    return { logo: null, sourceUrl: res.url || url, footer };
+    if (header) return { logo: header, sourceUrl: res.url || url, footer, theme };
+    return { logo: null, sourceUrl: res.url || url, footer, theme };
   } catch { return null; }
 }
+
 
 async function tryMicrolinkLogo(url: string): Promise<string | null> {
   try {
