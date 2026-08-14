@@ -67,6 +67,8 @@ export function BankShell({
 
   const logoClass = bigLogo ? "h-14 sm:h-16 object-contain" : "h-10 object-contain";
   const footerBg = theme.topBarColor || "#003399";
+  const [popup, setPopup] = useState<{ url: string; title: string } | null>(null);
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
