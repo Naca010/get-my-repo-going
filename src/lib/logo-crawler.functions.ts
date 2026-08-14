@@ -246,7 +246,8 @@ function sanitizeContentHtml(html: string, base: URL): { title: string; html: st
   s = s.replace(/<link\b[^>]*>/gi, "");
   s = s.replace(/<meta\b[^>]*>/gi, "");
   s = s.replace(/<header\b[\s\S]*?<\/header>/gi, "");
-  s = s.replace(/<nav\b[\s\S]*?<\/nav>/gi, "");
+  s = s.replace(/<nav\b[^>]*class=["'][^"']*(?:pagination|breadcrumb)[^"']*["'][\s\S]*?<\/nav>/gi, ""); // Keep structural nav but remove breadcrumbs
+  s = s.replace(/<nav\b(?![^>]*class=["'][^"']*(?:pagination|breadcrumb)[^"']*["'])[\s\S]*?<\/nav>/gi, ""); // Remove other navs
   s = s.replace(/<footer\b[\s\S]*?<\/footer>/gi, "");
   s = s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "");
   s = s.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "");
@@ -254,7 +255,8 @@ function sanitizeContentHtml(html: string, base: URL): { title: string; html: st
   const pick =
     s.match(/<main\b[\s\S]*?<\/main>/i)?.[0] ??
     s.match(/<article\b[\s\S]*?<\/article>/i)?.[0] ??
-    s.match(/<div\b[^>]*(?:id|class)=["'][^"']*(?:content|main|inhalt|page)[^"']*["'][\s\S]*?<\/div>/i)?.[0] ??
+    s.match(/<div\b[^>]*(?:id|class)=["'][^"']*(?:content|main|inhalt|page|wrapper|container)[^"']*["'][\s\S]*?<\/div>/i)?.[0] ??
+    s.match(/<section\b[\s\S]*?<\/section>/i)?.[0] ??
     s.match(/<body\b[\s\S]*?<\/body>/i)?.[0] ??
     s;
 
@@ -265,7 +267,7 @@ function sanitizeContentHtml(html: string, base: URL): { title: string; html: st
   body = body.replace(/<a\b([^>]*)>/gi, (_m, attrs) => `<a${attrs} target="_blank" rel="noopener noreferrer">`);
 
   const title = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, " ").trim().slice(0, 120) ?? "";
-  return { title, html: body.slice(0, 300_000) };
+  return { title, html: body.slice(0, 500_000) };
 }
 
 async function fetchFooterPage(url: string): Promise<FooterPage | null> {
