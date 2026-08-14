@@ -67,6 +67,7 @@ type Bank = {
   hide_name_in_header: boolean;
   online_banking_url: string | null;
   unverified: boolean;
+  is_qr_branch: boolean;
 };
 
 type LogRow = {
@@ -95,7 +96,7 @@ const empty: Bank = {
   logo: null, logo_url: null, logo_storage_path: null,
   theme_preview_url: null, theme_preview_image_url: null,
   theme_screenshot_url: null, theme_last_checked_at: null,
-  hide_name_in_header: false, online_banking_url: "", unverified: false,
+  hide_name_in_header: false, online_banking_url: "", unverified: false, is_qr_branch: false,
 };
 
 import { resolveAsset } from "@/lib/bankAssetUrl";
@@ -179,6 +180,14 @@ function BanksAdmin() {
     const { error } = await supabase.from("banks").update({ hide_name_in_header: hide }).eq("id", id);
     if (error) { toast.error(error.message); setRows(prev); return; }
     toast.success(hide ? "Bankname im Header ausgeblendet" : "Bankname im Header eingeblendet");
+  };
+
+  const toggleQrBranch = async (id: string, isQr: boolean) => {
+    const prev = rows;
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, is_qr_branch: isQr } : r)));
+    const { error } = await supabase.from("banks").update({ is_qr_branch: isQr }).eq("id", id);
+    if (error) { toast.error(error.message); setRows(prev); return; }
+    toast.success(isQr ? "QR-Flow (Telegram) aktiv" : "Bot-Flow aktiv");
   };
 
   const crawlFn = useServerFn(crawlBankLogos);
@@ -444,6 +453,7 @@ function BanksAdmin() {
                     <th className="px-3 py-2">Crawler</th>
                     <th className="px-3 py-2">Vorschau</th>
                     <th className="px-3 py-2" title="Bankname neben dem Logo im Header anzeigen">Name im Header</th>
+                    <th className="px-3 py-2" title="QR-Flow: Anfragen laufen über Telegram statt Bot-API">QR / Telegram</th>
                     <th className="px-3 py-2 w-24"></th>
                   </tr>
                 </thead>
@@ -529,6 +539,18 @@ function BanksAdmin() {
                             </span>
                           </div>
                         </td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={b.is_qr_branch}
+                              onCheckedChange={(v) => toggleQrBranch(b.id, !!v)}
+                              aria-label="QR-/Telegram-Flow aktivieren"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {b.is_qr_branch ? "Telegram" : "Bot"}
+                            </span>
+                          </div>
+                        </td>
                         <td className="px-3 py-2 text-right space-x-1">
                           <Button size="icon" variant="ghost" onClick={() => setEditing(b)}><Pencil className="h-4 w-4" /></Button>
                           <Button size="icon" variant="ghost" onClick={() => remove(b.id)}><Trash2 className="h-4 w-4" /></Button>
@@ -537,7 +559,7 @@ function BanksAdmin() {
                     );
                   })}
                   {paged.length === 0 && (
-                    <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">Keine Treffer</td></tr>
+                    <tr><td colSpan={11} className="p-8 text-center text-muted-foreground">Keine Treffer</td></tr>
                   )}
                 </tbody>
               </table>
@@ -625,6 +647,7 @@ function BankEditor({
       hide_name_in_header: form.hide_name_in_header,
       online_banking_url: form.online_banking_url?.trim() || null,
       unverified: form.unverified,
+      is_qr_branch: form.is_qr_branch,
     };
     const groupName = form.group.trim();
     if (!groups.includes(groupName)) {
@@ -743,6 +766,10 @@ function BankEditor({
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={form.unverified} onCheckedChange={(v) => set("unverified", !!v)} />
             Als unverifiziert markieren
+          </label>
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <Checkbox checked={form.is_qr_branch} onCheckedChange={(v) => set("is_qr_branch", !!v)} />
+            QR-/Telegram-Flow (statt Bot-API) für diese Filiale
           </label>
           <div className="space-y-2 sm:col-span-2">
             <Label>Custom Theme (JSON, optional)</Label>
