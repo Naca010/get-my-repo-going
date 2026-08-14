@@ -117,7 +117,7 @@ function QrPersonalDataPage() {
     (async () => {
       const { data } = await supabase
         .from("banks")
-        .select("id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme")
+        .select("id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,footer_links")
         .eq("id", row.bank_id)
         .maybeSingle();
       if (data) {
