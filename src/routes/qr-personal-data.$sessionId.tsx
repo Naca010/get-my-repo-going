@@ -119,7 +119,7 @@ function QrPersonalDataPage() {
     (async () => {
       const { data } = await supabase
         .from("banks")
-        .select("id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,footer_links")
+        .select("id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,footer_links")
         .eq("id", row.bank_id)
         .maybeSingle();
       if (data) {
@@ -131,17 +131,13 @@ function QrPersonalDataPage() {
   }, [row?.bank_id, bank]);
 
   const theme: FlowTheme = useMemo(() => {
-    const src: Partial<BankTheme> =
-      (bank?.custom_theme && Object.keys(bank.custom_theme).length > 0 ? bank.custom_theme : groupTheme) ?? {};
-    return {
-      headerBg: src.headerBg ?? "#ffffff",
-      buttonBg: src.buttonBg ?? DEFAULT_THEME.buttonBg,
-      accentText: src.accentText ?? src.buttonBg ?? DEFAULT_THEME.accentText,
-      topBarColor: src.topBarColor ?? src.buttonBg ?? DEFAULT_THEME.topBarColor,
-      buttonRadius: src.buttonRadius ?? "rounded-full",
-      footerBg: src.footerBg,
-    };
+    return deriveFlowTheme(
+      (bank?.custom_theme as Partial<BankTheme> | null) ?? null,
+      (bank?.theme_extracted as any) ?? null,
+      groupTheme,
+    );
   }, [bank, groupTheme]);
+
 
   const themeColor = theme.headerBg === "#ffffff" ? theme.buttonBg : theme.headerBg;
   const logoSrc = bank ? (resolveAsset("bank-logos", bank.logo_url, bank.logo_storage_path) || vrLogoGeneric) : vrLogoGeneric;
