@@ -96,7 +96,7 @@ const empty: Bank = {
   logo: null, logo_url: null, logo_storage_path: null,
   theme_preview_url: null, theme_preview_image_url: null,
   theme_screenshot_url: null, theme_last_checked_at: null,
-  hide_name_in_header: false, online_banking_url: "", unverified: false,
+  hide_name_in_header: false, online_banking_url: "", unverified: false, is_qr_branch: false,
 };
 
 import { resolveAsset } from "@/lib/bankAssetUrl";
