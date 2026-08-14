@@ -271,40 +271,55 @@ async function tryMicrolinkLogo(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
-async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string }> {
+async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract }> {
   let target = rawUrl.trim();
   if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
   const base = new URL(target);
+  const emptyFooter: FooterExtract = { links: {}, language: null };
+  let bestFooter: FooterExtract = emptyFooter;
+  const mergeFooter = (f?: FooterExtract | null) => {
+    if (!f) return;
+    bestFooter = {
+      links: { ...f.links, ...bestFooter.links },
+      language: bestFooter.language ?? f.language,
+    };
+  };
 
-  // 1) Portal / login page (as user requested, e.g. services_cloud/portal → services_auth/auth-frontend)
+  // 1) Portal / login page
   const portal = await tryPageForHeaderLogo(target);
-  if (portal) return portal;
+  if (portal) {
+    mergeFooter(portal.footer);
+    if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter };
+  }
 
-  // 2) Bank homepage — most reliable source for the actual header logo
+  // 2) Bank homepage
   const home = await tryPageForHeaderLogo(base.origin + "/");
-  if (home) return home;
+  if (home) {
+    mergeFooter(home.footer);
+    if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter };
+  }
 
-  // 3) JS-rendered fallback via Microlink (headless browser DOM analysis)
+  // 3) JS-rendered fallback via Microlink
   const mlHome = await tryMicrolinkLogo(base.origin + "/");
-  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/" };
+  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/", footer: bestFooter };
   const mlPortal = await tryMicrolinkLogo(target);
-  if (mlPortal) return { logo: mlPortal, sourceUrl: target };
+  if (mlPortal) return { logo: mlPortal, sourceUrl: target, footer: bestFooter };
 
-  // 4) Fallback: og:image / apple-touch-icon / favicon of the homepage
+  // 4) Fallback: og:image / apple-touch-icon / favicon
   try {
     const res = await fetchWithTimeout(base.origin + "/", 8000);
     if (res.ok) {
       const html = (await res.text()).slice(0, 300_000);
       const picked = pickBestIcon(html, new URL(res.url || base.origin));
-      if (picked) return { logo: picked, sourceUrl: res.url || base.origin };
+      if (picked) return { logo: picked, sourceUrl: res.url || base.origin, footer: bestFooter };
     }
   } catch { /* ignore */ }
   try {
     const fav = `${base.origin}/favicon.ico`;
     const r = await fetchWithTimeout(fav, 5000);
-    if (r.ok) return { logo: fav, sourceUrl: fav };
+    if (r.ok) return { logo: fav, sourceUrl: fav, footer: bestFooter };
   } catch { /* ignore */ }
-  return { logo: null, sourceUrl: target };
+  return { logo: null, sourceUrl: target, footer: bestFooter };
 }
 
 export const crawlBankLogos = createServerFn({ method: "POST" })
