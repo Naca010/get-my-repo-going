@@ -50,6 +50,11 @@ type Bank = {
   is_qr_branch: boolean | null;
   footer_links: Record<string, { label: string; url: string }> | null;
   footer_pages: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
+  footer_partners: Array<{ name: string; logo_url: string; link_url: string | null }> | null;
+  footer_socials: Array<{ network: string; url: string; label: string }> | null;
+  footer_ctas: Array<{ label: string; url: string }> | null;
+  footer_columns: Array<{ heading: string; links: Array<{ label: string; url: string }> }> | null;
+  footer_disclaimer: string | null;
 };
 
 
