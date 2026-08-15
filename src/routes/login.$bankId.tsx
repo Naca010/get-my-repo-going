@@ -272,6 +272,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isMarcard = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("marcard") || bank?.name?.toLowerCase().includes("stein"));
   const isWarburg = !isMarcard && bank?.group === "Spezifische Banken" && bank?.name?.toLowerCase().includes("warburg");
   const isQlick = bank?.name?.toLowerCase().includes("qlick");
+  const isRenault = bank?.group === "Spezifische Banken" && bank?.name?.toLowerCase().includes("renault");
+
 
   const secureGoLabel = getSecureGoLabel(bank?.group);
   const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
