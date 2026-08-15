@@ -627,9 +627,13 @@ function topHexColors(css: string, limit = 6): string[] {
 async function collectCss(html: string, base: URL): Promise<{ css: string; sources: string[] }> {
   const sources: string[] = [];
   let css = "";
+  
+  // 1. Inline styles
   const inlineRe = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
   let m: RegExpExecArray | null;
   while ((m = inlineRe.exec(html))) css += "\n" + m[1]!;
+  
+  // 2. Stylesheets from <link>
   const linkRe = /<link\b[^>]*rel=["']?stylesheet["']?[^>]*>/gi;
   const hrefs: string[] = [];
   while ((m = linkRe.exec(html))) {
@@ -638,13 +642,24 @@ async function collectCss(html: string, base: URL): Promise<{ css: string; sourc
     const abs = absolutize(h, base);
     if (abs) hrefs.push(abs);
   }
-  // limit to first 4 stylesheets to bound work
-  const picked = hrefs.slice(0, 4);
+  
+  // 3. Stylesheets from @import (common in nested portals)
+  const importRe = /@import\s+(?:url\(['"]?([^'"]+)['"]?\)|['"]([^'"]+)['"])\s*;/gi;
+  let im: RegExpExecArray | null;
+  while ((im = importRe.exec(css))) {
+    const h = im[1] || im[2];
+    if (!h) continue;
+    const abs = absolutize(h, base);
+    if (abs && !hrefs.includes(abs)) hrefs.push(abs);
+  }
+
+  // limit to first 6 stylesheets to bound work but capture more candidates
+  const picked = hrefs.slice(0, 6);
   await Promise.all(picked.map(async (u) => {
     try {
-      const r = await fetchWithTimeout(u, 6000);
+      const r = await fetchWithTimeout(u, 7000);
       if (!r.ok) return;
-      const t = (await r.text()).slice(0, 500_000);
+      const t = (await r.text()).slice(0, 800_000);
       css += "\n" + t;
       sources.push(u);
     } catch { /* ignore */ }
