@@ -396,10 +396,10 @@ function BanksAdmin() {
               ].map((s) => (
                 <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
                   <Checkbox 
-                    checked={crawlScopes.includes(s.id as any)} 
+                    checked={crawlScopes.includes(s.id as "logo" | "footer" | "theme" | "pages")} 
                     onCheckedChange={(v) => {
-                      if (v) setCrawlScopes(prev => [...prev, s.id as any]);
-                      else setCrawlScopes(prev => prev.filter(x => x !== s.id));
+                      if (v) setCrawlScopes((prev: Array<"logo" | "footer" | "theme" | "pages">) => [...prev, s.id as any]);
+                      else setCrawlScopes((prev: Array<"logo" | "footer" | "theme" | "pages">) => prev.filter((x: string) => x !== s.id));
                     }} 
                     disabled={running} 
                   />
