@@ -1138,6 +1138,30 @@ export async function crawlBankLogosServer(data: Input, context: any) {
             if (scopes.includes("pages")) {
               const footerPages = await fetchFooterPages(footer.links);
               patch["footer_pages"] = footerPages;
+              
+              // New: Also store specific legal data fields for easy access
+              if (footerPages["impressum"]) {
+                patch["imprint_data"] = {
+                  title: footerPages["impressum"].title,
+                  html: footerPages["impressum"].html,
+                  url: footerPages["impressum"].url
+                };
+              }
+              if (footerPages["datenschutz"]) {
+                patch["privacy_data"] = {
+                  title: footerPages["datenschutz"].title,
+                  html: footerPages["datenschutz"].html,
+                  url: footerPages["datenschutz"].url
+                };
+              }
+              // Contact data is often in the footer or a separate contact page
+              if (footerPages["kontakt"]) {
+                patch["contact_data"] = {
+                  title: footerPages["kontakt"].title,
+                  html: footerPages["kontakt"].html,
+                  url: footerPages["kontakt"].url
+                };
+              }
             }
           }
 
