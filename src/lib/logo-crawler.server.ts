@@ -741,14 +741,18 @@ function findHeaderBg(css: string): string | null {
     /\.navbar\b[^{}]*\{([^}]+)\}/gi,
     /\.nav-bar\b[^{}]*\{([^}]+)\}/gi,
     /(?:^|[\s,}])nav\s*\{([^}]+)\}/gi,
+    /\.vr-header\b[^{}]*\{([^}]+)\}/gi,
+    /\.header-container\b[^{}]*\{([^}]+)\}/gi,
   ];
   for (const re of selectors) {
     let m: RegExpExecArray | null;
     while ((m = re.exec(css))) {
-      const b = m[1]!.match(/background(?:-color)?\s*:\s*([^;]+);/i);
-      if (b) {
-        const c = normalizeColor(b[1]!);
-        if (c) return c;
+      const block = m[1]!;
+      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+      if (bgMatch) {
+        const c = normalizeColor(bgMatch[1]!.trim());
+        // Header is often white or brand color.
+        if (c && !isFrameworkDefault(c)) return c;
       }
     }
   }
