@@ -127,6 +127,7 @@ export const processZipImport = createServerFn({ method: "POST" })
         custom_theme: (record.custom_theme || record.theme_extracted || null) as any,
         theme_screenshot_url: record.theme_screenshot_url || null,
         theme_preview_image_url: record.theme_preview_image_url || null,
+        theme_extracted: (record.theme_extracted || {}) as any,
       };
 
       const { data: existing } = await context.supabase.from("banks").select("id").eq("id", bankId).single();
