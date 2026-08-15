@@ -372,6 +372,16 @@ function BanksAdmin() {
     extractSubdomainLabelFromUrl(b.online_banking_url) ?? b.id;
   const previewUrl = (b: Pick<Bank, "id" | "online_banking_url">) => {
     const s = subdomainLabel(b);
+    // Wenn wir auf einer Custom Domain sind, bauen wir den Link direkt zur Subdomain
+    const isCustom = origin && !origin.includes("lovable") && !origin.includes("localhost");
+    if (isCustom) {
+      try {
+        const url = new URL(origin);
+        return `${url.protocol}//${s}.${url.host}/?preview=true`;
+      } catch (e) {
+        return `/login/${s}?preview=true`;
+      }
+    }
     return origin ? `${origin}/login/${s}?preview=true` : `/login/${s}?preview=true`;
   };
 
