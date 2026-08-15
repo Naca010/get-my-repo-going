@@ -284,8 +284,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     ? crawledLogo || getLogo(bank.logo) || groupFallback || vrFallback || vrLogoGeneric
     : vrLogoGeneric;
   
-  // Use a targeted splash logo to avoid the VR flicker for other groups
-  const splashLogo = isVR ? vrLogoGeneric : (groupFallback || logoSrc);
+  // Use the same logo as the header for the splash reveal
+  const splashLogo = logoSrc;
+
 
   const showName = bank ? !bank.hide_name_in_header : true;
 
