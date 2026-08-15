@@ -983,7 +983,7 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
     await Promise.all(
       data.banks.map(async (b) => {
         try {
-          const { logo, sourceUrl, footer, theme } = await findLogoForUrl(b.url);
+          const { logo, sourceUrl, footer, theme, loginFieldLabel } = await findLogoForUrl(b.url);
           
           let storedUrl: string | null = null;
           let storedPath: string | null = null;
