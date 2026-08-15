@@ -347,6 +347,26 @@ function BanksAdmin() {
     a.click();
   };
 
+  const exportZip = async () => {
+    setZipExporting(true);
+    try {
+      const { base64 } = await zipExportFn();
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/zip" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `banken-full-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      toast.success("ZIP-Export erstellt");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ZIP-Export fehlgeschlagen");
+    } finally {
+      setZipExporting(false);
+    }
+  };
+
   const progressPct = current && current.total > 0 ? Math.round((current.processed / current.total) * 100) : 0;
   const subdomainLabel = (b: Pick<Bank, "id" | "online_banking_url">) =>
     extractSubdomainLabelFromUrl(b.online_banking_url) ?? b.id;
