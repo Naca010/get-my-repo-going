@@ -622,8 +622,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 rounded-lg focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : "border-gray-300"}`}
-                      style={!pinError && pin ? { borderColor: theme.accentText } : undefined}
+                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : "border-gray-300"}`}
+                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: theme.buttonRadius }}
                       autoComplete="current-password"
                     />
                     <label
