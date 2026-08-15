@@ -534,6 +534,15 @@ function findVar(css: string, names: string[], opts: { allowFrameworkDefaults?: 
   return null;
 }
 
+function findVarRaw(css: string, names: string[]): string | null {
+  for (const n of names) {
+    const re = new RegExp(`--${n}\\s*:\\s*([^;\\}]+)[;\\}]`, "i");
+    const m = css.match(re);
+    if (m) return m[1]!.trim();
+  }
+  return null;
+}
+
 function findButtonStyle(css: string): { bg: string | null; color: string | null; radius: string | null; border: string | null } {
   // Prefer primary/submit/CTA selectors first so we capture the login button
   // shape (BBBank, GLS, PSD use rectangular primary buttons) instead of some
