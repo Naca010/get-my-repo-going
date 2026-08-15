@@ -9,6 +9,7 @@ export type FlowTheme = {
   accentText: string;
   topBarColor: string;
   buttonRadius: string;
+  footerBg?: string;
 };
 
 export type FooterLink = { label: string; url: string };
@@ -89,7 +90,7 @@ export function BankShell({
     : globalPartners;
 
   const logoClass = bigLogo ? "h-14 sm:h-16 object-contain" : "h-10 object-contain";
-  const footerBg = theme.topBarColor || "#003399";
+  const footerBg = theme.footerBg ?? theme.topBarColor ?? "#003399";
   const [popup, setPopup] = useState<{ url: string; title: string; html?: string | null } | null>(null);
 
 

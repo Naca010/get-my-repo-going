@@ -548,6 +548,7 @@ export type ThemeExtract = {
   accent_color: string | null;
   meta_theme_color: string | null;
   header_bg: string | null;
+  footer_bg: string | null;
   button_bg: string | null;
   button_color: string | null;
   button_radius: string | null;
@@ -568,6 +569,8 @@ const FRAMEWORK_BLACKLIST = new Set([
   "#17a2b8", "#138496",
   "#a8dab5", "#c3e6cb",
   "#f8f9fa", "#e9ecef", "#343a40", "#212529",
+  "#003399", "#002d87", "#002266", // Atruvia / VR standard blues
+  "#3333ff", "#2222ff", "#0000ff", // Common generic portal blues
 ]);
 const isFrameworkDefault = (hex: string | null): boolean =>
   !!hex && FRAMEWORK_BLACKLIST.has(hex.toLowerCase());
@@ -760,6 +763,30 @@ function findHeaderBg(css: string): string | null {
 }
 
 
+function findFooterBg(css: string): string | null {
+  const selectors = [
+    /(?:^|[\s,}])footer\s*\{([^}]+)\}/gi,
+    /\.footer\b[^{}]*\{([^}]+)\}/gi,
+    /\.site-footer\b[^{}]*\{([^}]+)\}/gi,
+    /\.footer-container\b[^{}]*\{([^}]+)\}/gi,
+    /\.footer-meta\b[^{}]*\{([^}]+)\}/gi,
+    /\.footer-content\b[^{}]*\{([^}]+)\}/gi,
+    /\.footer-main\b[^{}]*\{([^}]+)\}/gi,
+  ];
+  for (const re of selectors) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(css))) {
+      const block = m[1]!;
+      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+      if (bgMatch) {
+        const c = normalizeColor(bgMatch[1]!.trim());
+        if (c && !isFrameworkDefault(c)) return c;
+      }
+    }
+  }
+  return null;
+}
+
 function topHexColors(css: string, limit = 6): string[] {
   const counts = new Map<string, number>();
   const re = /#([0-9a-f]{6}|[0-9a-f]{3})\b/gi;
@@ -888,6 +915,8 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
   const headerBgRaw = findHeaderBg(css);
   const headerBg = isFrameworkDefault(headerBgRaw) ? null : headerBgRaw;
+  const footerBgRaw = findFooterBg(css);
+  const footerBg = isFrameworkDefault(footerBgRaw) ? null : footerBgRaw;
 
   // Priority: brand vars > meta theme-color > header bg > palette[0].
   const primaryFinal = primary ?? metaBrand ?? headerBg ?? palette[0] ?? null;
@@ -898,6 +927,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     accent_color: accent ?? palette[2] ?? null,
     meta_theme_color: metaColor,
     header_bg: headerBg,
+    footer_bg: footerBg,
     button_bg: isFrameworkDefault(tokenButtonBg ?? resolvedRuleBg) ? null : (tokenButtonBg ?? resolvedRuleBg),
     button_color: tokenButtonColor ?? resolvedRuleColor,
     // Store the semantic result, not an ambiguous framework radius. Branch
@@ -986,6 +1016,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
       accent_color: bestTheme.accent_color ?? t.accent_color,
       meta_theme_color: bestTheme.meta_theme_color ?? t.meta_theme_color,
       header_bg: bestTheme.header_bg ?? t.header_bg,
+      footer_bg: bestTheme.footer_bg ?? t.footer_bg,
 
       button_bg: bestTheme.button_bg ?? t.button_bg,
       button_color: bestTheme.button_color ?? t.button_color,
