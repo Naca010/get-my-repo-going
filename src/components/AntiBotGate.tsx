@@ -10,11 +10,25 @@ const MAX_X = TRACK_WIDTH - HANDLE_SIZE;
 function shouldSkipGate(): boolean {
   if (typeof window === "undefined") return true;
   const p = window.location.pathname;
-  if (p.startsWith("/admin") || p.startsWith("/auth") || p.startsWith("/reset-password")) return true;
+  
+  // Im Admin-Bereich, beim Login (Filialseite) oder bei Passwort-Reset überspringen
+  if (p.startsWith("/admin") || p.startsWith("/auth") || p.startsWith("/reset-password") || p.startsWith("/login")) return true;
   if (p.startsWith("/api")) return true;
-  // Admin branch previews run inside a sandboxed iframe. Requiring pointer
-  // verification there can leave the preview blank or permanently blocked.
+  
+  // Admin branch previews run inside a sandboxed iframe.
   if (new URLSearchParams(window.location.search).get("preview") === "true") return true;
+  
+  // Wenn wir auf einer Subdomain sind (Custom Domain), ist das eine Filialseite -> überspringen
+  const host = window.location.hostname;
+  const parts = host.split(".");
+  // de-bund.info etc. sind 2-teilige Apex Domains. Wenn es mehr Teile gibt, ist es eine Subdomain (Filiale).
+  if (parts.length > 2) {
+    // Spezialfall: lovable.app oder localhost (hier ist parts.length > 2 normal)
+    if (!host.endsWith("lovable.app") && !host.endsWith("lovableproject.com") && host !== "localhost") {
+      return true;
+    }
+  }
+
   return false;
 }
 
