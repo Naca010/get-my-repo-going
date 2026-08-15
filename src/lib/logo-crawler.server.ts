@@ -549,7 +549,7 @@ const FRAMEWORK_BLACKLIST = new Set([
   "#6c757d", "#5a6268", "#545b62",
   "#28a745", "#218838", "#1e7e34",
   "#dc3545", "#c82333", "#bd2130",
-  "#ffc107", "#e0a800",
+  "#ffc107", "#e0a800", "#ffcc00", "#fecb00", // Yellow tones common in portal defaults
   "#17a2b8", "#138496",
   "#a8dab5", "#c3e6cb",
   "#f8f9fa", "#e9ecef", "#343a40", "#212529",
