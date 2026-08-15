@@ -579,7 +579,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
               </div>
 
               {errorMsg && (
-                <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-2">
+                <div className="mb-4 bg-red-50 border border-red-200 p-4 flex items-start gap-2" style={{ borderRadius: theme.buttonRadius }}>
                   <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
                   <p className="text-sm text-red-600 font-medium">{errorMsg}</p>
                 </div>
