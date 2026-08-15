@@ -665,18 +665,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <div className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`} style={{ borderRadius: "4px" }}>
+                  <div
+                    className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`}
+                    style={{
+                      borderRadius: "4px",
+                      backgroundColor: !vrNetKeyError && focusedField === "vr" ? focusTint : undefined,
+                      transition: "background-color 150ms",
+                    }}
+                  >
                     <input
                       id="vrNetKey"
                       type="text"
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
+                      onFocus={() => setFocusedField("vr")}
+                      onBlur={() => setFocusedField((f) => (f === "vr" ? null : f))}
                       placeholder=" "
                        className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: "4px" }}
-
-
-
+                      style={{
+                        ...(!vrNetKeyError && (focusedField === "vr" || vrNetKey) ? { borderColor: focusAccent } : {}),
+                        borderRadius: "4px",
+                      }}
                       autoComplete="username"
                     />
                     <label
