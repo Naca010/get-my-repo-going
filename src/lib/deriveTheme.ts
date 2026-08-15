@@ -88,7 +88,13 @@ export function deriveFlowTheme(
   const extAccent = normHex(ext?.accent_color) || extPrimary;
 
   const extHeader = normHex(ext?.header_bg);
+  const extFooter = normHex(ext?.footer_bg);
   const headerBg = c.headerBg ?? (extHeader && !isNearWhite(extHeader) ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
+  
+  // Footer logic: If extracted footer color is a generic framework blue, ignore it.
+  const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff";
+  const footerBgFinal = c.footerBg ?? (extFooter && !isGenericBlue ? extFooter : null) ?? g.footerBg ?? null;
+  
   const buttonBg = c.buttonBg ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
   const accentText = c.accentText ?? extAccent ?? g.accentText ?? buttonBg;
   const topBarColor = c.topBarColor ?? extPrimary ?? g.topBarColor ?? buttonBg;
@@ -117,7 +123,7 @@ export function deriveFlowTheme(
     accentText,
     topBarColor,
     buttonRadius,
-    ...(c.footerBg ? { footerBg: c.footerBg } : g.footerBg ? { footerBg: g.footerBg } : {}),
+    ...(footerBgFinal ? { footerBg: footerBgFinal } : {}),
   } as FlowTheme;
 }
 
