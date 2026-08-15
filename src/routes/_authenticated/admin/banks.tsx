@@ -345,7 +345,7 @@ function BanksAdmin() {
     extractSubdomainLabelFromUrl(b.online_banking_url) ?? b.id;
   const previewUrl = (b: Pick<Bank, "id" | "online_banking_url">) => {
     const s = subdomainLabel(b);
-    return origin ? `${origin}/login/${s}` : `/login/${s}`;
+    return origin ? `${origin}/login/${s}?preview=true` : `/login/${s}?preview=true`;
   };
 
   return (
@@ -665,7 +665,12 @@ function BanksAdmin() {
             )}
           </DialogHeader>
           {previewing && (
-            <iframe src={previewing.url} title={previewing.name} className="w-full flex-1 border-0" />
+            <iframe 
+              src={previewing.url} 
+              title={previewing.name} 
+              className="w-full flex-1 border-0 bg-white" 
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups" 
+            />
           )}
         </DialogContent>
       </Dialog>

