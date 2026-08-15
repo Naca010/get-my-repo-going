@@ -247,7 +247,8 @@ export function BankShell({
           onClick={() => setPopup(null)}
         >
           <div
-            className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative"
+            className="bg-white w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden relative"
+            style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "16px" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-5 border-b bg-white sticky top-0 z-10">
