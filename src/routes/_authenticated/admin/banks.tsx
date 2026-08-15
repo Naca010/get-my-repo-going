@@ -205,6 +205,8 @@ function BanksAdmin() {
   const captureFn = useServerFn(captureBankTheme);
   const importFn = useServerFn(importBanksFromSeed);
   const zipImportFn = useServerFn(processZipImport);
+  const zipExportFn = useServerFn(buildBanksExport);
+  const [zipExporting, setZipExporting] = useState(false);
 
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
