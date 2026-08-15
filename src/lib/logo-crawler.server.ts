@@ -158,6 +158,8 @@ function pickBestIcon(html: string, base: URL): string | null {
 }
 
 async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
+  // Add a small artificial delay to prevent rate-limiting and allow remote servers to breathe.
+  await new Promise(r => setTimeout(r, 100));
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
   try {
@@ -697,29 +699,27 @@ function findButtonStyle(css: string, html: string): { bg: string | null; color:
       const block = m[1]!;
       
       // Look for background-color, but also handle shorthand background and CSS variables
-      const bgMatches = [...block.matchAll(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const bgMatches = [...block.matchAll(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/gi)];
       const bgMatch = bgMatches.at(-1);
       if (bgMatch) {
           const rawBg = bgMatch[1]!.trim();
-          // Keep variable references intact; extractTheme resolves them against
-          // the complete variable map after the effective button rule is found.
           bg = rawBg.startsWith("var(") ? rawBg : normalizeColor(rawBg);
       }
       
-      const colorMatches = [...block.matchAll(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const colorMatches = [...block.matchAll(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/gi)];
       const colorMatch = colorMatches.at(-1);
       if (colorMatch) {
           const rawColor = colorMatch[1]!.trim();
           color = rawColor.startsWith("var(") ? rawColor : normalizeColor(rawColor);
       }
       
-      const radiusMatches = [...block.matchAll(/border-radius\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const radiusMatches = [...block.matchAll(/border-radius\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/gi)];
       const radiusMatch = radiusMatches.at(-1);
       if (radiusMatch) {
           radius = radiusMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 40);
       }
       
-      const borderMatches = [...block.matchAll(/border(?:-\w+)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const borderMatches = [...block.matchAll(/border(?:-\w+)?\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/gi)];
       const borderMatch = borderMatches.at(-1);
       if (borderMatch) {
           border = borderMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 60);
@@ -748,7 +748,7 @@ function findHeaderBg(css: string): string | null {
     let m: RegExpExecArray | null;
     while ((m = re.exec(css))) {
       const block = m[1]!;
-      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/i);
       if (bgMatch) {
         const c = normalizeColor(bgMatch[1]!.trim());
         // Header is often white or brand color.
@@ -774,7 +774,7 @@ function findFooterBg(css: string): string | null {
     let m: RegExpExecArray | null;
     while ((m = re.exec(css))) {
       const block = m[1]!;
-      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/i);
       if (bgMatch) {
         const c = normalizeColor(bgMatch[1]!.trim());
         if (c && !isFrameworkDefault(c)) return c;
@@ -836,7 +836,7 @@ async function collectCss(html: string, base: URL): Promise<{ css: string; sourc
 
   // Keep stylesheet order stable. Appending inside concurrent requests made a
   // framework bundle occasionally override the bank-specific theme file.
-  const picked = hrefs.slice(0, 6);
+  const picked = hrefs.slice(0, 10); // Check more stylesheets for a more complete theme
   const fetched = await Promise.all(picked.map(async (u) => {
     try {
       const r = await fetchWithTimeout(u, 7000);
@@ -907,6 +907,9 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   ]);
   const isAtruviaPortal = sources.some((source) => /kf-theme|services_cloud\/portal/i.test(source));
 
+  // When resolving CSS values, try with both the current variable map and a potential 
+  // global map if we were to maintain one. For now, we resolve against the map from 
+  // all collected stylesheets.
   const resolvedRuleBg = normalizeColor(resolveCssValue(btn.bg, variables));
   const resolvedRuleColor = normalizeColor(resolveCssValue(btn.color, variables));
   const resolvedRuleRadius = resolveCssValue(btn.radius, variables);
@@ -1024,7 +1027,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
       button_radius: bestTheme.button_radius ?? t.button_radius,
       button_border: bestTheme.button_border ?? t.button_border,
       palette: bestTheme.palette.length ? bestTheme.palette : t.palette,
-      css_sources: [...bestTheme.css_sources, ...t.css_sources].slice(0, 8),
+      css_sources: [...bestTheme.css_sources, ...t.css_sources].slice(0, 12),
     };
   };
   const mergeLoginLabel = (l?: string | null) => {
@@ -1084,8 +1087,13 @@ export async function crawlBankLogosServer(data: Input, context: any) {
     const results: ResultItem[] = [];
     const scopes = data.scopes ?? ["logo", "footer", "theme", "pages"];
 
-    await Promise.all(
-      data.banks.map(async (b) => {
+    // Limit concurrency to avoid being blocked and ensure cleaner results.
+    // Processing banks in smaller batches (e.g., 5 at a time) is more reliable.
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < data.banks.length; i += BATCH_SIZE) {
+      const batch = data.banks.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async (b) => {
         try {
           const { logo, sourceUrl, footer, theme, loginFieldLabel } = await findLogoForUrl(b.url);
           
@@ -1163,8 +1171,9 @@ export async function crawlBankLogosServer(data: Input, context: any) {
           });
           results.push({ id: b.id, logo: null, error: msg });
         }
-      }),
-    );
+        })
+      );
+    }
 
     if (data.runId) {
       const okCount = results.filter((r) => r.logo).length;
