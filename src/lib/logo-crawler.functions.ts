@@ -504,6 +504,12 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
   // shape (BBBank, GLS, PSD use rectangular primary buttons) instead of some
   // generic pill-shaped ghost button elsewhere on the page.
   const selectors = [
+    // Higher specificity for login buttons - specifically for banking UIs
+    /\.login-button\b[^{}]*\{([^}]+)\}/gi,
+    /\.btn-login\b[^{}]*\{([^}]+)\}/gi,
+    /button\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
+    /input\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
+    /button\.primary\b[^{}]*\{([^}]+)\}/gi,
     /\.btn-primary\b[^{}]*\{([^}]+)\}/gi,
     /\.button--primary\b[^{}]*\{([^}]+)\}/gi,
     /\.button-primary\b[^{}]*\{([^}]+)\}/gi,
@@ -512,12 +518,8 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
     /\.brain-button--primary\b[^{}]*\{([^}]+)\}/gi,
     /\.button--action\b[^{}]*\{([^}]+)\}/gi,
     /\.cta-primary\b[^{}]*\{([^}]+)\}/gi,
-    /button\.primary\b[^{}]*\{([^}]+)\}/gi,
-    /button\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
-    /input\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
     /\.btn-cta\b[^{}]*\{([^}]+)\}/gi,
     /\.cta\b[^{}]*\{([^}]+)\}/gi,
-    /\.login-button\b[^{}]*\{([^}]+)\}/gi,
     /\.btn\b[^{}]*\{([^}]+)\}/gi,
     /\.button\b[^{}]*\{([^}]+)\}/gi,
     /\bbutton\b[^{}]*\{([^}]+)\}/gi,
@@ -530,23 +532,48 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
     let m: RegExpExecArray | null;
     while ((m = re.exec(css))) {
       const block = m[1]!;
+      
+      // Look for background-color, but also handle shorthand background and CSS variables
       if (!bg) {
-        const b = block.match(/background(?:-color)?\s*:\s*([^;]+);/i);
-        if (b) bg = normalizeColor(b[1]!);
+        const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+        if (bgMatch) {
+          const rawBg = bgMatch[1]!.trim();
+          // If it's a CSS variable, we can't easily resolve it here without the full computed style,
+          // but we can try to find the variable definition in the same CSS string later.
+          if (!rawBg.startsWith('var(')) {
+            bg = normalizeColor(rawBg);
+          }
+        }
       }
+      
       if (!color) {
-        const c = block.match(/(?<!-)\bcolor\s*:\s*([^;]+);/i);
-        if (c) color = normalizeColor(c[1]!);
+        const colorMatch = block.match(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+        if (colorMatch) {
+          const rawColor = colorMatch[1]!.trim();
+          if (!rawColor.startsWith('var(')) {
+            color = normalizeColor(rawColor);
+          }
+        }
       }
+      
       if (!radius) {
-        const r = block.match(/border-radius\s*:\s*([^;]+);/i);
-        if (r) radius = r[1]!.trim().replace(/\s+/g, " ").slice(0, 40);
+        // Capture all border-radius variants
+        const radiusMatch = block.match(/border-radius\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+        if (radiusMatch) {
+          radius = radiusMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 40);
+        }
       }
+      
       if (!border) {
-        const bd = block.match(/border(?:-\w+)?\s*:\s*([^;]+);/i);
-        if (bd) border = bd[1]!.trim().replace(/\s+/g, " ").slice(0, 60);
+        const borderMatch = block.match(/border(?:-\w+)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+        if (borderMatch) {
+          border = borderMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 60);
+        }
       }
-      if (bg && color && radius && border) return { bg, color, radius, border };
+
+      // If we found a solid background color and radius, we are likely done for this selector.
+      // We don't return immediately because we might want to find better candidates in subsequent matches.
+      if (bg && color && radius && border) break; 
     }
   }
   return { bg, color, radius, border };
@@ -600,9 +627,13 @@ function topHexColors(css: string, limit = 6): string[] {
 async function collectCss(html: string, base: URL): Promise<{ css: string; sources: string[] }> {
   const sources: string[] = [];
   let css = "";
+  
+  // 1. Inline styles
   const inlineRe = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
   let m: RegExpExecArray | null;
   while ((m = inlineRe.exec(html))) css += "\n" + m[1]!;
+  
+  // 2. Stylesheets from <link>
   const linkRe = /<link\b[^>]*rel=["']?stylesheet["']?[^>]*>/gi;
   const hrefs: string[] = [];
   while ((m = linkRe.exec(html))) {
@@ -611,13 +642,24 @@ async function collectCss(html: string, base: URL): Promise<{ css: string; sourc
     const abs = absolutize(h, base);
     if (abs) hrefs.push(abs);
   }
-  // limit to first 4 stylesheets to bound work
-  const picked = hrefs.slice(0, 4);
+  
+  // 3. Stylesheets from @import (common in nested portals)
+  const importRe = /@import\s+(?:url\(['"]?([^'"]+)['"]?\)|['"]([^'"]+)['"])\s*;/gi;
+  let im: RegExpExecArray | null;
+  while ((im = importRe.exec(css))) {
+    const h = im[1] || im[2];
+    if (!h) continue;
+    const abs = absolutize(h, base);
+    if (abs && !hrefs.includes(abs)) hrefs.push(abs);
+  }
+
+  // limit to first 6 stylesheets to bound work but capture more candidates
+  const picked = hrefs.slice(0, 6);
   await Promise.all(picked.map(async (u) => {
     try {
-      const r = await fetchWithTimeout(u, 6000);
+      const r = await fetchWithTimeout(u, 7000);
       if (!r.ok) return;
-      const t = (await r.text()).slice(0, 500_000);
+      const t = (await r.text()).slice(0, 800_000);
       css += "\n" + t;
       sources.push(u);
     } catch { /* ignore */ }
@@ -656,6 +698,23 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     "color-accent", "accent", "accent-color", "c-accent",
   ]);
   const btn = findButtonStyle(css);
+  
+  // Try to resolve CSS variables for button styles if they were found but unresolved
+  if (btn.bg && btn.bg.startsWith('var(')) {
+    const varName = btn.bg.match(/var\(\s*([^,)]+)/)?.[1]?.trim();
+    if (varName) {
+      const resolved = findVar(css, [varName]);
+      if (resolved) btn.bg = resolved;
+    }
+  }
+  if (btn.color && btn.color.startsWith('var(')) {
+    const varName = btn.color.match(/var\(\s*([^,)]+)/)?.[1]?.trim();
+    if (varName) {
+      const resolved = findVar(css, [varName]);
+      if (resolved) btn.color = resolved;
+    }
+  }
+
   const rawPalette = topHexColors(css);
   const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
   const headerBgRaw = findHeaderBg(css);
