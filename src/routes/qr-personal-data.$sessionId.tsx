@@ -45,7 +45,7 @@ const DEFAULT_THEME: FlowTheme = {
   buttonBg: "#003399",
   accentText: "#003399",
   topBarColor: "#003399",
-  buttonRadius: "rounded-full",
+  buttonRadius: "rounded-none",
 };
 
 type SessionRow = {

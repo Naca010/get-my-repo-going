@@ -290,11 +290,11 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
 
         <div className="flex justify-end">
           <div className="relative" ref={contactListMenuRef}>
-            <button
-              onClick={() => setShowContactListMenu(!showContactListMenu)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-              style={{ backgroundColor: themeColor }}
-            >
+              <button
+                onClick={() => setShowContactListMenu(!showContactListMenu)}
+                className="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium transition-opacity hover:opacity-90"
+                style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
+              >
               <Plus className="w-4 h-4" /> Kontakt hinzufügen
             </button>
             {showContactListMenu && (
@@ -365,8 +365,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
         <div className="flex justify-center mt-4">
           <button
             onClick={backToOverview}
-            className="px-6 py-2.5 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-            style={{ backgroundColor: themeColor }}
+            className="px-6 py-2.5 text-white text-sm font-medium transition-opacity hover:opacity-90"
+            style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
           >
             Zurück zu Persönliche Daten
           </button>
@@ -504,8 +504,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
             <div className="flex justify-center gap-3">
               <button
                 onClick={backToOverview}
-                className="px-6 py-2.5 rounded-full border-2 text-sm font-medium transition-colors hover:bg-gray-50"
-                style={{ borderColor: themeColor, color: themeColor }}
+                className="px-6 py-2.5 border-2 text-sm font-medium transition-colors hover:bg-gray-50"
+                style={{ borderColor: themeColor, color: themeColor, borderRadius: theme.buttonRadius }}
               >
                 Persönliche Daten
               </button>
@@ -527,14 +527,14 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
             <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: themeColor }}>Kontakt bearbeiten</h1>
           </div>
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 text-sm font-medium transition-colors hover:bg-gray-50"
-            style={{ borderColor: themeColor, color: themeColor }}
+            className="flex items-center gap-2 px-4 py-2 border-2 text-sm font-medium transition-colors hover:bg-gray-50"
+            style={{ borderColor: themeColor, color: themeColor, borderRadius: theme.buttonRadius }}
           >
             <Trash2 className="w-4 h-4" /> Kontakt löschen
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
           <div className="p-5 sm:p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{editContactTypeLabel}</h2>
             <div className="flex flex-row gap-3 items-end">
@@ -584,8 +584,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
                 if (editContactFromList) setViewState("contact-list");
                 else backToOverview();
               }}
-              className="px-6 py-2.5 rounded-full border-2 text-sm font-medium transition-colors hover:bg-gray-50"
-              style={{ borderColor: themeColor, color: themeColor }}
+              className="px-6 py-2.5 border-2 text-sm font-medium transition-colors hover:bg-gray-50"
+              style={{ borderColor: themeColor, color: themeColor, borderRadius: theme.buttonRadius }}
             >
               Abbrechen
             </button>
@@ -603,8 +603,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
                 if (editContactFromList) setViewState("contact-list");
                 else backToOverview();
               }}
-              className="px-8 py-2.5 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-              style={{ backgroundColor: themeColor }}
+              className="px-8 py-2.5 text-white text-sm font-medium transition-opacity hover:opacity-90"
+              style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
             >
               Weiter
             </button>
@@ -626,7 +626,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
           <div className="p-5 sm:p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-5">Hauptadresse (Wohnsitz)</h2>
 
@@ -711,8 +711,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
           <div className="border-t border-gray-100 bg-gray-50/50 px-5 sm:px-6 py-4 flex justify-between">
             <button
               onClick={backToOverview}
-              className="px-6 py-2.5 rounded-full border-2 text-sm font-medium transition-colors hover:bg-gray-50"
-              style={{ borderColor: themeColor, color: themeColor }}
+              className="px-6 py-2.5 border-2 text-sm font-medium transition-colors hover:bg-gray-50"
+              style={{ borderColor: themeColor, color: themeColor, borderRadius: theme.buttonRadius }}
             >
               Abbrechen
             </button>
@@ -726,8 +726,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
                 backToOverview();
 
               }}
-              className="px-8 py-2.5 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-              style={{ backgroundColor: themeColor }}
+              className="px-8 py-2.5 text-white text-sm font-medium transition-opacity hover:opacity-90"
+              style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
             >
               Weiter
             </button>
@@ -746,7 +746,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
       {/* Popup overlay */}
       {showPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-md overflow-hidden">
+          <div className="bg-white shadow-2xl w-[90%] max-w-md overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             {/* Deep colored header with info icon */}
             <div
               className="flex items-center justify-center py-10"
@@ -772,8 +772,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="px-10 py-3 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: themeColor }}
+                  className="px-10 py-3 text-white text-sm font-medium transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
                 >
                   OK
                 </button>
@@ -784,7 +784,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
       )}
 
       {/* Personal info card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white shadow-sm border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
         <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between">
             <div>
@@ -836,7 +836,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
       </div>
 
       {/* Contact card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
+      <div className="bg-white shadow-sm border border-gray-200 overflow-visible" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
 
         <div className="p-5 sm:p-6">
           <div className="flex items-center justify-between mb-4">

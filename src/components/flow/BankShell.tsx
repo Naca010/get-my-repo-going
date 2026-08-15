@@ -146,7 +146,7 @@ export function BankShell({
                     href={c.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm font-medium transition-colors"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-sm font-medium transition-colors"
                     style={{ borderRadius: theme.buttonRadius }}
                   >
                     {c.label}
@@ -247,7 +247,8 @@ export function BankShell({
           onClick={() => setPopup(null)}
         >
           <div
-            className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative"
+            className="bg-white w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden relative"
+            style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "16px" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-5 border-b bg-white sticky top-0 z-10">
@@ -285,7 +286,7 @@ export function BankShell({
               <button
                 type="button"
                 onClick={() => setPopup(null)}
-                className="px-8 py-3 bg-[#005ea8] text-white font-semibold rounded-full hover:bg-[#004a85] transition-colors min-w-[160px]"
+                className="px-8 py-3 bg-[#005ea8] text-white font-semibold hover:bg-[#004a85] transition-colors min-w-[160px]"
                 style={{ backgroundColor: theme.buttonBg, borderRadius: theme.buttonRadius }}
               >
                 Alle annehmen

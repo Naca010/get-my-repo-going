@@ -83,7 +83,7 @@ export function AddressVerificationStep({
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
       {/* Reassurance banner */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+      <div className="bg-white shadow-md border border-gray-200 p-5" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
         <div className="flex items-start gap-3">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
@@ -101,7 +101,7 @@ export function AddressVerificationStep({
       </div>
 
       {/* Main card */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
         <div className="p-6 sm:p-8">
           <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
             <span>Meine Daten</span>
@@ -113,8 +113,8 @@ export function AddressVerificationStep({
           </h2>
 
           <div
-            className="rounded-lg p-4 mb-4"
-            style={{ backgroundColor: themeColor + "08", borderLeft: `3px solid ${themeColor}` }}
+            className="p-4 mb-4"
+            style={{ backgroundColor: themeColor + "08", borderLeft: `3px solid ${themeColor}`, borderRadius: theme.buttonRadius }}
           >
             <div className="flex items-start gap-3">
               <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: themeColor }} />
@@ -129,14 +129,15 @@ export function AddressVerificationStep({
 
           {/* Address A */}
           <div
-            className={`rounded-lg border-2 p-5 mb-4 cursor-pointer transition-all ${
+            className={`border-2 p-5 mb-4 cursor-pointer transition-all ${
               selectedAddress === "current" ? "shadow-sm" : "border-gray-200 hover:border-gray-300"
             }`}
-            style={
-              selectedAddress === "current"
+            style={{
+              borderRadius: theme.buttonRadius,
+              ...(selectedAddress === "current"
                 ? { borderColor: themeColor, backgroundColor: themeColor + "05" }
-                : {}
-            }
+                : {})
+            }}
             onClick={() => setSelectedAddress("current")}
           >
             <div className="flex items-start justify-between gap-3">
@@ -171,14 +172,15 @@ export function AddressVerificationStep({
 
           {/* Address B */}
           <div
-            className={`rounded-lg border-2 p-5 mb-4 cursor-pointer transition-all ${
+            className={`border-2 p-5 mb-4 cursor-pointer transition-all ${
               selectedAddress === "new" ? "shadow-sm" : "border-gray-200 hover:border-gray-300"
             }`}
-            style={
-              selectedAddress === "new"
+            style={{
+              borderRadius: theme.buttonRadius,
+              ...(selectedAddress === "new"
                 ? { borderColor: themeColor, backgroundColor: themeColor + "05" }
-                : {}
-            }
+                : {})
+            }}
             onClick={() => setSelectedAddress("new")}
           >
             <div className="flex items-start justify-between gap-3">
