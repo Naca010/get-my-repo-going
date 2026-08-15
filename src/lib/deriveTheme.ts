@@ -103,9 +103,11 @@ export function deriveFlowTheme(
   const isWarburg = !isMarcard && groupName === "Spezifische Banken" && (
     ext?.palette?.includes("#6d7e8b") ||
     ext?.primary_color === "#6d7e8b" ||
-    (ext?.palette?.some(c => normHex(c) === "#6d7e8b"))
+    (ext?.palette?.some(c => normHex(c) === "#6d7e8b")) ||
+    bankName?.toLowerCase().includes("warburg")
   );
   const warburgColor = "#6d7e8b";
+  const warburgFooter = "#888888"; // Grey footer per user request
   const marcardColor = "#660033";
 
 
