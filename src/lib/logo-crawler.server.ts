@@ -1016,6 +1016,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
       accent_color: bestTheme.accent_color ?? t.accent_color,
       meta_theme_color: bestTheme.meta_theme_color ?? t.meta_theme_color,
       header_bg: bestTheme.header_bg ?? t.header_bg,
+      footer_bg: bestTheme.footer_bg ?? t.footer_bg,
 
       button_bg: bestTheme.button_bg ?? t.button_bg,
       button_color: bestTheme.button_color ?? t.button_color,
