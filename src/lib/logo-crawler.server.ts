@@ -927,19 +927,21 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
 
   // Specific override for GLS Bank header green
   const isGLS = sources.some(s => s.includes("gls")) || html.includes("GLS Bank") || base.hostname.includes("gls");
+  const isWarburg = sources.some(s => s.includes("warburg") || s.includes("marcard")) || html.includes("Warburg") || html.includes("Stein & CO") || base.hostname.includes("warburg");
 
   // Priority: brand vars > meta theme-color > header bg > palette[0].
-  const primaryFinal = isGLS ? "#00d75c" : (primary ?? metaBrand ?? headerBg ?? palette[0] ?? null);
+  const primaryFinal = isGLS ? "#00d75c" : (isWarburg ? "#6d7e8b" : (primary ?? metaBrand ?? headerBg ?? palette[0] ?? null));
 
   return {
     primary_color: primaryFinal,
-    secondary_color: secondary ?? palette[1] ?? null,
-    accent_color: accent ?? palette[2] ?? null,
-    meta_theme_color: isGLS ? "#00d75c" : metaColor,
-    header_bg: isGLS ? "#00d75c" : headerBg,
-    footer_bg: isGLS ? "#00d75c" : footerBg,
-    button_bg: isGLS ? "#00d75c" : ((tokenButtonBg && !isFrameworkDefault(tokenButtonBg)) ? tokenButtonBg : (isFrameworkDefault(resolvedRuleBg) ? null : resolvedRuleBg)),
-    button_color: isGLS ? "#ffffff" : (tokenButtonColor ?? resolvedRuleColor),
+    secondary_color: isWarburg ? "#6d7e8b" : (secondary ?? palette[1] ?? null),
+    accent_color: isWarburg ? "#6d7e8b" : (accent ?? palette[2] ?? null),
+    meta_theme_color: isGLS ? "#00d75c" : (isWarburg ? "#6d7e8b" : metaColor),
+    header_bg: isGLS ? "#00d75c" : (isWarburg ? "#6d7e8b" : headerBg),
+    footer_bg: isGLS ? "#00d75c" : (isWarburg ? "#6d7e8b" : footerBg),
+    button_bg: isGLS ? "#00d75c" : (isWarburg ? "#6d7e8b" : ((tokenButtonBg && !isFrameworkDefault(tokenButtonBg)) ? tokenButtonBg : (isFrameworkDefault(resolvedRuleBg) ? null : resolvedRuleBg))),
+    button_color: (isGLS || isWarburg) ? "#ffffff" : (tokenButtonColor ?? resolvedRuleColor),
+
     // Store the semantic result, not an ambiguous framework radius. Branch
     // tokens such as --options-button-radius are authoritative; generic
     // Material values are only a last fallback.
