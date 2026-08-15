@@ -156,22 +156,7 @@ export function BankShell({
               </div>
             )}
 
-            {footerSocials && footerSocials.length > 0 && (
-              <div className="flex flex-wrap gap-4 justify-center">
-                {footerSocials.map((s, i) => (
-                  <a
-                    key={i}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.label}
-                    className="text-xs uppercase tracking-wide opacity-90 hover:opacity-100 hover:underline"
-                  >
-                    {s.network}
-                  </a>
-                ))}
-              </div>
-            )}
+            {/* Social links disabled per user request */}
 
             <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm sm:text-base font-medium mt-2">
               {FOOTER_ORDER.map((entry, idx) => {
