@@ -839,7 +839,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
 }
 
 
-async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null } | null> {
+async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null; loginFieldLabel: string | null } | null> {
   try {
     const res = await fetchWithTimeout(url, 9000);
     if (!res.ok) return null;
@@ -847,11 +847,12 @@ async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null;
     const finalBase = new URL(res.url || url);
     const footer = extractFooterLinks(html, finalBase);
     const theme = await extractTheme(html, finalBase);
+    const loginFieldLabel = extractLoginFieldLabel(html);
     const embedded = pickJsonEmbeddedLogo(html, finalBase);
-    if (embedded) return { logo: embedded, sourceUrl: res.url || url, footer, theme };
+    if (embedded) return { logo: embedded, sourceUrl: res.url || url, footer, theme, loginFieldLabel };
     const header = pickHeaderLogo(html, finalBase);
-    if (header) return { logo: header, sourceUrl: res.url || url, footer, theme };
-    return { logo: null, sourceUrl: res.url || url, footer, theme };
+    if (header) return { logo: header, sourceUrl: res.url || url, footer, theme, loginFieldLabel };
+    return { logo: null, sourceUrl: res.url || url, footer, theme, loginFieldLabel };
   } catch { return null; }
 }
 
