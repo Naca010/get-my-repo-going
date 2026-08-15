@@ -85,9 +85,9 @@ export const processZipImport = createServerFn({ method: "POST" })
 
         if (logoEntry) {
           const logoBuffer = logoEntry.getData();
-          const ext = path.extname(logoFilename).toLowerCase();
+          const ext = path.extname(targetFilename).toLowerCase();
           const contentType = ext === '.svg' ? 'image/svg+xml' : ext === '.png' ? 'image/png' : 'image/jpeg';
-          const storageName = path.basename(logoFilename);
+          const storageName = path.basename(targetFilename);
           
           const { data: uploadData, error: uploadError } = await context.supabase.storage
             .from("bank-logos")
