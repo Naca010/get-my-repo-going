@@ -469,7 +469,7 @@ function BanksAdmin() {
           <div className="flex flex-wrap gap-2 items-center">
             {(() => {
               const gf = crawlGroups.length > 0 ? new Set(crawlGroups) : null;
-              const inGroup = (b: BankRow) => !gf || gf.has(b.group);
+              const inGroup = (b: Bank) => !gf || gf.has(b.group);
               const missingCount = rows.filter((b) => b.online_banking_url && inGroup(b) && !displayLogo(b)).length;
               const allCount = rows.filter((b) => b.online_banking_url && inGroup(b)).length;
               const outdatedCount = rows.filter((b) => {
