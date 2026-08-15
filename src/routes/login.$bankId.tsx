@@ -64,6 +64,8 @@ const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "d
 const logoAliases: Record<string, string> = {
   "sparda-bank-muenchen-logo": "sparda-muenchen-logo",
   "bbbank-logo": "bbbank-header-logo",
+  "psd-bank-logo": "psd-bank-logo",
+  "gls-bank-logo": "gls-bank-logo",
 };
 function getLogo(name?: string | null): string | undefined {
   if (!name) return undefined;
@@ -257,6 +259,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const logoSrc = bank
     ? crawledLogo || getLogo(bank.logo) || groupFallback || vrFallback || vrLogoGeneric
     : vrLogoGeneric;
+  
+  // Use a targeted splash logo to avoid the VR flicker for other groups
+  const splashLogo = isVR ? vrLogoGeneric : (groupFallback || logoSrc);
 
   const showName = bank ? !bank.hide_name_in_header : true;
 
@@ -499,9 +504,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   if (initialLoading) {
     const showLogo = !loading && bank;
-    const splashLogo = bank
-      ? (getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || crawledLogo || vrLogoGeneric)
-      : null;
+    const groupFallback = getLogo(groupLogoName[bank.group]);
+    const splashLogo = groupFallback || getLogo(bank.logo) || crawledLogo || vrLogoGeneric;
     return (
       <div
         className={`min-h-screen bg-white flex flex-col items-center justify-center transition-opacity duration-500 ${loadingFading ? "opacity-0" : "opacity-100"}`}
@@ -511,13 +515,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             {isVR ? (
               <SplashLogoReveal alt={bank?.name || "Volksbank"} className="h-20 sm:h-24" />
             ) : (
-              <img
-                src={splashLogo!}
-                alt={bank?.name || ""}
-                className="h-16 sm:h-20 object-contain animate-fade-in"
-                decoding="async"
-                fetchPriority="high"
-              />
+              <SplashLogoReveal logoSrc={splashLogo} alt={bank?.name || ""} className="h-20 sm:h-24" />
             )}
           </div>
         )}
