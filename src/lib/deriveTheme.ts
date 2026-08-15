@@ -134,10 +134,12 @@ export function deriveFlowTheme(
       : null;
   const buttonRadius =
     c.buttonRadius ??
+    (isWarburg ? "rounded-none" : null) ??
     explicitRadius ??
     legacyAtruviaRadius ??
     g.buttonRadius ??
     DEFAULT.buttonRadius;
+
 
   return {
     headerBg,
