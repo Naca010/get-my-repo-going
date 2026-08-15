@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type Input = { banks: Array<{ id: string; url: string }>; runId?: string };
+type Input = {
+  banks: Array<{ id: string; url: string }>;
+  runId?: string;
+  scopes?: Array<"logo" | "footer" | "theme" | "pages">;
+};
 type ResultItem = { id: string; logo: string | null; error?: string };
 
 async function storeLogoInBucket(
