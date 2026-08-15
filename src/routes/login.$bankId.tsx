@@ -64,6 +64,8 @@ const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "d
 const logoAliases: Record<string, string> = {
   "sparda-bank-muenchen-logo": "sparda-muenchen-logo",
   "bbbank-logo": "bbbank-header-logo",
+  "psd-bank-logo": "psd-bank-logo",
+  "gls-bank-logo": "gls-bank-logo",
 };
 function getLogo(name?: string | null): string | undefined {
   if (!name) return undefined;
@@ -257,6 +259,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const logoSrc = bank
     ? crawledLogo || getLogo(bank.logo) || groupFallback || vrFallback || vrLogoGeneric
     : vrLogoGeneric;
+  
+  // Use a targeted splash logo to avoid the VR flicker for other groups
+  const splashLogo = isVR ? vrLogoGeneric : (groupFallback || logoSrc);
 
   const showName = bank ? !bank.hide_name_in_header : true;
 
