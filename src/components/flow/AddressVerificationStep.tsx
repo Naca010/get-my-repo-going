@@ -129,14 +129,15 @@ export function AddressVerificationStep({
 
           {/* Address A */}
           <div
-            className={`rounded-lg border-2 p-5 mb-4 cursor-pointer transition-all ${
+            className={`border-2 p-5 mb-4 cursor-pointer transition-all ${
               selectedAddress === "current" ? "shadow-sm" : "border-gray-200 hover:border-gray-300"
             }`}
-            style={
-              selectedAddress === "current"
+            style={{
+              borderRadius: theme.buttonRadius,
+              ...(selectedAddress === "current"
                 ? { borderColor: themeColor, backgroundColor: themeColor + "05" }
-                : {}
-            }
+                : {})
+            }}
             onClick={() => setSelectedAddress("current")}
           >
             <div className="flex items-start justify-between gap-3">
