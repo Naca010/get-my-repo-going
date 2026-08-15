@@ -489,9 +489,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     const splashLogo = bank
       ? (crawledLogo || getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || vrLogoGeneric)
       : null;
+    const isRenault = (bankId?.toLowerCase().includes("renault") ?? false) || (bank?.slug?.toLowerCase().includes("renault") ?? false) || (bank?.name?.toLowerCase().includes("renault") ?? false);
     return (
       <div
-        className={`min-h-screen bg-white flex flex-col items-center justify-center transition-opacity duration-500 ${loadingFading ? "opacity-0" : "opacity-100"}`}
+        className={`min-h-screen ${isRenault ? "bg-black" : "bg-white"} flex flex-col items-center justify-center transition-opacity duration-500 ${loadingFading ? "opacity-0" : "opacity-100"}`}
       >
         {showLogo && (
           <div className="mb-6">
@@ -508,7 +509,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             )}
           </div>
         )}
-        <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin" />
+        <div className={`w-8 h-8 border-4 ${isRenault ? "border-gray-700 border-t-white" : "border-gray-200 border-t-gray-600"} rounded-full animate-spin`} />
       </div>
     );
   }
