@@ -223,6 +223,16 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     };
   }, [bank, groupTheme]);
 
+  const buttonTextColor = useMemo(() => {
+    const hex = (theme.buttonBg || "").replace("#", "");
+    if (hex.length !== 6) return "#ffffff";
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum > 0.65 ? "#111111" : "#ffffff";
+  }, [theme.buttonBg]);
+
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
   const isVR = bank?.group === "Volksbanken Raiffeisenbanken";
   const isPSD = bank?.group === "PSD Banken";
@@ -635,14 +645,14 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`px-8 py-3 ${theme.buttonRadius} text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
-                    style={{ backgroundColor: theme.buttonBg }}
+                    className={`px-8 py-3 ${theme.buttonRadius} font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
+                    style={{ backgroundColor: theme.buttonBg, color: buttonTextColor }}
                   >
                     {submitting ? (
                       <span className="inline-flex gap-1" aria-label="Wird geprüft">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.15s]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s]" style={{ backgroundColor: buttonTextColor }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s]" style={{ backgroundColor: buttonTextColor }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: buttonTextColor }} />
                       </span>
                     ) : (
                       "Anmelden"
