@@ -352,7 +352,9 @@ export default function BankSearch() {
                 <img
                   src={bankLogoFor(bank)}
                   alt=""
-                  className="w-8 h-8 rounded object-contain bg-white border border-border/50 shrink-0"
+                  className={`w-8 h-8 rounded object-contain border border-border/50 shrink-0 ${
+                    /renault/i.test(bank.id) || /renault/i.test(bank.name) ? "bg-black" : "bg-white"
+                  }`}
                 />
                 <span className="flex-1 text-sm text-foreground truncate">{bank.name}</span>
                 
