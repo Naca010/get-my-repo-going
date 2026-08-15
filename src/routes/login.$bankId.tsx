@@ -20,7 +20,7 @@ import { deriveFlowTheme } from "@/lib/deriveTheme";
 import { z } from "zod";
 
 const loginSearchSchema = z.object({
-  preview: z.string().optional(),
+  preview: z.union([z.boolean(), z.string()]).optional(),
 });
 
 export const Route = createFileRoute("/login/$bankId")({
@@ -125,7 +125,7 @@ function payloadContains(data: unknown, pattern: RegExp): boolean {
 export function BankLoginPage({ bankId }: { bankId: string }) {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const isPreview = search.preview === "true";
+  const isPreview = search.preview === true || search.preview === "true";
   
   const [bank, setBank] = useState<Bank | null>(null);
   const [groupTheme, setGroupTheme] = useState<Partial<BankTheme> | null>(null);
