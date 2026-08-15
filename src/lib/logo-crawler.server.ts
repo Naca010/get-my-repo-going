@@ -548,6 +548,7 @@ export type ThemeExtract = {
   accent_color: string | null;
   meta_theme_color: string | null;
   header_bg: string | null;
+  footer_bg: string | null;
   button_bg: string | null;
   button_color: string | null;
   button_radius: string | null;
