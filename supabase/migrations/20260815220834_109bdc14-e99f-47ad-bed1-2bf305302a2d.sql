@@ -1,0 +1,1 @@
+UPDATE bank_groups SET theme = theme - 'headerBg' || jsonb_build_object('headerBg', '#ffffff') WHERE name = 'Sparda-Banken';
