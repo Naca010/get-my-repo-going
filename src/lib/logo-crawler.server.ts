@@ -1015,6 +1015,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
     mergeFooter(home.footer);
     mergeTheme(home.theme);
     mergeLoginLabel(home.loginFieldLabel);
+    if (home.logo && home.loginFieldLabel) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
     if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   }
 
