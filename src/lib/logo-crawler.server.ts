@@ -852,8 +852,8 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const tokenButtonRadius = resolvedVariable(variables, [
     "options-button-radius",
     "options-widget-border-radius",
-    "mat-button-filled-container-shape",
   ]);
+  const isAtruviaPortal = sources.some((source) => /kf-theme|services_cloud\/portal/i.test(source));
 
   const resolvedRuleBg = normalizeColor(resolveCssValue(btn.bg, variables));
   const resolvedRuleColor = normalizeColor(resolveCssValue(btn.color, variables));
@@ -878,7 +878,10 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     // Store the semantic result, not an ambiguous framework radius. Branch
     // tokens such as --options-button-radius are authoritative; generic
     // Material values are only a last fallback.
-    button_radius: classifyButtonRadius(tokenButtonRadius ?? resolvedRuleRadius),
+    // Atruvia's portal bundle contains a generic Material 4px shape. It is not
+    // the bank's effective button radius. Leave the value empty on that page so
+    // the subsequent bank homepage theme can provide --options-button-radius.
+    button_radius: classifyButtonRadius(tokenButtonRadius ?? (isAtruviaPortal ? null : resolvedRuleRadius)),
     button_border: btn.border,
     palette,
     css_sources: sources,
@@ -891,7 +894,9 @@ async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null;
     const res = await fetchWithTimeout(url, 9000);
     if (!res.ok) return null;
     const html = (await res.text()).slice(0, 800_000);
-    const finalBase = new URL(res.url || url);
+    const responseBase = new URL(res.url || url);
+    const documentBaseHref = html.match(/<base\b[^>]*href=["']([^"']+)["']/i)?.[1];
+    const finalBase = documentBaseHref ? new URL(documentBaseHref, responseBase) : responseBase;
     const footer = extractFooterLinks(html, finalBase);
     const theme = await extractTheme(html, finalBase);
     const loginFieldLabel = extractLoginFieldLabel(html);

