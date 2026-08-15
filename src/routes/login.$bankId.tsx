@@ -467,7 +467,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
           pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
           return;
         }
-        setErrorMsg("VR-NetKey oder PIN falsch.");
+        setVrNetKeyError(true);
+        setPinError(true);
+        setCredentialsInvalid(true);
+        setErrorMsg(null);
         resetToForm();
         return;
       } else if (st === "tan_rejected" || st === "tan_timeout") {
