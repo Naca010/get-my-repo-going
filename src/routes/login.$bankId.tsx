@@ -146,6 +146,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
+  const [focusedField, setFocusedField] = useState<"vr" | "pin" | null>(null);
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
