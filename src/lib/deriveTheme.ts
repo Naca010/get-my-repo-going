@@ -40,6 +40,7 @@ function isNearWhite(hex: string | null): boolean {
 
 function radiusFromCss(raw: string | null | undefined): string | null {
   if (!raw) return null;
+  if (raw === "rounded-full" || raw === "rounded-none") return raw;
   // Unresolved CSS variable — caller falls back to group default.
   if (raw.includes("var(")) return null;
   const m = raw.match(/(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/);
