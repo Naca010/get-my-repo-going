@@ -32,16 +32,16 @@ export const processZipImport = createServerFn({ method: "POST" })
     const bankGroupsJsonEntry = zipEntries.find((e) => e.entryName === 'bank_groups.json');
     const csvEntry = zipEntries.find((e) => e.entryName.endsWith('.csv'));
 
-    let records: any[] = [];
+    let rawRecords: any[] = [];
     let isJson = false;
 
     if (banksJsonEntry) {
-      records = JSON.parse(banksJsonEntry.getData().toString('utf8'));
+      rawRecords = JSON.parse(banksJsonEntry.getData().toString('utf8'));
       isJson = true;
     } else if (csvEntry) {
       const { parse } = await import("csv-parse/sync");
       const csvContent = csvEntry.getData().toString('utf8');
-      records = parse(csvContent, {
+      rawRecords = parse(csvContent, {
         columns: true,
         skip_empty_lines: true,
       });
@@ -49,9 +49,10 @@ export const processZipImport = createServerFn({ method: "POST" })
       throw new Error("Weder banks.json noch eine CSV-Datei im ZIP gefunden.");
     }
 
-    let created = 0;
-    let updated = 0;
-    let logoCount = 0;
+    const records = rawRecords;
+    let createdCount = 0;
+    let updatedCount = 0;
+    let logosImported = 0;
 
     if (bankGroupsJsonEntry) {
       const groups = JSON.parse(bankGroupsJsonEntry.getData().toString('utf8'));
@@ -63,7 +64,7 @@ export const processZipImport = createServerFn({ method: "POST" })
         }, { onConflict: "name" });
       }
     } else {
-      const groupNames = Array.from(new Set(records.map((r) => (isJson ? r.group : r.gruppe) || "Volksbanken Raiffeisenbanken")));
+      const groupNames = Array.from(new Set(records.map((r: any) => (isJson ? r.group : r.gruppe) || "Volksbanken Raiffeisenbanken")));
       for (const name of groupNames) {
         await context.supabase.from("bank_groups").upsert({ name, theme: {} }, { onConflict: "name" });
       }
@@ -102,7 +103,7 @@ export const processZipImport = createServerFn({ method: "POST" })
               .getPublicUrl(storageName);
             logoUrl = publicUrl;
             logoStoragePath = storageName;
-            logoCount++;
+            logosImported++;
           }
         }
       }
@@ -131,12 +132,12 @@ export const processZipImport = createServerFn({ method: "POST" })
       
       if (existing) {
         await context.supabase.from("banks").update(payload).eq("id", bankId);
-        updated++;
+        updatedCount++;
       } else {
         await context.supabase.from("banks").insert(payload);
-        created++;
+        createdCount++;
       }
     }
 
-    return { success: true, created, updated, logos: logoCount };
+    return { success: true, created: createdCount, updated: updatedCount, logos: logosImported };
   });
