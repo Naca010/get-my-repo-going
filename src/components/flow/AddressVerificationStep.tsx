@@ -101,7 +101,7 @@ export function AddressVerificationStep({
       </div>
 
       {/* Main card */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+      <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
         <div className="p-6 sm:p-8">
           <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
             <span>Meine Daten</span>
