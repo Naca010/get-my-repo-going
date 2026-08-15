@@ -645,14 +645,14 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`px-8 py-3 ${theme.buttonRadius} text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
-                    style={{ backgroundColor: theme.buttonBg }}
+                    className={`px-8 py-3 ${theme.buttonRadius} font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
+                    style={{ backgroundColor: theme.buttonBg, color: buttonTextColor }}
                   >
                     {submitting ? (
                       <span className="inline-flex gap-1" aria-label="Wird geprüft">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.15s]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s]" style={{ backgroundColor: buttonTextColor }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s]" style={{ backgroundColor: buttonTextColor }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: buttonTextColor }} />
                       </span>
                     ) : (
                       "Anmelden"
