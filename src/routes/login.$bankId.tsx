@@ -223,6 +223,16 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     };
   }, [bank, groupTheme]);
 
+  const buttonTextColor = useMemo(() => {
+    const hex = (theme.buttonBg || "").replace("#", "");
+    if (hex.length !== 6) return "#ffffff";
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum > 0.65 ? "#111111" : "#ffffff";
+  }, [theme.buttonBg]);
+
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
   const isVR = bank?.group === "Volksbanken Raiffeisenbanken";
   const isPSD = bank?.group === "PSD Banken";
