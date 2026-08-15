@@ -157,7 +157,8 @@ export function deriveFlowTheme(
       : null;
   const buttonRadius =
     c.buttonRadius ??
-    (isWarburg || isRenault ? "rounded-none" : null) ??
+    (isRenault ? "rounded-none" : null) ??
+    (isWarburg ? "rounded-full" : null) ??
     explicitRadius ??
     legacyAtruviaRadius ??
     g.buttonRadius ??
