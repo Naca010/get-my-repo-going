@@ -763,6 +763,30 @@ function findHeaderBg(css: string): string | null {
 }
 
 
+function findFooterBg(css: string): string | null {
+  const selectors = [
+    /(?:^|[\s,}])footer\s*\{([^}]+)\}/gi,
+    /\.footer\b[^{}]*\{([^}]+)\}/gi,
+    /\.site-footer\b[^{}]*\{([^}]+)\}/gi,
+    /\.footer-container\b[^{}]*\{([^}]+)\}/gi,
+    /\.footer-meta\b[^{}]*\{([^}]+)\}/gi,
+    /\.footer-content\b[^{}]*\{([^}]+)\}/gi,
+    /\.footer-main\b[^{}]*\{([^}]+)\}/gi,
+  ];
+  for (const re of selectors) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(css))) {
+      const block = m[1]!;
+      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+      if (bgMatch) {
+        const c = normalizeColor(bgMatch[1]!.trim());
+        if (c && !isFrameworkDefault(c)) return c;
+      }
+    }
+  }
+  return null;
+}
+
 function topHexColors(css: string, limit = 6): string[] {
   const counts = new Map<string, number>();
   const re = /#([0-9a-f]{6}|[0-9a-f]{3})\b/gi;
