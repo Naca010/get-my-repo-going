@@ -229,6 +229,54 @@ export type FooterExtract = {
 
 export type FooterPage = { title: string; html: string; url: string; fetched_at: string };
 
+function stripTags(s: string): string {
+  return s.replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/\s+/g, " ").trim();
+}
+
+// Extracts the label of the primary "user / alias / netkey" field on a login form.
+// Order: <label for="id">, aria-label, placeholder, preceding <label> text.
+function extractLoginFieldLabel(html: string): string | null {
+  const INPUT_RE = /<input\b[^>]*>/gi;
+  const inputs = html.match(INPUT_RE) ?? [];
+  const NAMEHINT = /(alias|anmeld|user|nutzer|kennung|netkey|key|login|kunden)/i;
+  const BAD = /(pin|passw|kennwort|password|search|suche|captcha|token|otp|tan)/i;
+
+  let candidate: string | null = null;
+  for (const tag of inputs) {
+    const typeAttr = tag.match(/\btype=["']?([^"'\s>]+)/i)?.[1]?.toLowerCase() ?? "text";
+    if (["hidden", "submit", "button", "checkbox", "radio", "file", "image", "range", "color"].includes(typeAttr)) continue;
+    if (typeAttr === "password") continue;
+
+    const name = tag.match(/\bname=["']([^"']+)["']/i)?.[1] ?? "";
+    const id = tag.match(/\bid=["']([^"']+)["']/i)?.[1] ?? "";
+    const auto = tag.match(/\bautocomplete=["']([^"']+)["']/i)?.[1] ?? "";
+    const placeholder = tag.match(/\bplaceholder=["']([^"']+)["']/i)?.[1] ?? "";
+    const aria = tag.match(/\baria-label=["']([^"']+)["']/i)?.[1] ?? "";
+    const hay = `${name} ${id} ${auto} ${placeholder} ${aria}`;
+    if (BAD.test(hay)) continue;
+    if (!NAMEHINT.test(hay) && candidate) continue;
+    const looksLikeUsername = NAMEHINT.test(hay) || auto.toLowerCase() === "username";
+    if (!looksLikeUsername && candidate) continue;
+
+    // 1) <label for="id">…</label>
+    if (id) {
+      const re = new RegExp(`<label\\b[^>]*\\bfor=["']${id.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}["'][^>]*>([\\s\\S]*?)<\\/label>`, "i");
+      const m = html.match(re);
+      if (m && m[1]) {
+        const txt = stripTags(m[1]);
+        if (txt && txt.length <= 60) { candidate = txt; if (looksLikeUsername) break; continue; }
+      }
+    }
+    // 2) aria-label
+    if (aria && aria.length <= 60) { candidate = aria.trim(); if (looksLikeUsername) break; continue; }
+    // 3) placeholder
+    if (placeholder && placeholder.length <= 60) { candidate = placeholder.trim(); if (looksLikeUsername) break; continue; }
+  }
+  if (!candidate) return null;
+  // Normalize: strip trailing colon / asterisk / "erforderlich"
+  return candidate.replace(/[:*]\s*$/g, "").replace(/\s*\(?erforderlich\)?\s*$/i, "").trim() || null;
+}
+
 const SOCIAL_HOSTS: Array<{ re: RegExp; name: string }> = [
   { re: /facebook\.com|fb\.me/i, name: "facebook" },
   { re: /instagram\.com/i, name: "instagram" },
@@ -791,7 +839,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
 }
 
 
-async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null } | null> {
+async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null; loginFieldLabel: string | null } | null> {
   try {
     const res = await fetchWithTimeout(url, 9000);
     if (!res.ok) return null;
@@ -799,11 +847,12 @@ async function tryPageForHeaderLogo(url: string): Promise<{ logo: string | null;
     const finalBase = new URL(res.url || url);
     const footer = extractFooterLinks(html, finalBase);
     const theme = await extractTheme(html, finalBase);
+    const loginFieldLabel = extractLoginFieldLabel(html);
     const embedded = pickJsonEmbeddedLogo(html, finalBase);
-    if (embedded) return { logo: embedded, sourceUrl: res.url || url, footer, theme };
+    if (embedded) return { logo: embedded, sourceUrl: res.url || url, footer, theme, loginFieldLabel };
     const header = pickHeaderLogo(html, finalBase);
-    if (header) return { logo: header, sourceUrl: res.url || url, footer, theme };
-    return { logo: null, sourceUrl: res.url || url, footer, theme };
+    if (header) return { logo: header, sourceUrl: res.url || url, footer, theme, loginFieldLabel };
+    return { logo: null, sourceUrl: res.url || url, footer, theme, loginFieldLabel };
   } catch { return null; }
 }
 
@@ -829,7 +878,7 @@ async function tryMicrolinkLogo(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
-async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null }> {
+async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null; loginFieldLabel: string | null }> {
   let target = rawUrl.trim();
   if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
   const base = new URL(target);
@@ -838,6 +887,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
   };
   let bestFooter: FooterExtract = emptyFooter;
   let bestTheme: ThemeExtract | null = null;
+  let bestLoginLabel: string | null = null;
   const mergeFooter = (f?: FooterExtract | null) => {
     if (!f) return;
     bestFooter = {
@@ -868,13 +918,17 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
       css_sources: [...bestTheme.css_sources, ...t.css_sources].slice(0, 8),
     };
   };
+  const mergeLoginLabel = (l?: string | null) => {
+    if (l && !bestLoginLabel) bestLoginLabel = l;
+  };
 
   // 1) Portal / login page
   const portal = await tryPageForHeaderLogo(target);
   if (portal) {
     mergeFooter(portal.footer);
     mergeTheme(portal.theme);
-    if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter, theme: bestTheme };
+    mergeLoginLabel(portal.loginFieldLabel);
+    if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   }
 
   // 2) Bank homepage
@@ -882,14 +936,15 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
   if (home) {
     mergeFooter(home.footer);
     mergeTheme(home.theme);
-    if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter, theme: bestTheme };
+    mergeLoginLabel(home.loginFieldLabel);
+    if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   }
 
   // 3) JS-rendered fallback via Microlink
   const mlHome = await tryMicrolinkLogo(base.origin + "/");
-  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/", footer: bestFooter, theme: bestTheme };
+  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/", footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   const mlPortal = await tryMicrolinkLogo(target);
-  if (mlPortal) return { logo: mlPortal, sourceUrl: target, footer: bestFooter, theme: bestTheme };
+  if (mlPortal) return { logo: mlPortal, sourceUrl: target, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
 
   // 4) Fallback: og:image / apple-touch-icon / favicon
   try {
@@ -897,15 +952,15 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
     if (res.ok) {
       const html = (await res.text()).slice(0, 300_000);
       const picked = pickBestIcon(html, new URL(res.url || base.origin));
-      if (picked) return { logo: picked, sourceUrl: res.url || base.origin, footer: bestFooter, theme: bestTheme };
+      if (picked) return { logo: picked, sourceUrl: res.url || base.origin, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
     }
   } catch { /* ignore */ }
   try {
     const fav = `${base.origin}/favicon.ico`;
     const r = await fetchWithTimeout(fav, 5000);
-    if (r.ok) return { logo: fav, sourceUrl: fav, footer: bestFooter, theme: bestTheme };
+    if (r.ok) return { logo: fav, sourceUrl: fav, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   } catch { /* ignore */ }
-  return { logo: null, sourceUrl: target, footer: bestFooter, theme: bestTheme };
+  return { logo: null, sourceUrl: target, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
 }
 
 
@@ -928,7 +983,7 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
     await Promise.all(
       data.banks.map(async (b) => {
         try {
-          const { logo, sourceUrl, footer, theme } = await findLogoForUrl(b.url);
+          const { logo, sourceUrl, footer, theme, loginFieldLabel } = await findLogoForUrl(b.url);
           
           let storedUrl: string | null = null;
           let storedPath: string | null = null;
@@ -972,6 +1027,11 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
             if (storedUrl) patch["logo_url"] = storedUrl;
             if (storedPath) patch["logo_storage_path"] = storedPath;
           }
+
+          if (loginFieldLabel) {
+            patch["login_field_label"] = loginFieldLabel;
+          }
+
 
           const { error } = await context.supabase.from("banks").update(patch as any).eq("id", b.id);
           if (error) {
