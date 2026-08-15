@@ -33,8 +33,8 @@ const SplashLogoReveal = ({ logoSrc, alt, className = "h-20 sm:h-24" }: Props) =
           transform: phase >= 1 ? "scale(1)" : "scale(0.85)",
           transition:
             "opacity 500ms ease-out, transform 700ms cubic-bezier(0.22, 1.2, 0.36, 1)",
-          filter: "drop-shadow(0 6px 18px rgba(0,60,125,0.25))",
         }}
+
       >
         <img
           src={src}
