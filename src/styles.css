@@ -72,8 +72,7 @@ a[href*="lovable.dev"],
 .lovable-badge,
 #lovable-badge,
 [class*="lovable-badge"],
-[id*="lovable-badge"],
-iframe[src*="lovable"] {
+[id*="lovable-badge"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
