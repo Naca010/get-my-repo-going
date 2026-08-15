@@ -542,11 +542,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       >
         {showLogo && (
           <div className="mb-6">
-            {isVR ? (
-              <SplashLogoReveal alt={bank?.name || "Volksbank"} className="h-20 sm:h-24" />
-            ) : (
-              <SplashLogoReveal logoSrc={loadingSplashLogo} alt={bank?.name || ""} className="h-20 sm:h-24" />
-            )}
+            <SplashLogoReveal logoSrc={loadingSplashLogo} alt={bank?.name || ""} className="h-20 sm:h-24" />
+
           </div>
         )}
         <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin" />
