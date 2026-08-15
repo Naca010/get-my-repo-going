@@ -89,10 +89,13 @@ export function deriveFlowTheme(
 
   const extHeader = normHex(ext?.header_bg);
   const extFooter = normHex(ext?.footer_bg);
+  
+  // Header logic: Branches often have specific header colors (e.g. Volksbank yellow/blue variants).
+  // Only fallback to group/default if it's white or missing.
   const headerBg = c.headerBg ?? (extHeader && !isNearWhite(extHeader) ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
   
   // Footer logic: If extracted footer color is a generic framework blue, ignore it.
-  const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff";
+  const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff" || extFooter === "#002d87" || extFooter === "#002266";
   const footerBgFinal = c.footerBg ?? (extFooter && !isGenericBlue ? extFooter : null) ?? g.footerBg ?? null;
   
   const buttonBg = c.buttonBg ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
