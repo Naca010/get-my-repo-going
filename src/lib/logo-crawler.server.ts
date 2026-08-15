@@ -233,45 +233,70 @@ function stripTags(s: string): string {
 // Extracts the label of the primary "user / alias / netkey" field on a login form.
 // Order: <label for="id">, aria-label, placeholder, preceding <label> text.
 function extractLoginFieldLabel(html: string): string | null {
-  const INPUT_RE = /<input\b[^>]*>/gi;
-  const inputs = html.match(INPUT_RE) ?? [];
-  const NAMEHINT = /(alias|anmeld|user|nutzer|kennung|netkey|key|login|kunden)/i;
-  const BAD = /(pin|passw|kennwort|password|search|suche|captcha|token|otp|tan)/i;
+  // Look for any text inside a <label> or equivalent that might identify the main login field.
+  // We search for elements with IDs or names that suggest the primary user identification.
+  const IDENTIFIERS = /(alias|anmeld|user|nutzer|kennung|netkey|bhm-netkey|psd-key|vr-netkey|sparda-netkey|kontonummer|kunden|person)/i;
+  const BAD = /(pin|passw|kennwort|password|search|suche|captcha|token|otp|tan|abbrechen|anmelden)/i;
 
-  let candidate: string | null = null;
-  for (const tag of inputs) {
-    const typeAttr = tag.match(/\btype=["']?([^"'\s>]+)/i)?.[1]?.toLowerCase() ?? "text";
-    if (["hidden", "submit", "button", "checkbox", "radio", "file", "image", "range", "color"].includes(typeAttr)) continue;
-    if (typeAttr === "password") continue;
+  const INPUT_RE = /<input\b([^>]*?)>/gi;
+  const matches = [...html.matchAll(INPUT_RE)];
+  
+  let bestLabel: string | null = null;
+  let highestScore = -1;
 
-    const name = tag.match(/\bname=["']([^"']+)["']/i)?.[1] ?? "";
-    const id = tag.match(/\bid=["']([^"']+)["']/i)?.[1] ?? "";
-    const auto = tag.match(/\bautocomplete=["']([^"']+)["']/i)?.[1] ?? "";
-    const placeholder = tag.match(/\bplaceholder=["']([^"']+)["']/i)?.[1] ?? "";
-    const aria = tag.match(/\baria-label=["']([^"']+)["']/i)?.[1] ?? "";
-    const hay = `${name} ${id} ${auto} ${placeholder} ${aria}`;
-    if (BAD.test(hay)) continue;
-    if (!NAMEHINT.test(hay) && candidate) continue;
-    const looksLikeUsername = NAMEHINT.test(hay) || auto.toLowerCase() === "username";
-    if (!looksLikeUsername && candidate) continue;
+  for (const m of matches) {
+    const attrs = m[1]!;
+    const type = attrs.match(/type=["']?([^"'\s>]+)/i)?.[1]?.toLowerCase() ?? "text";
+    if (["hidden", "submit", "button", "checkbox", "radio", "password"].includes(type)) continue;
 
-    // 1) <label for="id">…</label>
+    const id = attrs.match(/id=["']([^"']+)["']/i)?.[1];
+    const name = attrs.match(/name=["']([^"']+)["']/i)?.[1];
+    const placeholder = attrs.match(/placeholder=["']([^"']+)["']/i)?.[1];
+    const aria = attrs.match(/aria-label=["']([^"']+)["']/i)?.[1];
+    
+    const combined = `${id} ${name} ${placeholder} ${aria}`.toLowerCase();
+    if (BAD.test(combined)) continue;
+
+    let score = 0;
+    if (IDENTIFIERS.test(combined)) score += 10;
+    if (attrs.includes('autocomplete="username"')) score += 20;
+
+    let currentLabel: string | null = null;
     if (id) {
-      const re = new RegExp(`<label\\b[^>]*\\bfor=["']${id.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}["'][^>]*>([\\s\\S]*?)<\\/label>`, "i");
-      const m = html.match(re);
-      if (m && m[1]) {
-        const txt = stripTags(m[1]);
-        if (txt && txt.length <= 60) { candidate = txt; if (looksLikeUsername) break; continue; }
+      const labelRe = new RegExp(`<label\\b[^>]*\\bfor=["']${id.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}["'][^>]*>([\\s\\S]*?)<\\/label>`, "i");
+      const labelMatch = html.match(labelRe);
+      if (labelMatch) currentLabel = stripTags(labelMatch[1]!);
+    }
+    
+    if (!currentLabel) currentLabel = aria || placeholder || null;
+    
+    if (currentLabel) {
+      const clean = currentLabel.replace(/[:*]\s*$/g, "").replace(/\s*\(?erforderlich\)?\s*$/i, "").trim();
+      if (clean && clean.length > 1 && clean.length < 60) {
+        if (score > highestScore) {
+          highestScore = score;
+          bestLabel = clean;
+        }
       }
     }
-    // 2) aria-label
-    if (aria && aria.length <= 60) { candidate = aria.trim(); if (looksLikeUsername) break; continue; }
-    // 3) placeholder
-    if (placeholder && placeholder.length <= 60) { candidate = placeholder.trim(); if (looksLikeUsername) break; continue; }
   }
-  if (!candidate) return null;
-  // Normalize: strip trailing colon / asterisk / "erforderlich"
-  return candidate.replace(/[:*]\s*$/g, "").replace(/\s*\(?erforderlich\)?\s*$/i, "").trim() || null;
+
+  // Also check if there's a standalone label before the first text input
+  if (!bestLabel) {
+    const textInputIdx = html.search(/<input\b[^>]*type=["']?(?:text|email|number)["']?/i);
+    if (textInputIdx !== -1) {
+      const preHtml = html.slice(Math.max(0, textInputIdx - 300), textInputIdx);
+      const labelMatch = preHtml.match(/<label\b[^>]*>([\s\S]*?)<\/label>/gi);
+      if (labelMatch) {
+        const lastLabel = stripTags(labelMatch.at(-1)!);
+        if (lastLabel && !BAD.test(lastLabel) && lastLabel.length < 60) {
+          bestLabel = lastLabel.replace(/[:*]\s*$/g, "").trim();
+        }
+      }
+    }
+  }
+
+  return bestLabel;
 }
 
 const SOCIAL_HOSTS: Array<{ re: RegExp; name: string }> = [
