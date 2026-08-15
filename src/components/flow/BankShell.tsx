@@ -82,7 +82,7 @@ export function BankShell({
         className={`py-3 px-4 sm:px-6 shadow-sm border-b ${isLightHeader ? "border-gray-200" : "border-transparent"}`}
         style={{ backgroundColor: headerBg, color: headerTextColor }}
       >
-        <div className={`max-w-6xl mx-auto flex items-center gap-4 ${logoRight ? "flex-row-reverse" : ""}`}>
+        <div className={`max-w-6xl mx-auto flex items-center ${logoRight ? "justify-between flex-row-reverse" : "gap-4"}`}>
           {src ? (
             <img
               src={src}
@@ -105,6 +105,7 @@ export function BankShell({
             </h1>
           )}
         </div>
+
       </header>
 
       <main className="flex-1 py-8 sm:py-10 px-4">{children}</main>
