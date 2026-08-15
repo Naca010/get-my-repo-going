@@ -11,7 +11,7 @@ interface Props {
  * VR-Splash-Reveal: zeigt zuerst den oberen (blauen) Teil des Splash-Logos,
  * dann fällt der untere (orange) Teil dazu – ergibt das komplette VR-Splash-Logo.
  */
-const VRSplashReveal = ({ alt, className = "h-40 sm:h-48" }: Props) => {
+const VRSplashReveal = ({ alt, className = "h-40 sm:h-48 w-40 sm:w-48" }: Props) => {
   const [phase, setPhase] = useState<0 | 1 | 2>(0);
 
   useEffect(() => {
