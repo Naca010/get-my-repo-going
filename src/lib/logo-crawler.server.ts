@@ -351,24 +351,8 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
     }
   }
 
-  // Socials from footer anchors
+  // Socials disabled per user request
   const socials: FooterSocial[] = [];
-  const seenSocial = new Set<string>();
-  for (const m of footerAnchors) {
-    const href = m[1]!;
-    const abs = absolutize(href, base);
-    if (!abs) continue;
-    const net = detectSocial(abs);
-    if (!net || seenSocial.has(net)) continue;
-    
-    // Check if the anchor contains an <img> or an <svg> that might be an icon
-    const content = m[2]!;
-    const hasIcon = content.includes('<img') || content.includes('<svg') || content.includes('class="icon');
-    
-    seenSocial.add(net);
-    const label = content.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 40) || net;
-    socials.push({ network: net, url: abs, label });
-  }
 
   // Partner logos: <img> inside footer wrapped in <a>
   const partners: FooterPartner[] = [];
