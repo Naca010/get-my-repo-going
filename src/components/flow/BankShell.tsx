@@ -9,6 +9,7 @@ export type FlowTheme = {
   accentText: string;
   topBarColor: string;
   buttonRadius: string;
+  footerBg?: string;
 };
 
 export type FooterLink = { label: string; url: string };
