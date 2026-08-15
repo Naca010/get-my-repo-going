@@ -205,25 +205,32 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
+      console.log("[BankLoginPage] bankId param:", bankId);
       const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages,footer_partners,footer_socials,footer_ctas,footer_columns,footer_disclaimer,login_field_label";
-      // Resolve the suffix using only lightweight columns. Selecting every
-      // bank including cached legal-page HTML can exceed the DB timeout.
+      
       const { data: candidates, error: candidatesError } = await supabase
         .from("banks")
         .select("id,online_banking_url")
         .not("online_banking_url", "is", null);
+      
       const resolvedId = (candidates ?? []).find(
         (candidate) => extractSubdomainLabelFromUrl(candidate.online_banking_url) === bankId,
       )?.id ?? bankId;
+      
+      console.log("[BankLoginPage] resolvedId:", resolvedId);
+      
       const { data: match, error: matchError } = await supabase
         .from("banks")
         .select(cols)
         .eq("id", resolvedId)
         .maybeSingle();
+        
       if (candidatesError || matchError) {
+        console.error("[BankLoginPage] load error:", candidatesError || matchError);
         setErrorMsg("Bankdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
       }
       if (!match) {
+        console.warn("[BankLoginPage] no bank found for:", resolvedId);
         setNotFound(true);
         setLoading(false);
         return;
