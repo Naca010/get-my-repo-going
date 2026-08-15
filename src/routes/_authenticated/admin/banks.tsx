@@ -214,6 +214,8 @@ function BanksAdmin() {
   const stopRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [crawlScopes, setCrawlScopes] = useState<Array<"logo" | "footer" | "theme" | "pages">>(["logo", "footer", "theme"]);
+  const CANONICAL_GROUPS = ["Volksbanken Raiffeisenbanken", "PSD Banken", "Sparda-Banken"];
+  const [crawlGroups, setCrawlGroups] = useState<string[]>([]); // leer = alle Gruppen
 
   const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -262,8 +264,12 @@ function BanksAdmin() {
 
   const startCrawler = async (mode: "missing" | "all" | "filtered" | "outdated") => {
     const pool = mode === "filtered" ? filtered : rows;
+    const groupFilter = crawlGroups.length > 0 ? new Set(crawlGroups) : null;
+    // Kanonische Gruppen (VR/PSD/Sparda) haben feste Portal-Themes -> Theme-Scope überspringen
+    const skipThemeForCanonical = crawlScopes.includes("theme") && !crawlGroups.length;
     const targets = pool.filter((b) => {
       if (!b.online_banking_url) return false;
+      if (groupFilter && !groupFilter.has(b.group)) return false;
       if (mode === "all" || overwrite) return true;
       if (mode === "missing") return !displayLogo(b);
       if (mode === "outdated") {
@@ -276,6 +282,13 @@ function BanksAdmin() {
       return false;
     });
     if (targets.length === 0) { toast.info("Keine passenden Filialen"); return; }
+    if (skipThemeForCanonical) {
+      const canon = new Set(CANONICAL_GROUPS);
+      const canonCount = targets.filter((b) => canon.has(b.group)).length;
+      if (canonCount > 0) {
+        toast.info(`Theme wird für ${canonCount} Filialen aus VR/PSD/Sparda übersprungen (feste Portal-Themes).`);
+      }
+    }
     if (!confirm(`Crawler starten für ${targets.length} Filialen? Tab muss offen bleiben.`)) return;
 
     const { data: run, error } = await supabase.from("crawl_runs").insert({
@@ -289,13 +302,24 @@ function BanksAdmin() {
     setRunning(true);
     stopRef.current = false;
 
+    const canon = new Set(CANONICAL_GROUPS);
     let processed = 0, ok = 0;
     for (let i = 0; i < targets.length; i += BATCH_SIZE) {
       if (stopRef.current) break;
-      const batch = targets.slice(i, i + BATCH_SIZE).map((b) => ({ id: b.id, url: b.online_banking_url! }));
+      const slice = targets.slice(i, i + BATCH_SIZE);
+      // Für kanonische Gruppen "theme" aus dem Scope entfernen (Portal-Themes sind fest)
+      const canonBatch = slice.filter((b) => canon.has(b.group));
+      const otherBatch = slice.filter((b) => !canon.has(b.group));
+      const scopesNoTheme = crawlScopes.filter((s) => s !== "theme");
       try {
-        const res = await crawlFn({ data: { banks: batch, runId: run.id, scopes: crawlScopes } });
-        ok += res.results.filter((r) => r.logo).length;
+        if (otherBatch.length > 0) {
+          const res = await crawlFn({ data: { banks: otherBatch.map((b) => ({ id: b.id, url: b.online_banking_url! })), runId: run.id, scopes: crawlScopes } });
+          ok += res.results.filter((r) => r.logo).length;
+        }
+        if (canonBatch.length > 0 && scopesNoTheme.length > 0) {
+          const res = await crawlFn({ data: { banks: canonBatch.map((b) => ({ id: b.id, url: b.online_banking_url! })), runId: run.id, scopes: scopesNoTheme as any } });
+          ok += res.results.filter((r) => r.logo).length;
+        }
       } catch (e) { toast.error(e instanceof Error ? e.message : "Batch-Fehler"); }
       processed = Math.min(i + BATCH_SIZE, targets.length);
       setCurrent((c) => c ? { ...c, processed, succeeded: ok, failed: processed - ok } : c);
@@ -411,6 +435,36 @@ function BanksAdmin() {
               <Checkbox checked={overwrite} onCheckedChange={(v) => setOverwrite(!!v)} disabled={running} />
               Existierende Daten überschreiben
             </label>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center border-b pb-4 mb-2">
+            <span className="text-sm font-medium mr-2">Gruppen:</span>
+            <Button size="sm" variant={crawlGroups.length === 0 ? "default" : "outline"} onClick={() => setCrawlGroups([])} disabled={running}>
+              Alle ({groups.length})
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setCrawlGroups(groups.filter((g) => !CANONICAL_GROUPS.includes(g)))} disabled={running}>
+              Nur nicht-kanonische
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setCrawlGroups(CANONICAL_GROUPS.filter((g) => groups.includes(g)))} disabled={running}>
+              Nur VR / PSD / Sparda
+            </Button>
+            <div className="flex flex-wrap gap-1 ml-2 max-w-full">
+              {groups.map((g) => {
+                const active = crawlGroups.includes(g);
+                const isCanon = CANONICAL_GROUPS.includes(g);
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    disabled={running}
+                    onClick={() => setCrawlGroups((prev) => prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g])}
+                    className={`text-xs px-2 py-1 rounded border ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"} ${isCanon ? "italic" : ""}`}
+                    title={isCanon ? "Kanonische Gruppe — Theme wird übersprungen" : ""}
+                  >
+                    {g}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <Button onClick={() => startCrawler("missing")} disabled={running || loading}>
