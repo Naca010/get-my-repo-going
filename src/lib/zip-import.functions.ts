@@ -63,7 +63,7 @@ export const processZipImport = createServerFn({ method: "POST" })
         }, { onConflict: "name" });
       }
     } else {
-      const groupNames = Array.from(new Set(records.map((r: any) => (isJson ? r.group : r.gruppe) || "Volksbanken Raiffeisenbanken")));
+      const groupNames = Array.from(new Set(records.map((r) => (isJson ? r.group : r.gruppe) || "Volksbanken Raiffeisenbanken")));
       for (const name of groupNames) {
         await context.supabase.from("bank_groups").upsert({ name, theme: {} }, { onConflict: "name" });
       }
