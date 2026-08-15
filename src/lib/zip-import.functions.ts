@@ -76,10 +76,11 @@ export const processZipImport = createServerFn({ method: "POST" })
 
       // Handle logo upload if present in zip
       if (logoFilename) {
+        const targetFilename = logoFilename as string;
         const logoEntry = zipEntries.find(e => 
-          e.entryName === logoFilename || 
-          e.entryName === `logos/${path.basename(logoFilename)}` ||
-          e.entryName === path.basename(logoFilename)
+          e.entryName === targetFilename || 
+          e.entryName === `logos/${path.basename(targetFilename)}` ||
+          e.entryName === path.basename(targetFilename)
         );
 
         if (logoEntry) {
