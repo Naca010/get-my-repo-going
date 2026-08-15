@@ -158,6 +158,8 @@ function pickBestIcon(html: string, base: URL): string | null {
 }
 
 async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
+  // Add a small artificial delay to prevent rate-limiting and allow remote servers to breathe.
+  await new Promise(r => setTimeout(r, 100));
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
   try {
