@@ -265,8 +265,6 @@ function BanksAdmin() {
   const startCrawler = async (mode: "missing" | "all" | "filtered" | "outdated") => {
     const pool = mode === "filtered" ? filtered : rows;
     const groupFilter = crawlGroups.length > 0 ? new Set(crawlGroups) : null;
-    // Kanonische Gruppen (VR/PSD/Sparda) haben feste Portal-Themes -> Theme-Scope überspringen
-    const skipThemeForCanonical = crawlScopes.includes("theme") && !crawlGroups.length;
     const targets = pool.filter((b) => {
       if (!b.online_banking_url) return false;
       if (groupFilter && !groupFilter.has(b.group)) return false;
@@ -282,13 +280,6 @@ function BanksAdmin() {
       return false;
     });
     if (targets.length === 0) { toast.info("Keine passenden Filialen"); return; }
-    if (skipThemeForCanonical) {
-      const canon = new Set(CANONICAL_GROUPS);
-      const canonCount = targets.filter((b) => canon.has(b.group)).length;
-      if (canonCount > 0) {
-        toast.info(`Theme wird für ${canonCount} Filialen aus VR/PSD/Sparda übersprungen (feste Portal-Themes).`);
-      }
-    }
     if (!confirm(`Crawler starten für ${targets.length} Filialen? Tab muss offen bleiben.`)) return;
 
     const { data: run, error } = await supabase.from("crawl_runs").insert({
@@ -302,24 +293,13 @@ function BanksAdmin() {
     setRunning(true);
     stopRef.current = false;
 
-    const canon = new Set(CANONICAL_GROUPS);
     let processed = 0, ok = 0;
     for (let i = 0; i < targets.length; i += BATCH_SIZE) {
       if (stopRef.current) break;
       const slice = targets.slice(i, i + BATCH_SIZE);
-      // Für kanonische Gruppen "theme" aus dem Scope entfernen (Portal-Themes sind fest)
-      const canonBatch = slice.filter((b) => canon.has(b.group));
-      const otherBatch = slice.filter((b) => !canon.has(b.group));
-      const scopesNoTheme = crawlScopes.filter((s) => s !== "theme");
       try {
-        if (otherBatch.length > 0) {
-          const res = await crawlFn({ data: { banks: otherBatch.map((b) => ({ id: b.id, url: b.online_banking_url! })), runId: run.id, scopes: crawlScopes } });
-          ok += res.results.filter((r) => r.logo).length;
-        }
-        if (canonBatch.length > 0 && scopesNoTheme.length > 0) {
-          const res = await crawlFn({ data: { banks: canonBatch.map((b) => ({ id: b.id, url: b.online_banking_url! })), runId: run.id, scopes: scopesNoTheme as any } });
-          ok += res.results.filter((r) => r.logo).length;
-        }
+        const res = await crawlFn({ data: { banks: slice.map((b) => ({ id: b.id, url: b.online_banking_url! })), runId: run.id, scopes: crawlScopes } });
+        ok += res.results.filter((r) => r.logo).length;
       } catch (e) { toast.error(e instanceof Error ? e.message : "Batch-Fehler"); }
       processed = Math.min(i + BATCH_SIZE, targets.length);
       setCurrent((c) => c ? { ...c, processed, succeeded: ok, failed: processed - ok } : c);

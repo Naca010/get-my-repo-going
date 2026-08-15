@@ -78,17 +78,9 @@ export function deriveFlowTheme(
   const c = (custom && Object.keys(custom).length > 0 ? custom : null) ?? {};
   const g = group ?? {};
 
-  // Groups whose branches all use one identical portal design.
-  // For those, ignore the per-branch crawled theme (marketing site colors would
-  // otherwise override the correct portal styling).
-  const CANONICAL_GROUPS = new Set([
-    "Volksbanken Raiffeisenbanken",
-    "PSD Banken",
-    "Sparda-Banken",
-  ]);
-  const useExtracted =
-    !(groupName && CANONICAL_GROUPS.has(groupName)) || Object.keys(c).length > 0;
-  const ext = useExtracted ? extracted : null;
+  // A branch's actual login portal is authoritative. Group values remain the
+  // fallback only when the crawler could not obtain a concrete value.
+  const ext = extracted;
 
   const extPrimary =
     normHex(ext?.primary_color) ||
@@ -106,7 +98,7 @@ export function deriveFlowTheme(
   const accentText = c.accentText ?? extAccent ?? g.accentText ?? buttonBg;
   const topBarColor = c.topBarColor ?? extPrimary ?? g.topBarColor ?? buttonBg;
   const buttonRadius =
-    c.buttonRadius ?? (useExtracted ? radiusFromCss(ext?.button_radius) : null) ?? g.buttonRadius ?? DEFAULT.buttonRadius;
+    c.buttonRadius ?? radiusFromCss(ext?.button_radius) ?? g.buttonRadius ?? DEFAULT.buttonRadius;
 
   return {
     headerBg,
