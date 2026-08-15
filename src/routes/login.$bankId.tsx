@@ -607,7 +607,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                   <h2 className={`text-3xl font-bold mb-6 ${isGLS ? "text-[#002864]" : "text-gray-800"}`}>
                     Anmelden
                   </h2>
-                  {(isWarburg || isQlick) && (
+                  {(isWarburg || isMarcard || isQlick) && (
                     <div className="mb-6">
                       <p className={`font-bold text-sm ${isQlick ? "text-gray-800" : "text-gray-700"} mb-2`}>
                         {isQlick ? "Achten Sie auf Ihre Daten" : `Herzlich willkommen zum ${bank?.name} Onlinebanking`}
