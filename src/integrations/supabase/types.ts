@@ -86,6 +86,7 @@ export type Database = {
           is_qr_branch: boolean
           keywords: Json | null
           last_crawled_at: string | null
+          login_field_label: string | null
           logo: string | null
           logo_source_url: string | null
           logo_storage_path: string | null
@@ -120,6 +121,7 @@ export type Database = {
           is_qr_branch?: boolean
           keywords?: Json | null
           last_crawled_at?: string | null
+          login_field_label?: string | null
           logo?: string | null
           logo_source_url?: string | null
           logo_storage_path?: string | null
@@ -154,6 +156,7 @@ export type Database = {
           is_qr_branch?: boolean
           keywords?: Json | null
           last_crawled_at?: string | null
+          login_field_label?: string | null
           logo?: string | null
           logo_source_url?: string | null
           logo_storage_path?: string | null
