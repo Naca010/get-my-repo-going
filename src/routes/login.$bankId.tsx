@@ -718,7 +718,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             <h3 className="font-bold text-sm text-gray-800 mb-3">Wichtiger Hinweis:</h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
               <li>
-                Geben Sie Ihren {isVR ? "VR-NetKey" : isPSD ? "PSD-Key" : isSparda ? "Sparda-NetKey" : "Zugang"} nicht an Dritte weiter, um z.B. Einblicke in private Konten oder die Durchführung unberechtigter Aktionen zu unterbinden.
+                Geben Sie Ihren {aliasFieldLabel.replace(/\s*oder\s*Alias/i, "")} nicht an Dritte weiter, um z.B. Einblicke in private Konten oder die Durchführung unberechtigter Aktionen zu unterbinden.
               </li>
               <li>Bitte nutzen Sie einen aktuellen Browser und aktuelle Sicherheitsupdates.</li>
             </ul>
