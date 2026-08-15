@@ -20,7 +20,7 @@ export function CompletionStep({ theme: _theme, customerName }: { theme: FlowThe
   return (
     <main className="flex-1 flex items-center justify-center px-4">
       <div className="w-full max-w-md text-center">
-        <div className="bg-green-50 rounded-2xl p-8 sm:p-10 mb-6">
+        <div className="bg-green-50 p-8 sm:p-10 mb-6" style={{ borderRadius: _theme.buttonRadius }}>
           <div className="w-14 h-14 mx-auto mb-5 rounded-full border-[3px] border-green-600 flex items-center justify-center">
             <svg
               className="w-7 h-7 text-green-600"
