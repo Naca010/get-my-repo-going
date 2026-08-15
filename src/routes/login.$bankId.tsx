@@ -692,7 +692,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         </div>
 
         <div className="hidden lg:block w-full lg:w-1/2">
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 h-full">
+          <div className="bg-white shadow-md border border-gray-200 p-8 h-full" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <h3 className="text-xl font-bold mb-3" style={{ color: themeColor }}>
               Sicher im Online-Banking
             </h3>
