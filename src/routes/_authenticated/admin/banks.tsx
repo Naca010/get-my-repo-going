@@ -122,7 +122,7 @@ function BanksAdmin() {
   const load = async () => {
     setLoading(true);
     const [b, g, l, r] = await Promise.all([
-      supabase.from("banks").select("*").order("name"),
+      supabase.from("banks").select("id,name,group,blz,aliases,keywords,custom_theme,logo,logo_url,logo_storage_path,theme_preview_url,theme_preview_image_url,theme_screenshot_url,theme_last_checked_at,hide_name_in_header,online_banking_url,unverified,is_qr_branch").order("name"),
       supabase.from("bank_groups").select("name").order("name"),
       supabase.from("logo_crawl_log").select("*"),
       supabase.from("crawl_runs").select("*").order("started_at", { ascending: false }).limit(10),
