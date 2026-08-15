@@ -696,11 +696,12 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     >
                       PIN
                     </label>
-                    {isGLS && (
-                      <button type="button" className="absolute right-0 -bottom-6 text-xs font-bold text-[#002864] hover:underline">
+                    {(isGLS || isWarburg) && (
+                      <button type="button" className={`absolute right-0 -bottom-6 text-xs font-bold ${isGLS ? "text-[#002864]" : "text-gray-400"} hover:underline`}>
                         PIN vergessen?
                       </button>
                     )}
+
 
                     <button
                       type="button"
