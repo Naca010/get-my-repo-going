@@ -612,11 +612,29 @@ function resolvedVariable(variables: Map<string, string>, names: string[]): stri
   return null;
 }
 
-function findButtonStyle(css: string): { bg: string | null; color: string | null; radius: string | null; border: string | null } {
+function escapeCssIdentifier(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function findButtonStyle(css: string, html: string): { bg: string | null; color: string | null; radius: string | null; border: string | null } {
   // Prefer primary/submit/CTA selectors first so we capture the login button
   // shape (BBBank, GLS, PSD use rectangular primary buttons) instead of some
   // generic pill-shaped ghost button elsewhere on the page.
+  const exactSelectors: RegExp[] = [];
+  const submitRe = /<(?:button|input)\b[^>]*type=["']?submit["']?[^>]*>/gi;
+  let submitMatch: RegExpExecArray | null;
+  while ((submitMatch = submitRe.exec(html))) {
+    const tag = submitMatch[0];
+    const id = tag.match(/\bid=["']([^"']+)["']/i)?.[1];
+    const classes = tag.match(/\bclass=["']([^"']+)["']/i)?.[1]?.split(/\s+/).filter(Boolean) ?? [];
+    if (id) exactSelectors.push(new RegExp(`#${escapeCssIdentifier(id)}\\b[^{}]*\\{([^}]+)\\}`, "gi"));
+    for (const className of classes) {
+      exactSelectors.push(new RegExp(`\\.${escapeCssIdentifier(className)}\\b[^{}]*\\{([^}]+)\\}`, "gi"));
+    }
+  }
+
   const selectors = [
+    ...exactSelectors,
     // Higher specificity for login buttons - specifically for banking UIs
     /\.login-button\b[^{}]*\{([^}]+)\}/gi,
     /\.btn-login\b[^{}]*\{([^}]+)\}/gi,
@@ -651,11 +669,9 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
         const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
         if (bgMatch) {
           const rawBg = bgMatch[1]!.trim();
-          // If it's a CSS variable, we can't easily resolve it here without the full computed style,
-          // but we can try to find the variable definition in the same CSS string later.
-          if (!rawBg.startsWith('var(')) {
-            bg = normalizeColor(rawBg);
-          }
+          // Keep variable references intact; extractTheme resolves them against
+          // the complete variable map after the effective button rule is found.
+          bg = rawBg.startsWith("var(") ? rawBg : normalizeColor(rawBg);
         }
       }
       
@@ -663,9 +679,7 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
         const colorMatch = block.match(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
         if (colorMatch) {
           const rawColor = colorMatch[1]!.trim();
-          if (!rawColor.startsWith('var(')) {
-            color = normalizeColor(rawColor);
-          }
+          color = rawColor.startsWith("var(") ? rawColor : normalizeColor(rawColor);
         }
       }
       
@@ -816,7 +830,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     "vr-color-accent", "vr-accent", "brand-accent", "color-brand-accent",
     "color-accent", "accent", "accent-color", "c-accent",
   ]);
-  const btn = findButtonStyle(css);
+  const btn = findButtonStyle(css, html);
 
   // Atruvia portals expose the effective login-button styling through these
   // tokens. They are more reliable than generic `.btn` rules and may resolve
@@ -824,7 +838,6 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const tokenButtonBg = normalizeColor(resolvedVariable(variables, [
     "button-primary-background",
     "mat-button-filled-container-color",
-    "color-primary",
   ]));
   const tokenButtonColor = normalizeColor(resolvedVariable(variables, [
     "button-primary-text",
