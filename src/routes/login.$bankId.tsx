@@ -706,19 +706,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                 </div>
 
                 <div>
-                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: "4px" }}>
+                  <div
+                    className={`relative ${pinError ? "bg-red-50" : ""}`}
+                    style={{
+                      borderRadius: "4px",
+                      backgroundColor: !pinError && focusedField === "pin" ? focusTint : undefined,
+                      transition: "background-color 150ms",
+                    }}
+                  >
                     <input
                       id="pin"
                       type={showPin ? "text" : "password"}
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
+                      onFocus={() => setFocusedField("pin")}
+                      onBlur={() => setFocusedField((f) => (f === "pin" ? null : f))}
                       placeholder=" "
                       className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: "4px" }}
-
-
-
-
+                      style={{
+                        ...(!pinError && (focusedField === "pin" || pin) ? { borderColor: focusAccent } : {}),
+                        borderRadius: "4px",
+                      }}
                       autoComplete="current-password"
                     />
                     <label
