@@ -62,6 +62,7 @@ type Bank = {
   footer_ctas: Array<{ label: string; url: string }> | null;
   footer_columns: Array<{ heading: string; links: Array<{ label: string; url: string }> }> | null;
   footer_disclaimer: string | null;
+  login_field_label: string | null;
 };
 
 
