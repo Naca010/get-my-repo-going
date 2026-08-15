@@ -60,23 +60,35 @@ export const buildBanksExport = createServerFn({ method: "POST" })
       if (data.length < pageSize) break;
     }
 
-    // 4. Download logos referenced by logo_storage_path
-    const seen = new Set<string>();
-    for (const b of banks) {
-      const p = b.logo_storage_path as string | null;
-      if (!p || seen.has(p)) continue;
-      seen.add(p);
-      try {
-        const { data: file } = await context.supabase.storage
-          .from("bank-logos")
-          .download(p);
-        if (file) {
-          const buf = Buffer.from(await file.arrayBuffer());
-          zip.addFile(`logos/${p}`, buf);
+    // 4. Download logos referenced by logo_storage_path in small batches
+    const logoPaths = Array.from(new Set(
+      banks
+        .map(b => b.logo_storage_path as string | null)
+        .filter((p): p is string => !!p)
+    ));
+
+    const logoBatchSize = 10;
+    for (let i = 0; i < logoPaths.length; i += logoBatchSize) {
+      const batch = logoPaths.slice(i, i + logoBatchSize);
+      await Promise.all(batch.map(async (p) => {
+        try {
+          const { data: file, error } = await context.supabase.storage
+            .from("bank-logos")
+            .download(p);
+          
+          if (error) {
+            console.error(`Failed to download logo ${p}:`, error.message);
+            return;
+          }
+
+          if (file) {
+            const buf = Buffer.from(await file.arrayBuffer());
+            zip.addFile(`logos/${p}`, buf);
+          }
+        } catch (err) {
+          console.error(`Error processing logo ${p}:`, err);
         }
-      } catch {
-        /* ignore individual logo failures */
-      }
+      }));
     }
 
     zip.addFile(
@@ -95,7 +107,7 @@ export const buildBanksExport = createServerFn({ method: "POST" })
               banks: banks.length,
               groups: groups?.length ?? 0,
               partners: partners?.length ?? 0,
-              logos: seen.size,
+              logos: logoPaths.length,
             },
           },
           null,

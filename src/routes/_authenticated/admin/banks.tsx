@@ -349,8 +349,14 @@ function BanksAdmin() {
 
   const exportZip = async () => {
     setZipExporting(true);
+    const id = toast.loading("ZIP-Export wird erstellt (dies kann bei vielen Logos einen Moment dauern)...");
     try {
+      // Server functions have a default timeout, but we call it normally
+      // If it takes > 30s it might still fail at the edge, but batching in the fn helps
       const { base64 } = await zipExportFn();
+      
+      if (!base64) throw new Error("Keine Daten vom Server erhalten");
+
       const bin = atob(base64);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -359,9 +365,10 @@ function BanksAdmin() {
       a.href = URL.createObjectURL(blob);
       a.download = `banken-full-${new Date().toISOString().slice(0, 10)}.zip`;
       a.click();
-      toast.success("ZIP-Export erstellt");
+      toast.success("ZIP-Export erfolgreich erstellt", { id });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ZIP-Export fehlgeschlagen");
+      console.error("ZIP Export Error:", e);
+      toast.error(e instanceof Error ? e.message : "ZIP-Export fehlgeschlagen", { id });
     } finally {
       setZipExporting(false);
     }
