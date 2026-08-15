@@ -655,55 +655,49 @@ function findButtonStyle(css: string, html: string): { bg: string | null; color:
     /\.button\b[^{}]*\{([^}]+)\}/gi,
     /\bbutton\b[^{}]*\{([^}]+)\}/gi,
   ];
-  let bg: string | null = null;
-  let color: string | null = null;
-  let radius: string | null = null;
-  let border: string | null = null;
   for (const re of selectors) {
+    let bg: string | null = null;
+    let color: string | null = null;
+    let radius: string | null = null;
+    let border: string | null = null;
     let m: RegExpExecArray | null;
     while ((m = re.exec(css))) {
       const block = m[1]!;
       
       // Look for background-color, but also handle shorthand background and CSS variables
-      if (!bg) {
-        const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
-        if (bgMatch) {
+      const bgMatches = [...block.matchAll(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const bgMatch = bgMatches.at(-1);
+      if (bgMatch) {
           const rawBg = bgMatch[1]!.trim();
           // Keep variable references intact; extractTheme resolves them against
           // the complete variable map after the effective button rule is found.
           bg = rawBg.startsWith("var(") ? rawBg : normalizeColor(rawBg);
-        }
       }
       
-      if (!color) {
-        const colorMatch = block.match(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
-        if (colorMatch) {
+      const colorMatches = [...block.matchAll(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const colorMatch = colorMatches.at(-1);
+      if (colorMatch) {
           const rawColor = colorMatch[1]!.trim();
           color = rawColor.startsWith("var(") ? rawColor : normalizeColor(rawColor);
-        }
       }
       
-      if (!radius) {
-        // Capture all border-radius variants
-        const radiusMatch = block.match(/border-radius\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
-        if (radiusMatch) {
+      const radiusMatches = [...block.matchAll(/border-radius\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const radiusMatch = radiusMatches.at(-1);
+      if (radiusMatch) {
           radius = radiusMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 40);
-        }
       }
       
-      if (!border) {
-        const borderMatch = block.match(/border(?:-\w+)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
-        if (borderMatch) {
+      const borderMatches = [...block.matchAll(/border(?:-\w+)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const borderMatch = borderMatches.at(-1);
+      if (borderMatch) {
           border = borderMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 60);
-        }
       }
-
-      // If we found a solid background color and radius, we are likely done for this selector.
-      // We don't return immediately because we might want to find better candidates in subsequent matches.
-      if (bg && color && radius && border) break; 
     }
+    // Selector order expresses confidence. Within one selector, the final CSS
+    // declaration wins, matching the browser cascade for equal specificity.
+    if (bg || radius) return { bg, color, radius, border };
   }
-  return { bg, color, radius, border };
+  return { bg: null, color: null, radius: null, border: null };
 }
 
 function findHeaderBg(css: string): string | null {
