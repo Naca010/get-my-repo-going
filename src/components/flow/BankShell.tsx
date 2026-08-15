@@ -98,22 +98,31 @@ export function BankShell({
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="h-2" style={{ backgroundColor: theme.topBarColor }} />
       <header className="bg-white py-3 px-4 sm:px-6 shadow-sm border-b border-gray-200">
-        <div className="max-w-6xl mx-auto flex items-center gap-4">
-          <img
-            src={src}
-            alt={bankName}
-            className={logoClass}
-            decoding="async"
-            fetchPriority="high"
-            onError={() => { if (fallbackLogoSrc && src !== fallbackLogoSrc) setSrc(fallbackLogoSrc); }}
-          />
-          {showName && !bigLogo && (
-            <h1 className="text-base sm:text-lg font-semibold" style={{ color: themeColor }}>
-              {bankName}
-            </h1>
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <img
+              src={src}
+              alt={bankName}
+              className={logoClass}
+              decoding="async"
+              fetchPriority="high"
+              onError={() => { if (fallbackLogoSrc && src !== fallbackLogoSrc) setSrc(fallbackLogoSrc); }}
+            />
+            {showName && !bigLogo && (
+              <h1 className="text-base sm:text-lg font-semibold" style={{ color: themeColor }}>
+                {bankName}
+              </h1>
+            )}
+          </div>
+          {bankName.toLowerCase().includes("gls") && (
+            <div className="flex items-center gap-1 text-[#002864] font-bold text-sm">
+              <span className="w-2 h-2 rounded-full bg-[#00d75c]"></span>
+              Online-Filiale
+            </div>
           )}
         </div>
       </header>
+
 
       <main className="flex-1 py-8 sm:py-10 px-4">{children}</main>
 

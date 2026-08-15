@@ -53,8 +53,9 @@ function radiusFromCss(raw: string | null | undefined): string | null {
   // must render as square to match PSD/GLS/BBBank/KD-Bank.
   if (unit === "%") return val >= 20 ? "rounded-full" : "rounded-none";
   const px = unit === "px" ? val : val * 16;
-  if (px >= 10) return "rounded-full";
+  if (px >= 20) return "rounded-full";
   return "rounded-none";
+
 }
 
 /**
