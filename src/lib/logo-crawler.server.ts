@@ -909,6 +909,9 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   ]);
   const isAtruviaPortal = sources.some((source) => /kf-theme|services_cloud\/portal/i.test(source));
 
+  // When resolving CSS values, try with both the current variable map and a potential 
+  // global map if we were to maintain one. For now, we resolve against the map from 
+  // all collected stylesheets.
   const resolvedRuleBg = normalizeColor(resolveCssValue(btn.bg, variables));
   const resolvedRuleColor = normalizeColor(resolveCssValue(btn.color, variables));
   const resolvedRuleRadius = resolveCssValue(btn.radius, variables);
