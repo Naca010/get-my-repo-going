@@ -109,6 +109,7 @@ export function deriveFlowTheme(
   );
   const warburgColor = "#6d7e8b";
   const warburgFooter = "#888888"; // Grey footer per user request
+  const isMMWarburg = isWarburg && bankName?.toLowerCase().includes("m.m. warburg");
   const marcardColor = "#660033";
 
 
