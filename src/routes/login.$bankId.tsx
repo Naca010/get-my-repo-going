@@ -241,6 +241,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       (bank?.theme_extracted as any) ?? null,
       groupTheme,
       bank?.group ?? null,
+      bank?.name ?? null,
     );
     const src: Partial<BankTheme> =
       (bank?.custom_theme && Object.keys(bank.custom_theme).length > 0
