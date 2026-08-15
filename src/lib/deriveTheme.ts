@@ -170,8 +170,8 @@ export function deriveFlowTheme(
   const isMLP = bankName?.toLowerCase().includes("mlp");
   const buttonRadius =
     c.buttonRadius ??
-    (isMarcard || isMLP ? "rounded-full" : null) ??
-    (isWarburg || isRenault || isMerkur ? "rounded-none" : null) ??
+    (isWarburg || isRenault ? "rounded-none" : null) ??
+    (isMarcard || isMLP || isMerkur ? "rounded-full" : null) ??
     explicitRadius ??
     legacyAtruviaRadius ??
     g.buttonRadius ??
