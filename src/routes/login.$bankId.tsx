@@ -270,12 +270,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isSparda = bank?.group === "Sparda-Banken";
   const isGLS = bank?.group === "GLS Bank";
   const isWarburg = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
+  const secureGoLabel = getSecureGoLabel(bank?.group);
   const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
   const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
   const aliasFieldLabel = crawledLabel && crawledLabel.trim().length > 0 ? crawledLabel : groupLabel;
 
-
-  const secureGoLabel = getSecureGoLabel(bank?.group);
 
   const crawledLogo = bank ? resolveAsset("bank-logos", bank.logo_url ?? null, bank.logo_storage_path) : null;
   const groupFallback = bank ? getLogo(groupLogoName[bank.group]) : undefined;

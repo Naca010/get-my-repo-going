@@ -237,7 +237,7 @@ function stripTags(s: string): string {
 function extractLoginFieldLabel(html: string): string | null {
   // Look for any text inside a <label> or equivalent that might identify the main login field.
   // We search for elements with IDs or names that suggest the primary user identification.
-  const IDENTIFIERS = /(alias|anmeld|user|nutzer|kennung|netkey|bhm-netkey|psd-key|vr-netkey|sparda-netkey|kontonummer|kunden|person|privat-key|online-zugang|cvw-netkey|warburg-netkey)/i;
+  const IDENTIFIERS = /(alias|anmeld|user|nutzer|kennung|netkey|bhm-netkey|psd-key|vr-netkey|sparda-netkey|kontonummer|kunden|person|privat-key|online-zugang|cvw-netkey|warburg-netkey|bvr-kennung)/i;
   const BAD = /(pin|passw|kennwort|password|search|suche|captcha|token|otp|tan|abbrechen|anmelden)/i;
 
   const INPUT_RE = /<input\b([^>]*?)>/gi;
