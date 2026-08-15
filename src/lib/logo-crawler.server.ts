@@ -699,29 +699,27 @@ function findButtonStyle(css: string, html: string): { bg: string | null; color:
       const block = m[1]!;
       
       // Look for background-color, but also handle shorthand background and CSS variables
-      const bgMatches = [...block.matchAll(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const bgMatches = [...block.matchAll(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/gi)];
       const bgMatch = bgMatches.at(-1);
       if (bgMatch) {
           const rawBg = bgMatch[1]!.trim();
-          // Keep variable references intact; extractTheme resolves them against
-          // the complete variable map after the effective button rule is found.
           bg = rawBg.startsWith("var(") ? rawBg : normalizeColor(rawBg);
       }
       
-      const colorMatches = [...block.matchAll(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const colorMatches = [...block.matchAll(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/gi)];
       const colorMatch = colorMatches.at(-1);
       if (colorMatch) {
           const rawColor = colorMatch[1]!.trim();
           color = rawColor.startsWith("var(") ? rawColor : normalizeColor(rawColor);
       }
       
-      const radiusMatches = [...block.matchAll(/border-radius\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const radiusMatches = [...block.matchAll(/border-radius\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/gi)];
       const radiusMatch = radiusMatches.at(-1);
       if (radiusMatch) {
           radius = radiusMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 40);
       }
       
-      const borderMatches = [...block.matchAll(/border(?:-\w+)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/gi)];
+      const borderMatches = [...block.matchAll(/border(?:-\w+)?\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/gi)];
       const borderMatch = borderMatches.at(-1);
       if (borderMatch) {
           border = borderMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 60);
