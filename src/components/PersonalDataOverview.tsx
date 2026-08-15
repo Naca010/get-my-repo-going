@@ -772,8 +772,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
               <div className="flex justify-end">
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="px-10 py-3 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: themeColor }}
+                  className="px-10 py-3 text-white text-sm font-medium transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
                 >
                   OK
                 </button>
