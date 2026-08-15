@@ -252,12 +252,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const showName = bank ? !bank.hide_name_in_header : true;
 
-  useEffect(() => {
-    if (loading) return;
-    const t1 = setTimeout(() => setLoadingFading(true), 1400);
-    const t2 = setTimeout(() => setInitialLoading(false), 1900);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [loading]);
 
   // stop polling on unmount
   useEffect(() => () => { stopPolling(); stopQrPolling(); }, []);
