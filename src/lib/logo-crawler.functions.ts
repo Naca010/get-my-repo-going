@@ -1028,6 +1028,11 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
             if (storedPath) patch["logo_storage_path"] = storedPath;
           }
 
+          if (loginFieldLabel) {
+            patch["login_field_label"] = loginFieldLabel;
+          }
+
+
           const { error } = await context.supabase.from("banks").update(patch as any).eq("id", b.id);
           if (error) {
             await context.supabase.from("logo_crawl_log").upsert({
