@@ -485,35 +485,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     }
   };
 
-  if (initialLoading) {
-    const showLogo = !loading && bank;
-    const splashLogo = bank
-      ? (crawledLogo || getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || vrLogoGeneric)
-      : null;
-    const isRenault = (bankId?.toLowerCase().includes("renault") ?? false) || (bank?.slug?.toLowerCase().includes("renault") ?? false) || (bank?.name?.toLowerCase().includes("renault") ?? false);
-    return (
-      <div
-        className={`min-h-screen ${isRenault ? "bg-black" : "bg-white"} flex flex-col items-center justify-center transition-opacity duration-500 ${loadingFading ? "opacity-0" : "opacity-100"}`}
-      >
-        {showLogo && (
-          <div className="mb-6">
-            {isVR ? (
-              <VRSplashReveal alt={bank?.name || "Volksbank"} className="h-40 sm:h-48" />
-            ) : (
-              <img
-                src={splashLogo!}
-                alt={bank?.name || ""}
-                className="h-16 sm:h-20 object-contain animate-fade-in"
-                decoding="async"
-                fetchPriority="high"
-              />
-            )}
-          </div>
-        )}
-        <div className={`w-8 h-8 border-4 ${isRenault ? "border-gray-700 border-t-white" : "border-gray-200 border-t-gray-600"} rounded-full animate-spin`} />
-      </div>
-    );
-  }
+  // Splash/Loader entfernt – Login-Seite wird direkt gerendert.
 
 
   if (notFound || !bank) {
