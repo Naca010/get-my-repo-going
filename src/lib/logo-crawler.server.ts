@@ -929,7 +929,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     meta_theme_color: metaColor,
     header_bg: headerBg,
     footer_bg: footerBg,
-    button_bg: isFrameworkDefault(tokenButtonBg ?? resolvedRuleBg) ? null : (tokenButtonBg ?? resolvedRuleBg),
+    button_bg: (tokenButtonBg && !isFrameworkDefault(tokenButtonBg)) ? tokenButtonBg : (isFrameworkDefault(resolvedRuleBg) ? null : resolvedRuleBg),
     button_color: tokenButtonColor ?? resolvedRuleColor,
     // Store the semantic result, not an ambiguous framework radius. Branch
     // tokens such as --options-button-radius are authoritative; generic
