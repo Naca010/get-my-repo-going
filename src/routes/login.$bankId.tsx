@@ -483,7 +483,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   if (initialLoading) {
     const showLogo = !loading && bank;
     const splashLogo = bank
-      ? (getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || crawledLogo || vrLogoGeneric)
+      ? (crawledLogo || getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || vrLogoGeneric)
       : null;
     return (
       <div
