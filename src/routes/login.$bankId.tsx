@@ -261,7 +261,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isVR = bank?.group === "Volksbanken Raiffeisenbanken";
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
-  const aliasFieldLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
+  const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
+  const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
+  const aliasFieldLabel = crawledLabel && crawledLabel.trim().length > 0 ? crawledLabel : groupLabel;
   const secureGoLabel = getSecureGoLabel(bank?.group);
 
   const crawledLogo = bank ? resolveAsset("bank-logos", bank.logo_url ?? null, bank.logo_storage_path) : null;
