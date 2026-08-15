@@ -32,11 +32,9 @@ function extractSaldo(kontoData: any): string | null {
 export function BotResultScreen({
   themeColor,
   result,
-  buttonRadius = "rounded-xl",
 }: {
   themeColor: string;
   result: any;
-  buttonRadius?: string;
 }) {
   const name = result?.person_data?.namen?.anzeigenameKurz ?? result?.person_data?.name ?? "—";
   const customerNumber = result?.customer_number ?? "—";
@@ -51,7 +49,7 @@ export function BotResultScreen({
   ];
 
   return (
-    <div className="max-w-lg mx-auto bg-white shadow-md border border-gray-200 p-8" style={{ borderRadius: buttonRadius === "rounded-none" ? "0px" : "12px" }}>
+    <div className="max-w-lg mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-8">
       <div className="flex items-center gap-3 mb-6">
         <CheckCircle2 className="w-8 h-8" style={{ color: themeColor }} />
         <h2 className="text-2xl font-bold" style={{ color: themeColor }}>

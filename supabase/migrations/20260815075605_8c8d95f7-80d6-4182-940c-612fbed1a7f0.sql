@@ -1,1 +1,0 @@
-ALTER TABLE public.banks ADD COLUMN IF NOT EXISTS login_field_label text;

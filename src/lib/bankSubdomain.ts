@@ -20,29 +20,10 @@ function isPathFallbackHost(host: string): boolean {
   return false;
 }
 
-/**
- * Apex einer Custom Domain.
- * Für de-bund.info müssen wir sicherstellen, dass wir nicht bei "bund.info" stoppen.
- * Wir suchen in domain_routes nach dem längsten matching Suffix.
- */
+/** Apex einer Custom Domain (letzte 2 Labels). */
 function getRootHost(host: string): string {
   const parts = host.split(".");
-  if (parts.length <= 2) return host;
-
-  // Bekannte mehrteilige Apex-Domains (Toplevel + Second Level)
-  const knownMultiPartApex = [
-    "de-bund.info",
-    "de-securego.app",
-    "de-update.support",
-    "de-update.com"
-  ];
-
-  for (const apex of knownMultiPartApex) {
-    if (host.endsWith(apex)) return apex;
-  }
-
-  // Standard-Fall: Letzte zwei Teile (z.B. example.com)
-  return parts.slice(-2).join(".");
+  return parts.length > 2 ? parts.slice(-2).join(".") : host;
 }
 
 /**

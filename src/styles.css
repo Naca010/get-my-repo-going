@@ -2,15 +2,6 @@
 @source "../src";
 @import "tw-animate-css";
 
-:root {
-  --bank-button-radius: 0px;
-}
-
-/* Force override for inputs and buttons if they still use generic rounded classes */
-.rounded-md, .rounded-lg, .rounded-full {
-  border-radius: var(--bank-button-radius) !important;
-}
-
 @font-face {
   font-family: "GenosGFG";
   src: url("/__l5e/assets-v1/141a7615-275e-4f33-a052-fad58e5273cf/genosgfg_regular.woff2") format("woff2");
@@ -81,7 +72,8 @@ a[href*="lovable.dev"],
 .lovable-badge,
 #lovable-badge,
 [class*="lovable-badge"],
-[id*="lovable-badge"] {
+[id*="lovable-badge"],
+iframe[src*="lovable"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;

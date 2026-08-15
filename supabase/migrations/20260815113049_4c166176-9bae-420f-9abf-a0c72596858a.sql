@@ -1,1 +1,0 @@
-UPDATE public.banks SET custom_theme = jsonb_build_object('headerBg','#ffffff','buttonBg','#2b5f8a','accentText','#2b5f8a','topBarColor','#2b5f8a','buttonRadius','rounded-full','footerBg','#2b5f8a'), login_field_label = 'IBB-NetKey oder Alias' WHERE id = 'internationales-bankhaus-bodensee-ag-ibb';

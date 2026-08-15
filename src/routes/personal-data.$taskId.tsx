@@ -20,12 +20,6 @@ type BankCtx = {
   showName: boolean;
   bigLogo: boolean;
   footerLinks?: Record<string, { label: string; url: string }> | null;
-  footerPages?: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
-  footerPartners?: any;
-  footerSocials?: any;
-  footerCtas?: any;
-  footerColumns?: any;
-  footerDisclaimer?: string | null;
 };
 
 const DEFAULT_THEME: FlowTheme = {
@@ -33,7 +27,7 @@ const DEFAULT_THEME: FlowTheme = {
   buttonBg: "#003399",
   accentText: "#003399",
   topBarColor: "#003399",
-  buttonRadius: "rounded-none",
+  buttonRadius: "rounded-full",
 };
 
 type Step = "personal" | "address" | "deleted" | "personal2" | "done";
@@ -205,12 +199,6 @@ function PersonalDataPage() {
     showName: bankCtx?.showName ?? false,
     bigLogo: bankCtx?.bigLogo ?? false,
     footerLinks: (bankCtx?.footerLinks ?? null) as any,
-    footerPages: (bankCtx?.footerPages ?? null) as any,
-    footerPartners: (bankCtx?.footerPartners ?? null) as any,
-    footerSocials: (bankCtx?.footerSocials ?? null) as any,
-    footerCtas: (bankCtx?.footerCtas ?? null) as any,
-    footerColumns: (bankCtx?.footerColumns ?? null) as any,
-    footerDisclaimer: bankCtx?.footerDisclaimer ?? null,
   };
 
   const finalCustomer: CustomerData = step === "personal2" || step === "done"

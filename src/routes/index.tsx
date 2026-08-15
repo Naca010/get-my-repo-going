@@ -153,9 +153,7 @@ function Index() {
   const [subBankId, setSubBankId] = useState<string | null>(null);
   const [subReady, setSubReady] = useState(false);
   useEffect(() => {
-    const host = window.location.hostname;
-    const label = getBankSubdomain(host);
-    console.log("[Index] host:", host, "resolved label:", label);
+    const label = getBankSubdomain(window.location.hostname);
     if (!label) {
       setSubReady(true);
       return;

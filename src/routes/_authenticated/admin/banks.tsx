@@ -6,7 +6,6 @@ import { crawlBankLogos } from "@/lib/logo-crawler.functions";
 import { captureBankTheme } from "@/lib/theme-capture.functions";
 import { importBanksFromSeed } from "@/lib/bank-import.functions";
 import { processZipImport } from "@/lib/zip-import.functions";
-import { buildBanksExport } from "@/lib/zip-export.functions";
 import { extractSubdomainLabelFromUrl } from "@/lib/bankSubdomain";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -85,12 +84,11 @@ type Run = {
   status: string; started_at: string; finished_at: string | null; note: string | null;
 };
 
-type Filter = "all" | "with_logo" | "without_logo" | "with_url" | "without_url" | "unverified" | "outdated";
+type Filter = "all" | "with_logo" | "without_logo" | "with_url" | "without_url" | "unverified";
 
 const PAGE_SIZE = 50;
 const BATCH_SIZE = 20;
 const PAUSE_MS = 400;
-const BANK_LIST_COLUMNS = "id,name,group,blz,aliases,keywords,custom_theme,logo,logo_url,logo_storage_path,theme_preview_url,theme_preview_image_url,theme_screenshot_url,theme_last_checked_at,hide_name_in_header,online_banking_url,unverified,is_qr_branch,last_crawled_at,footer_last_checked_at";
 
 const empty: Bank = {
   id: "", name: "", group: "", blz: "",
@@ -124,8 +122,7 @@ function BanksAdmin() {
   const load = async () => {
     setLoading(true);
     const [b, g, l, r] = await Promise.all([
-      // Keep large cached footer HTML out of the overview query.
-      supabase.from("banks").select(BANK_LIST_COLUMNS).order("name"),
+      supabase.from("banks").select("*").order("name"),
       supabase.from("bank_groups").select("name").order("name"),
       supabase.from("logo_crawl_log").select("*"),
       supabase.from("crawl_runs").select("*").order("started_at", { ascending: false }).limit(10),
@@ -161,14 +158,6 @@ function BanksAdmin() {
         case "with_url": return !!r.online_banking_url;
         case "without_url": return !r.online_banking_url;
         case "unverified": return r.unverified;
-        case "outdated": {
-          if (!r.online_banking_url) return false;
-          const last = (r as any).last_crawled_at;
-          if (!last) return true;
-          const oneWeekAgo = new Date();
-          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-          return new Date(last) < oneWeekAgo;
-        }
         default: return true;
       }
     });
@@ -205,8 +194,6 @@ function BanksAdmin() {
   const captureFn = useServerFn(captureBankTheme);
   const importFn = useServerFn(importBanksFromSeed);
   const zipImportFn = useServerFn(processZipImport);
-  const zipExportFn = useServerFn(buildBanksExport);
-  const [zipExporting, setZipExporting] = useState(false);
 
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -216,9 +203,6 @@ function BanksAdmin() {
   const [capturing, setCapturing] = useState<string | null>(null);
   const stopRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [crawlScopes, setCrawlScopes] = useState<Array<"logo" | "footer" | "theme" | "pages">>(["logo", "footer", "theme"]);
-  const CANONICAL_GROUPS = ["Volksbanken Raiffeisenbanken", "PSD Banken", "Sparda-Banken"];
-  const [crawlGroups, setCrawlGroups] = useState<string[]>([]); // leer = alle Gruppen
 
   const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -265,23 +249,9 @@ function BanksAdmin() {
     finally { setImporting(false); }
   };
 
-  const startCrawler = async (mode: "missing" | "all" | "filtered" | "outdated") => {
+  const startCrawler = async (mode: "missing" | "all" | "filtered") => {
     const pool = mode === "filtered" ? filtered : rows;
-    const groupFilter = crawlGroups.length > 0 ? new Set(crawlGroups) : null;
-    const targets = pool.filter((b) => {
-      if (!b.online_banking_url) return false;
-      if (groupFilter && !groupFilter.has(b.group)) return false;
-      if (mode === "all" || overwrite) return true;
-      if (mode === "missing") return !displayLogo(b);
-      if (mode === "outdated") {
-        const last = (b as any).last_crawled_at;
-        if (!last) return true;
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        return new Date(last) < oneWeekAgo;
-      }
-      return false;
-    });
+    const targets = pool.filter((b) => b.online_banking_url && (mode === "all" || overwrite || !displayLogo(b)));
     if (targets.length === 0) { toast.info("Keine passenden Filialen"); return; }
     if (!confirm(`Crawler starten für ${targets.length} Filialen? Tab muss offen bleiben.`)) return;
 
@@ -299,9 +269,9 @@ function BanksAdmin() {
     let processed = 0, ok = 0;
     for (let i = 0; i < targets.length; i += BATCH_SIZE) {
       if (stopRef.current) break;
-      const slice = targets.slice(i, i + BATCH_SIZE);
+      const batch = targets.slice(i, i + BATCH_SIZE).map((b) => ({ id: b.id, url: b.online_banking_url! }));
       try {
-        const res = await crawlFn({ data: { banks: slice.map((b) => ({ id: b.id, url: b.online_banking_url! })), runId: run.id, scopes: crawlScopes } });
+        const res = await crawlFn({ data: { banks: batch, runId: run.id } });
         ok += res.results.filter((r) => r.logo).length;
       } catch (e) { toast.error(e instanceof Error ? e.message : "Batch-Fehler"); }
       processed = Math.min(i + BATCH_SIZE, targets.length);
@@ -347,49 +317,12 @@ function BanksAdmin() {
     a.click();
   };
 
-  const exportZip = async () => {
-    setZipExporting(true);
-    const id = toast.loading("ZIP-Export wird erstellt (dies kann bei vielen Logos einen Moment dauern)...");
-    try {
-      // Server functions have a default timeout, but we call it normally
-      // If it takes > 30s it might still fail at the edge, but batching in the fn helps
-      const { base64 } = await zipExportFn();
-      
-      if (!base64) throw new Error("Keine Daten vom Server erhalten");
-
-      const bin = atob(base64);
-      const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      const blob = new Blob([bytes], { type: "application/zip" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `banken-full-${new Date().toISOString().slice(0, 10)}.zip`;
-      a.click();
-      toast.success("ZIP-Export erfolgreich erstellt", { id });
-    } catch (e) {
-      console.error("ZIP Export Error:", e);
-      toast.error(e instanceof Error ? e.message : "ZIP-Export fehlgeschlagen", { id });
-    } finally {
-      setZipExporting(false);
-    }
-  };
-
   const progressPct = current && current.total > 0 ? Math.round((current.processed / current.total) * 100) : 0;
   const subdomainLabel = (b: Pick<Bank, "id" | "online_banking_url">) =>
     extractSubdomainLabelFromUrl(b.online_banking_url) ?? b.id;
   const previewUrl = (b: Pick<Bank, "id" | "online_banking_url">) => {
     const s = subdomainLabel(b);
-    // Wenn wir auf einer Custom Domain sind, bauen wir den Link direkt zur Subdomain
-    const isCustom = origin && !origin.includes("lovable") && !origin.includes("localhost");
-    if (isCustom) {
-      try {
-        const url = new URL(origin);
-        return `${url.protocol}//${s}.${url.host}/?preview=true`;
-      } catch (e) {
-        return `/login/${s}?preview=true`;
-      }
-    }
-    return origin ? `${origin}/login/${s}?preview=true` : `/login/${s}?preview=true`;
+    return origin ? `${origin}/login/${s}` : `/login/${s}`;
   };
 
   return (
@@ -403,10 +336,6 @@ function BanksAdmin() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" /> CSV</Button>
-          <Button variant="outline" onClick={exportZip} disabled={zipExporting}>
-            {zipExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            ZIP Export
-          </Button>
           <input
             type="file"
             accept=".zip"
@@ -433,96 +362,20 @@ function BanksAdmin() {
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Wand2 className="h-4 w-4" /> Logo-Crawler</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-4 items-center border-b pb-4 mb-2">
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 text-sm font-medium">Bereiche:</label>
-              {[
-                { id: "logo", label: "Logo" },
-                { id: "footer", label: "Footer" },
-                { id: "theme", label: "Theme" },
-                { id: "pages", label: "Footer Pages" },
-              ].map((s) => (
-                <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox 
-                    checked={crawlScopes.includes(s.id as "logo" | "footer" | "theme" | "pages")} 
-                    onCheckedChange={(v) => {
-                      if (v) setCrawlScopes((prev: Array<"logo" | "footer" | "theme" | "pages">) => [...prev, s.id as any]);
-                      else setCrawlScopes((prev: Array<"logo" | "footer" | "theme" | "pages">) => prev.filter((x: string) => x !== s.id));
-                    }} 
-                    disabled={running} 
-                  />
-                  {s.label}
-                </label>
-              ))}
-            </div>
-            <label className="flex items-center gap-2 text-sm ml-auto font-medium text-orange-600">
-              <Checkbox checked={overwrite} onCheckedChange={(v) => setOverwrite(!!v)} disabled={running} />
-              Existierende Daten überschreiben
-            </label>
-          </div>
-          <div className="flex flex-wrap gap-2 items-center border-b pb-4 mb-2">
-            <span className="text-sm font-medium mr-2">Gruppen:</span>
-            <Button size="sm" variant={crawlGroups.length === 0 ? "default" : "outline"} onClick={() => setCrawlGroups([])} disabled={running}>
-              Alle ({groups.length})
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setCrawlGroups(groups.filter((g) => !CANONICAL_GROUPS.includes(g)))} disabled={running}>
-              Nur nicht-kanonische
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setCrawlGroups(CANONICAL_GROUPS.filter((g) => groups.includes(g)))} disabled={running}>
-              Nur VR / PSD / Sparda
-            </Button>
-            <div className="flex flex-wrap gap-1 ml-2 max-w-full">
-              {groups.map((g) => {
-                const active = crawlGroups.includes(g);
-                const isCanon = CANONICAL_GROUPS.includes(g);
-                return (
-                  <button
-                    key={g}
-                    type="button"
-                    disabled={running}
-                    onClick={() => setCrawlGroups((prev) => prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g])}
-                    className={`text-xs px-2 py-1 rounded border ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"} ${isCanon ? "italic" : ""}`}
-                    title={isCanon ? "Kanonische Gruppe — Theme wird übersprungen" : ""}
-                  >
-                    {g}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
           <div className="flex flex-wrap gap-2 items-center">
-            {(() => {
-              const gf = crawlGroups.length > 0 ? new Set(crawlGroups) : null;
-              const inGroup = (b: Bank) => !gf || gf.has(b.group);
-              const missingCount = rows.filter((b) => b.online_banking_url && inGroup(b) && !displayLogo(b)).length;
-              const allCount = rows.filter((b) => b.online_banking_url && inGroup(b)).length;
-              const outdatedCount = rows.filter((b) => {
-                if (!b.online_banking_url || !inGroup(b)) return false;
-                const last = (b as any).last_crawled_at;
-                if (!last) return true;
-                const oneWeekAgo = new Date();
-                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-                return new Date(last) < oneWeekAgo;
-              }).length;
-              const filteredCount = filtered.filter(inGroup).length;
-              const suffix = gf ? ` · ${crawlGroups.length} Gruppe(n)` : "";
-              return (
-                <>
-                  <Button onClick={() => startCrawler("missing")} disabled={running || loading}>
-                    <Play className="mr-2 h-4 w-4" /> Fehlende ({missingCount}){suffix}
-                  </Button>
-                  <Button variant="secondary" onClick={() => startCrawler("all")} disabled={running || loading}>
-                    <Play className="mr-2 h-4 w-4" /> Alle ({allCount}){suffix}
-                  </Button>
-                  <Button variant="outline" onClick={() => startCrawler("outdated")} disabled={running || loading}>
-                    <RefreshCw className="mr-2 h-4 w-4" /> Veraltete ({outdatedCount}){suffix}
-                  </Button>
-                  <Button variant="outline" onClick={() => startCrawler("filtered")} disabled={running || loading}>
-                    <Play className="mr-2 h-4 w-4" /> Nur gefilterte ({filteredCount}){suffix}
-                  </Button>
-                </>
-              );
-            })()}
+            <label className="flex items-center gap-2 text-sm mr-2">
+              <Checkbox checked={overwrite} onCheckedChange={(v) => setOverwrite(!!v)} disabled={running} />
+              vorhandene überschreiben
+            </label>
+            <Button onClick={() => startCrawler("missing")} disabled={running || loading}>
+              <Play className="mr-2 h-4 w-4" /> Fehlende ({rows.filter((b) => b.online_banking_url && !displayLogo(b)).length})
+            </Button>
+            <Button variant="secondary" onClick={() => startCrawler("all")} disabled={running || loading}>
+              <Play className="mr-2 h-4 w-4" /> Alle ({rows.filter((b) => b.online_banking_url).length})
+            </Button>
+            <Button variant="outline" onClick={() => startCrawler("filtered")} disabled={running || loading}>
+              <Play className="mr-2 h-4 w-4" /> Nur gefilterte ({filtered.length})
+            </Button>
             {running && (
               <Button variant="destructive" onClick={stopCrawler}><Square className="mr-2 h-4 w-4" /> Stoppen</Button>
             )}
@@ -576,7 +429,6 @@ function BanksAdmin() {
             ["with_url", "mit URL"],
             ["without_url", "ohne URL"],
             ["unverified", "unverifiziert"],
-            ["outdated", "veraltet"],
           ] as const).map(([k, l]) => (
             <Button key={k} size="sm" variant={filter === k ? "default" : "outline"} onClick={() => setFilter(k)}>{l}</Button>
           ))}
@@ -756,12 +608,7 @@ function BanksAdmin() {
             )}
           </DialogHeader>
           {previewing && (
-            <iframe 
-              src={previewing.url} 
-              title={previewing.name} 
-              className="w-full flex-1 border-0 bg-white" 
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups" 
-            />
+            <iframe src={previewing.url} title={previewing.name} className="w-full flex-1 border-0" />
           )}
         </DialogContent>
       </Dialog>

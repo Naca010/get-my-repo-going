@@ -28,7 +28,7 @@ export function TanWaitingScreen({
           Anmelden
         </h2>
 
-        <div className="bg-white border border-gray-200" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "6px" }}>
+        <div className="bg-white border border-gray-200 rounded-md">
           {/* Info banner */}
           <div
             className="m-4 sm:m-6 flex items-center gap-3 rounded-sm px-4 py-3"
@@ -169,8 +169,8 @@ export function TanWaitingScreen({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-8 py-2.5 border-2 text-sm font-semibold bg-white hover:bg-gray-50 transition"
-                style={{ borderColor: accent, color: accent, borderRadius: theme.buttonRadius }}
+                className="px-8 py-2.5 rounded-full border-2 text-sm font-semibold bg-white hover:bg-gray-50 transition"
+                style={{ borderColor: accent, color: accent }}
               >
                 Abbrechen
               </button>

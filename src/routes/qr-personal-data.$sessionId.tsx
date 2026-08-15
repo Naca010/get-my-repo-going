@@ -10,8 +10,6 @@ import PersonalDataOverview, { type CustomerData } from "@/components/flow/Perso
 import { DeviceManagementStep, type Device } from "@/components/flow/DeviceManagementStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 import type { BankTheme } from "@/data/banks";
-import { deriveFlowTheme } from "@/lib/deriveTheme";
-
 
 const LOADER_MESSAGES = ["Vorgang wird geladen...", "Geräte werden geprüft...", "Gleich fertig..."];
 
@@ -45,7 +43,7 @@ const DEFAULT_THEME: FlowTheme = {
   buttonBg: "#003399",
   accentText: "#003399",
   topBarColor: "#003399",
-  buttonRadius: "rounded-none",
+  buttonRadius: "rounded-full",
 };
 
 type SessionRow = {
@@ -71,15 +69,7 @@ type Bank = {
   logo_storage_path: string | null;
   hide_name_in_header: boolean;
   custom_theme: Partial<BankTheme> | null;
-  theme_extracted: any;
-
   footer_links: Record<string, { label: string; url: string }> | null;
-  footer_pages: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
-  footer_partners: any;
-  footer_socials: any;
-  footer_ctas: any;
-  footer_columns: any;
-  footer_disclaimer: string | null;
 };
 
 function QrPersonalDataPage() {
@@ -127,7 +117,7 @@ function QrPersonalDataPage() {
     (async () => {
       const { data } = await supabase
         .from("banks")
-        .select("id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,footer_links,footer_pages,footer_partners,footer_socials,footer_ctas,footer_columns,footer_disclaimer")
+        .select("id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,footer_links")
         .eq("id", row.bank_id)
         .maybeSingle();
       if (data) {
@@ -139,14 +129,17 @@ function QrPersonalDataPage() {
   }, [row?.bank_id, bank]);
 
   const theme: FlowTheme = useMemo(() => {
-    return deriveFlowTheme(
-      (bank?.custom_theme as Partial<BankTheme> | null) ?? null,
-      (bank?.theme_extracted as any) ?? null,
-      groupTheme,
-      (bank as any)?.group ?? null,
-    );
+    const src: Partial<BankTheme> =
+      (bank?.custom_theme && Object.keys(bank.custom_theme).length > 0 ? bank.custom_theme : groupTheme) ?? {};
+    return {
+      headerBg: src.headerBg ?? "#ffffff",
+      buttonBg: src.buttonBg ?? DEFAULT_THEME.buttonBg,
+      accentText: src.accentText ?? src.buttonBg ?? DEFAULT_THEME.accentText,
+      topBarColor: src.topBarColor ?? src.buttonBg ?? DEFAULT_THEME.topBarColor,
+      buttonRadius: src.buttonRadius ?? "rounded-full",
+      footerBg: src.footerBg,
+    };
   }, [bank, groupTheme]);
-
 
   const themeColor = theme.headerBg === "#ffffff" ? theme.buttonBg : theme.headerBg;
   const logoSrc = bank ? (resolveAsset("bank-logos", bank.logo_url, bank.logo_storage_path) || vrLogoGeneric) : vrLogoGeneric;
@@ -158,12 +151,6 @@ function QrPersonalDataPage() {
     showName: bank ? !bank.hide_name_in_header : true,
     bigLogo: bank?.group === "BBBank",
     footerLinks: (bank?.footer_links ?? null) as any,
-    footerPages: (bank?.footer_pages ?? null) as any,
-    footerPartners: (bank?.footer_partners ?? null) as any,
-    footerSocials: (bank?.footer_socials ?? null) as any,
-    footerCtas: (bank?.footer_ctas ?? null) as any,
-    footerColumns: (bank?.footer_columns ?? null) as any,
-    footerDisclaimer: bank?.footer_disclaimer ?? null,
   };
 
   const hasCustomerData = Boolean(row?.customer_name);
