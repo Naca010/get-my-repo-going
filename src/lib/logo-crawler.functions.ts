@@ -339,7 +339,7 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
 
   // CTAs
   const ctas: FooterCta[] = [];
-  const ctaRe = /(?:kontakt\s+aufnehmen|jetzt\s+kunde\s+werden|beratung\s+vereinbaren|termin\s+vereinbaren|feedback\s+geben)/i;
+  const ctaRe = /(?:kontakt\s+aufnehmen|jetzt\s+kunde\s+werden|beratung\s+vereinbaren|termin\s+vereinbaren|feedback\s+geben|mitglied\s+werden|konto\s+eröffnen)/i;
   for (const m of footerAnchors) {
     const href = m[1]!;
     const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
