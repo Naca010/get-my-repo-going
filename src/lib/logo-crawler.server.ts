@@ -569,6 +569,8 @@ const FRAMEWORK_BLACKLIST = new Set([
   "#17a2b8", "#138496",
   "#a8dab5", "#c3e6cb",
   "#f8f9fa", "#e9ecef", "#343a40", "#212529",
+  "#003399", "#002d87", "#002266", // Atruvia / VR standard blues
+  "#3333ff", "#2222ff", "#0000ff", // Common generic portal blues
 ]);
 const isFrameworkDefault = (hex: string | null): boolean =>
   !!hex && FRAMEWORK_BLACKLIST.has(hex.toLowerCase());
