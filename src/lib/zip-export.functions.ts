@@ -44,7 +44,10 @@ export const buildBanksExport = createServerFn({ method: "POST" })
 
     // 3. Banks (paged to avoid limits)
     const banks: any[] = [];
-    const pageSize = 1000;
+    // footer_pages can contain large cached HTML documents. Small pages keep
+    // each database statement below the hosted statement timeout while still
+    // exporting every field for every bank.
+    const pageSize = 25;
     for (let from = 0; ; from += pageSize) {
       const { data, error } = await context.supabase
         .from("banks")
