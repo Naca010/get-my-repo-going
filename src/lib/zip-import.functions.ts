@@ -3,6 +3,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import * as path from "path";
 
+interface ZipEntry {
+  entryName: string;
+  getData: () => Buffer;
+}
+
 export const processZipImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: any) => 
@@ -21,11 +26,11 @@ export const processZipImport = createServerFn({ method: "POST" })
     const { default: AdmZip } = await import("adm-zip");
     const buffer = Buffer.from(data.base64, 'base64');
     const zip = new AdmZip(buffer);
-    const zipEntries: any[] = zip.getEntries();
+    const zipEntries = zip.getEntries() as unknown as ZipEntry[];
 
-    const banksJsonEntry = zipEntries.find((e: any) => e.entryName === 'banks.json');
-    const bankGroupsJsonEntry = zipEntries.find((e: any) => e.entryName === 'bank_groups.json');
-    const csvEntry = zipEntries.find((e: any) => e.entryName.endsWith('.csv'));
+    const banksJsonEntry = zipEntries.find((e) => e.entryName === 'banks.json');
+    const bankGroupsJsonEntry = zipEntries.find((e) => e.entryName === 'bank_groups.json');
+    const csvEntry = zipEntries.find((e) => e.entryName.endsWith('.csv'));
 
     let records: any[] = [];
     let isJson = false;
@@ -71,8 +76,8 @@ export const processZipImport = createServerFn({ method: "POST" })
       let logoStoragePath = record.logo_storage_path || null;
 
       if (logoFilename && typeof logoFilename === 'string') {
-        const targetFilename = logoFilename as string;
-        const logoEntry = zipEntries.find((e: any) => 
+        const targetFilename = logoFilename;
+        const logoEntry = zipEntries.find((e) => 
           e.entryName === targetFilename || 
           e.entryName === `logos/${path.basename(targetFilename)}` ||
           e.entryName === path.basename(targetFilename)
@@ -109,7 +114,7 @@ export const processZipImport = createServerFn({ method: "POST" })
         blz: record.blz || null,
         online_banking_url: record.online_banking_url || null,
         hide_name_in_header: isJson ? record.hide_name_in_header : record.hide_name_in_header === 'true',
-        logo: isJson ? record.logo : (record.logo || (logoFilename ? path.basename(logoFilename as string) : '')),
+        logo: isJson ? record.logo : (record.logo || (logoFilename ? path.basename(logoFilename) : '')),
         logo_url: logoUrl,
         logo_storage_path: logoStoragePath,
         unverified: isJson ? record.unverified : record.unverified === 'true',
