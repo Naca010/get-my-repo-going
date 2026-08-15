@@ -143,7 +143,7 @@ export function deriveFlowTheme(
   
   const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultButton : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
   const accentText = c.accentText ?? (isGLS ? glsAccent : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultButton : null) ?? extAccent ?? buttonBg;
-  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultHeader : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
+  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? (isMMWarburg ? "#ffffff" : isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultHeader : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
 
 
   const explicitRadius = radiusFromCss(ext?.button_radius);
