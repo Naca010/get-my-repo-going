@@ -95,8 +95,13 @@ export function deriveFlowTheme(
   const isGLS = groupName === "GLS Bank" || ext?.primary_color === "#00d75c";
   
   // Warburg & Stein specific branding (Slate Blue/Gray)
-  const isWarburg = groupName === "Spezifische Banken" && (ext?.palette?.includes("#6d7e8b") || true); // Defaulting to true for now if in group
+  const isWarburg = groupName === "Spezifische Banken" && (
+    ext?.palette?.includes("#6d7e8b") || 
+    ext?.primary_color === "#6d7e8b" ||
+    (ext?.palette?.some(c => normHex(c) === "#6d7e8b"))
+  );
   const warburgColor = "#6d7e8b";
+
 
   const glsHeader = "#00d75c";
   const glsButton = "#00d75c";
