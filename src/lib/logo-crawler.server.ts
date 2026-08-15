@@ -1084,8 +1084,13 @@ export async function crawlBankLogosServer(data: Input, context: any) {
     const results: ResultItem[] = [];
     const scopes = data.scopes ?? ["logo", "footer", "theme", "pages"];
 
-    await Promise.all(
-      data.banks.map(async (b) => {
+    // Limit concurrency to avoid being blocked and ensure cleaner results.
+    // Processing banks in smaller batches (e.g., 5 at a time) is more reliable.
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < data.banks.length; i += BATCH_SIZE) {
+      const batch = data.banks.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map(async (b) => {
         try {
           const { logo, sourceUrl, footer, theme, loginFieldLabel } = await findLogoForUrl(b.url);
           
