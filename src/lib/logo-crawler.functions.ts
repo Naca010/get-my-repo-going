@@ -878,7 +878,7 @@ async function tryMicrolinkLogo(url: string): Promise<string | null> {
   } catch { return null; }
 }
 
-async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null }> {
+async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; sourceUrl: string; footer: FooterExtract; theme: ThemeExtract | null; loginFieldLabel: string | null }> {
   let target = rawUrl.trim();
   if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
   const base = new URL(target);
@@ -887,6 +887,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
   };
   let bestFooter: FooterExtract = emptyFooter;
   let bestTheme: ThemeExtract | null = null;
+  let bestLoginLabel: string | null = null;
   const mergeFooter = (f?: FooterExtract | null) => {
     if (!f) return;
     bestFooter = {
@@ -917,13 +918,17 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
       css_sources: [...bestTheme.css_sources, ...t.css_sources].slice(0, 8),
     };
   };
+  const mergeLoginLabel = (l?: string | null) => {
+    if (l && !bestLoginLabel) bestLoginLabel = l;
+  };
 
   // 1) Portal / login page
   const portal = await tryPageForHeaderLogo(target);
   if (portal) {
     mergeFooter(portal.footer);
     mergeTheme(portal.theme);
-    if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter, theme: bestTheme };
+    mergeLoginLabel(portal.loginFieldLabel);
+    if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   }
 
   // 2) Bank homepage
@@ -931,14 +936,15 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
   if (home) {
     mergeFooter(home.footer);
     mergeTheme(home.theme);
-    if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter, theme: bestTheme };
+    mergeLoginLabel(home.loginFieldLabel);
+    if (home.logo) return { logo: home.logo, sourceUrl: home.sourceUrl, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   }
 
   // 3) JS-rendered fallback via Microlink
   const mlHome = await tryMicrolinkLogo(base.origin + "/");
-  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/", footer: bestFooter, theme: bestTheme };
+  if (mlHome) return { logo: mlHome, sourceUrl: base.origin + "/", footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   const mlPortal = await tryMicrolinkLogo(target);
-  if (mlPortal) return { logo: mlPortal, sourceUrl: target, footer: bestFooter, theme: bestTheme };
+  if (mlPortal) return { logo: mlPortal, sourceUrl: target, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
 
   // 4) Fallback: og:image / apple-touch-icon / favicon
   try {
@@ -946,15 +952,15 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
     if (res.ok) {
       const html = (await res.text()).slice(0, 300_000);
       const picked = pickBestIcon(html, new URL(res.url || base.origin));
-      if (picked) return { logo: picked, sourceUrl: res.url || base.origin, footer: bestFooter, theme: bestTheme };
+      if (picked) return { logo: picked, sourceUrl: res.url || base.origin, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
     }
   } catch { /* ignore */ }
   try {
     const fav = `${base.origin}/favicon.ico`;
     const r = await fetchWithTimeout(fav, 5000);
-    if (r.ok) return { logo: fav, sourceUrl: fav, footer: bestFooter, theme: bestTheme };
+    if (r.ok) return { logo: fav, sourceUrl: fav, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   } catch { /* ignore */ }
-  return { logo: null, sourceUrl: target, footer: bestFooter, theme: bestTheme };
+  return { logo: null, sourceUrl: target, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
 }
 
 
