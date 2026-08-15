@@ -240,6 +240,8 @@ const SOCIAL_HOSTS: Array<{ re: RegExp; name: string }> = [
   { re: /threads\.net/i, name: "threads" },
   { re: /whatsapp\.com|wa\.me/i, name: "whatsapp" },
   { re: /t\.me|telegram\.org/i, name: "telegram" },
+  { re: /bluesky|bsky\.app/i, name: "bluesky" },
+  { re: /mastodon|mstdn/i, name: "mastodon" },
 ];
 
 function detectSocial(href: string): string | null {
