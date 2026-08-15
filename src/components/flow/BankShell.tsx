@@ -43,14 +43,18 @@ export function BankShell({
   children: ReactNode;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
-  const initial = fallbackLogoSrc || logoSrc;
-  const [src, setSrc] = useState(initial);
+  const [src, setSrc] = useState<string | null>(logoSrc || null);
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    if (!logoSrc || logoSrc === src) return;
-    const img = new Image();
-    img.onload = () => setSrc(logoSrc);
-    img.src = logoSrc;
-  }, [logoSrc]);
+    setLoaded(false);
+    if (logoSrc) {
+      setSrc(logoSrc);
+    } else if (fallbackLogoSrc) {
+      setSrc(fallbackLogoSrc);
+    } else {
+      setSrc(null);
+    }
+  }, [logoSrc, fallbackLogoSrc]);
 
   const [partners, setPartners] = useState<Partner[]>([]);
   useEffect(() => {
@@ -73,14 +77,26 @@ export function BankShell({
       <div className="h-2" style={{ backgroundColor: theme.topBarColor }} />
       <header className="bg-white py-3 px-4 sm:px-6 shadow-sm border-b border-gray-200">
         <div className="max-w-6xl mx-auto flex items-center gap-4">
-          <img
-            src={src}
-            alt={bankName}
-            className={logoClass}
-            decoding="async"
-            fetchPriority="high"
-            onError={() => { if (fallbackLogoSrc && src !== fallbackLogoSrc) setSrc(fallbackLogoSrc); }}
-          />
+          {src ? (
+            <img
+              src={src}
+              alt={bankName}
+              className={logoClass}
+              decoding="async"
+              fetchPriority="high"
+              style={{ visibility: loaded ? "visible" : "hidden" }}
+              onLoad={() => setLoaded(true)}
+              onError={() => {
+                if (fallbackLogoSrc && src !== fallbackLogoSrc) {
+                  setSrc(fallbackLogoSrc);
+                } else {
+                  setLoaded(true);
+                }
+              }}
+            />
+          ) : (
+            <div className={logoClass} />
+          )}
           {showName && !bigLogo && (
             <h1 className="text-base sm:text-lg font-semibold" style={{ color: themeColor }}>
               {bankName}
