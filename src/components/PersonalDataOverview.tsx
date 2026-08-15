@@ -711,8 +711,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
           <div className="border-t border-gray-100 bg-gray-50/50 px-5 sm:px-6 py-4 flex justify-between">
             <button
               onClick={backToOverview}
-              className="px-6 py-2.5 rounded-full border-2 text-sm font-medium transition-colors hover:bg-gray-50"
-              style={{ borderColor: themeColor, color: themeColor }}
+              className="px-6 py-2.5 border-2 text-sm font-medium transition-colors hover:bg-gray-50"
+              style={{ borderColor: themeColor, color: themeColor, borderRadius: theme.buttonRadius }}
             >
               Abbrechen
             </button>
