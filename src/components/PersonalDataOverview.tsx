@@ -726,8 +726,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
                 backToOverview();
 
               }}
-              className="px-8 py-2.5 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-              style={{ backgroundColor: themeColor }}
+              className="px-8 py-2.5 text-white text-sm font-medium transition-opacity hover:opacity-90"
+              style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
             >
               Weiter
             </button>
