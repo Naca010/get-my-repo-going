@@ -1,0 +1,1 @@
+UPDATE public.banks SET logo = 'https://csqqxohnouievcsdjrqy.supabase.co/storage/v1/object/public/bank-logos/national-bank-ag.svg' WHERE id = 'national-bank-ag';
