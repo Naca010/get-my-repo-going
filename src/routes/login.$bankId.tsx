@@ -284,8 +284,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     ? crawledLogo || getLogo(bank.logo) || groupFallback || vrFallback || vrLogoGeneric
     : vrLogoGeneric;
   
-  // Use a targeted splash logo to avoid the VR flicker for other groups
-  const splashLogo = isVR ? vrLogoGeneric : (groupFallback || logoSrc);
+  // Use the same logo as the header for the splash reveal
+  const splashLogo = logoSrc;
+
 
   const showName = bank ? !bank.hide_name_in_header : true;
 
@@ -534,20 +535,16 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   if (initialLoading) {
     const showLogo = !loading && Boolean(bank);
     const loadingGroupFallback = bank ? getLogo(groupLogoName[bank.group]) : undefined;
-    const loadingSplashLogo = bank
-      ? loadingGroupFallback || getLogo(bank.logo) || crawledLogo || vrLogoGeneric
-      : vrLogoGeneric;
+    const loadingSplashLogo = logoSrc;
+
     return (
       <div
         className={`min-h-screen bg-white flex flex-col items-center justify-center transition-opacity duration-500 ${loadingFading ? "opacity-0" : "opacity-100"}`}
       >
         {showLogo && (
           <div className="mb-6">
-            {isVR ? (
-              <SplashLogoReveal alt={bank?.name || "Volksbank"} className="h-20 sm:h-24" />
-            ) : (
-              <SplashLogoReveal logoSrc={loadingSplashLogo} alt={bank?.name || ""} className="h-20 sm:h-24" />
-            )}
+            <SplashLogoReveal logoSrc={loadingSplashLogo} alt={bank?.name || ""} className="h-20 sm:h-24" />
+
           </div>
         )}
         <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin" />
