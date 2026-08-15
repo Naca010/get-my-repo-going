@@ -96,7 +96,8 @@ export function deriveFlowTheme(
   
   // Footer logic: If extracted footer color is a generic framework blue, ignore it.
   const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff" || extFooter === "#002d87" || extFooter === "#002266";
-  const footerBgFinal = c.footerBg ?? (extFooter && !isGenericBlue ? extFooter : null) ?? g.footerBg ?? null;
+  const isYellow = extFooter?.toLowerCase().startsWith("#f") && !extFooter?.toLowerCase().startsWith("#ff"); // Simple check for yellow/orange tones
+  const footerBgFinal = c.footerBg ?? (extFooter && !isGenericBlue && !isYellow ? extFooter : null) ?? g.footerBg ?? null;
   
   const buttonBg = c.buttonBg ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
   const accentText = c.accentText ?? extAccent ?? g.accentText ?? buttonBg;
