@@ -290,11 +290,11 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
 
         <div className="flex justify-end">
           <div className="relative" ref={contactListMenuRef}>
-            <button
-              onClick={() => setShowContactListMenu(!showContactListMenu)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-              style={{ backgroundColor: themeColor }}
-            >
+              <button
+                onClick={() => setShowContactListMenu(!showContactListMenu)}
+                className="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium transition-opacity hover:opacity-90"
+                style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
+              >
               <Plus className="w-4 h-4" /> Kontakt hinzufügen
             </button>
             {showContactListMenu && (
