@@ -114,7 +114,7 @@ export function deriveFlowTheme(
   // Header logic: Branches often have specific header colors.
   // We prefer the extracted header background if it's NOT white and NOT framework blue.
   const isExtHeaderGenericBlue = extHeader === "#003399" || extHeader === "#3333ff" || extHeader === "#002d87" || extHeader === "#002266";
-  const headerBg = c.headerBg ?? (isGLS ? glsHeader : null) ?? (extHeader && !isNearWhite(extHeader) && !isExtHeaderGenericBlue ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
+  const headerBg = c.headerBg ?? (isGLS ? glsHeader : null) ?? (isWarburg ? warburgColor : null) ?? (extHeader && !isNearWhite(extHeader) && !isExtHeaderGenericBlue ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
   
   // Footer logic: If extracted footer color is a generic framework blue or a framework yellow, ignore it.
   const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff" || extFooter === "#002d87" || extFooter === "#002266";
