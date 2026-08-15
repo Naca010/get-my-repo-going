@@ -288,8 +288,13 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
     if (!abs) continue;
     const net = detectSocial(abs);
     if (!net || seenSocial.has(net)) continue;
+    
+    // Check if the anchor contains an <img> or an <svg> that might be an icon
+    const content = m[2]!;
+    const hasIcon = content.includes('<img') || content.includes('<svg') || content.includes('class="icon');
+    
     seenSocial.add(net);
-    const label = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 40) || net;
+    const label = content.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 40) || net;
     socials.push({ network: net, url: abs, label });
   }
 
