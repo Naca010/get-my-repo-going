@@ -499,7 +499,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         {showLogo && (
           <div>
             {isVR ? (
-              <VRSplashReveal alt={bank?.name || "Volksbank"} className="h-40 sm:h-48 w-40 sm:w-48" />
+              <VRSplashReveal alt={bank?.name || "Volksbank"} className="w-40 sm:w-48 aspect-[4/5]" />
             ) : (
               <img
                 src={splashLogo!}
