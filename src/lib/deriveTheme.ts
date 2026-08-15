@@ -128,22 +128,31 @@ export function deriveFlowTheme(
   const renaultButton = "#edee00";
   const renaultHeader = "#000000"; // Black header per screenshot
 
+  // Merkur Privatbank branding
+  const isMerkur = bankName?.toLowerCase().includes("merkur") || (groupName === "Spezifische Banken" && (
+    ext?.palette?.some(c => normHex(c) === "#2b2a29") ||
+    normHex(ext?.primary_color) === "#2b2a29"
+  ));
+  const merkurButton = "#2b2a29";
+  const merkurHeader = "#ffffff";
+  const merkurTopBar = "#2b2a29";
+
 
 
   
   // Header logic: Branches often have specific header colors.
   // We prefer the extracted header background if it's NOT white and NOT framework blue.
   const isExtHeaderGenericBlue = extHeader === "#003399" || extHeader === "#3333ff" || extHeader === "#002d87" || extHeader === "#002266";
-  const headerBg = c.headerBg ?? (isGLS ? glsHeader : null) ?? (isMMWarburg ? "#ffffff" : isWarburg ? warburgColor : null) ?? (isMarcard ? marcardColor : null) ?? (isRenault ? renaultHeader : null) ?? (extHeader && !isNearWhite(extHeader) && !isExtHeaderGenericBlue ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
+  const headerBg = c.headerBg ?? (isGLS ? glsHeader : null) ?? (isMMWarburg ? "#ffffff" : isWarburg ? warburgColor : null) ?? (isMarcard ? marcardColor : null) ?? (isRenault ? renaultHeader : null) ?? (isMerkur ? merkurHeader : null) ?? (extHeader && !isNearWhite(extHeader) && !isExtHeaderGenericBlue ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
   
   // Footer logic: If extracted footer color is a generic framework blue or a framework yellow, ignore it.
   const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff" || extFooter === "#002d87" || extFooter === "#002266";
   const isFrameworkYellow = extFooter === "#ffcc00" || extFooter === "#fecb00" || extFooter === "#ffc107" || extFooter === "#e0a800";
-  const footerBgFinal = c.footerBg ?? (isGLS ? glsFooter : null) ?? (isWarburg ? warburgFooter : null) ?? (isMarcard ? marcardColor : null) ?? (isRenault ? renaultHeader : null) ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
+  const footerBgFinal = c.footerBg ?? (isGLS ? glsFooter : null) ?? (isWarburg ? warburgFooter : null) ?? (isMarcard ? marcardColor : null) ?? (isRenault ? renaultHeader : null) ?? (isMerkur ? merkurHeader : null) ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
   
-  const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultButton : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
-  const accentText = c.accentText ?? (isGLS ? glsAccent : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultButton : null) ?? extAccent ?? buttonBg;
-  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? (isMMWarburg ? "#ffffff" : isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultHeader : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
+  const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultButton : null) ?? (isMerkur ? merkurButton : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
+  const accentText = c.accentText ?? (isGLS ? glsAccent : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultButton : null) ?? (isMerkur ? merkurButton : null) ?? extAccent ?? buttonBg;
+  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? (isMMWarburg ? "#ffffff" : isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultHeader : null) ?? (isMerkur ? merkurTopBar : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
 
 
   const explicitRadius = radiusFromCss(ext?.button_radius);
@@ -162,7 +171,7 @@ export function deriveFlowTheme(
   const buttonRadius =
     c.buttonRadius ??
     (isMarcard || isMLP ? "rounded-full" : null) ??
-    (isWarburg || isRenault ? "rounded-none" : null) ??
+    (isWarburg || isRenault || isMerkur ? "rounded-none" : null) ??
     explicitRadius ??
     legacyAtruviaRadius ??
     g.buttonRadius ??
