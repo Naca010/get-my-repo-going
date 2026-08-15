@@ -602,7 +602,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
           <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <div className="p-6 sm:p-8">
-              {isGLS || isWarburg || isQlick ? (
+              {isGLS || isWarburg || isMarcard || isQlick ? (
                 <div className="flex flex-col mb-6">
                   <h2 className={`text-3xl font-bold mb-6 ${isGLS ? "text-[#002864]" : "text-gray-800"}`}>
                     Anmelden
