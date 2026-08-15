@@ -43,14 +43,18 @@ export function BankShell({
   children: ReactNode;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
-  const initial = fallbackLogoSrc || logoSrc;
-  const [src, setSrc] = useState(initial);
+  const [src, setSrc] = useState<string | null>(logoSrc || null);
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    if (!logoSrc || logoSrc === src) return;
-    const img = new Image();
-    img.onload = () => setSrc(logoSrc);
-    img.src = logoSrc;
-  }, [logoSrc]);
+    setLoaded(false);
+    if (logoSrc) {
+      setSrc(logoSrc);
+    } else if (fallbackLogoSrc) {
+      setSrc(fallbackLogoSrc);
+    } else {
+      setSrc(null);
+    }
+  }, [logoSrc, fallbackLogoSrc]);
 
   const [partners, setPartners] = useState<Partner[]>([]);
   useEffect(() => {
