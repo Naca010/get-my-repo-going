@@ -563,7 +563,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     <BankShell {...shellProps}>
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <div className="p-6 sm:p-8">
               <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
                 Anmelden
