@@ -480,6 +480,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   // Splash/Loader entfernt – Login-Seite wird direkt gerendert.
 
 
+  if (loading && !bank) {
+    return null;
+  }
+
   if (notFound || !bank) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4 px-4 text-center">
