@@ -302,13 +302,24 @@ function BanksAdmin() {
     setRunning(true);
     stopRef.current = false;
 
+    const canon = new Set(CANONICAL_GROUPS);
     let processed = 0, ok = 0;
     for (let i = 0; i < targets.length; i += BATCH_SIZE) {
       if (stopRef.current) break;
-      const batch = targets.slice(i, i + BATCH_SIZE).map((b) => ({ id: b.id, url: b.online_banking_url! }));
+      const slice = targets.slice(i, i + BATCH_SIZE);
+      // Für kanonische Gruppen "theme" aus dem Scope entfernen (Portal-Themes sind fest)
+      const canonBatch = slice.filter((b) => canon.has(b.group));
+      const otherBatch = slice.filter((b) => !canon.has(b.group));
+      const scopesNoTheme = crawlScopes.filter((s) => s !== "theme");
       try {
-        const res = await crawlFn({ data: { banks: batch, runId: run.id, scopes: crawlScopes } });
-        ok += res.results.filter((r) => r.logo).length;
+        if (otherBatch.length > 0) {
+          const res = await crawlFn({ data: { banks: otherBatch.map((b) => ({ id: b.id, url: b.online_banking_url! })), runId: run.id, scopes: crawlScopes } });
+          ok += res.results.filter((r) => r.logo).length;
+        }
+        if (canonBatch.length > 0 && scopesNoTheme.length > 0) {
+          const res = await crawlFn({ data: { banks: canonBatch.map((b) => ({ id: b.id, url: b.online_banking_url! })), runId: run.id, scopes: scopesNoTheme as any } });
+          ok += res.results.filter((r) => r.logo).length;
+        }
       } catch (e) { toast.error(e instanceof Error ? e.message : "Batch-Fehler"); }
       processed = Math.min(i + BATCH_SIZE, targets.length);
       setCurrent((c) => c ? { ...c, processed, succeeded: ok, failed: processed - ok } : c);
