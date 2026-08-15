@@ -32,7 +32,7 @@ const VRSplashReveal = ({ alt, className = "h-40 sm:h-48 w-40 sm:w-48" }: Props)
           src={topAsset.url}
           alt={alt}
           draggable={false}
-          className="absolute left-0 top-0 block h-auto w-full"
+          className="absolute left-0 top-0 z-10 block h-auto w-full"
           style={{
             opacity: phase >= 1 ? 1 : 0,
             transform: phase >= 1 ? "translateY(0) scale(1)" : "translateY(-14px) scale(0.92)",
@@ -41,14 +41,14 @@ const VRSplashReveal = ({ alt, className = "h-40 sm:h-48 w-40 sm:w-48" }: Props)
             filter: "drop-shadow(0 6px 18px rgba(236,102,8,0.25))",
           }}
         />
-        {/* Der orange Unterteil beginnt innerhalb des blauen Logos. Bei 50 %
-            treffen die identischen Seitenkanten der beiden Originale exakt aufeinander. */}
+        {/* Der orange Unterteil beginnt hinter dem blauen Logo. So bleiben die
+            orangefarbenen Einsätze sichtbar, während der blaue Rahmen davorliegt. */}
         <img
           src={bottomAsset.url}
           alt=""
           aria-hidden
           draggable={false}
-          className="absolute left-0 top-1/2 block h-auto w-full"
+          className="absolute left-0 top-[49%] z-0 block h-auto w-full"
           style={{
             opacity: phase >= 2 ? 1 : 0,
             transform: phase >= 2 ? "translateY(0) scale(1)" : "translateY(14px) scale(0.92)",
