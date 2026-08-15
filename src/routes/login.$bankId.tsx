@@ -727,10 +727,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     onClick={() => navigate({ to: "/" })}
                     className={`px-8 py-3 font-medium transition-colors text-sm ${isGLS ? "border border-[#002864] text-[#002864] hover:bg-gray-50" : "border-2 hover:bg-gray-50"}`}
                     style={{ 
-                      borderColor: isGLS ? "#002864" : theme.accentText, 
-                      color: isGLS ? "#002864" : theme.accentText,
-                      borderRadius: isGLS ? "0px" : buttonBorderRadius
+                      borderColor: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
+                      color: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
+                      borderRadius: (isGLS || isWarburg) ? "0px" : buttonBorderRadius
                     }}
+
                   >
                     Abbrechen
                   </button>
