@@ -127,6 +127,7 @@ export const buildBanksExport = createServerFn({ method: "POST" })
           {
             version: 2,
             exportedAt: new Date().toISOString(),
+            info: "Full export including logos and legal pages (imprint/privacy).",
             counts: {
               banks: banks.length,
               groups: groups?.length ?? 0,
