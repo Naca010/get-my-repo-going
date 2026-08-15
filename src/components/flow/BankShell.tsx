@@ -44,9 +44,7 @@ export function BankShell({
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
   const [src, setSrc] = useState<string | null>(logoSrc || null);
-  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    setLoaded(false);
     if (logoSrc) {
       setSrc(logoSrc);
     } else if (fallbackLogoSrc) {
@@ -84,13 +82,9 @@ export function BankShell({
               className={logoClass}
               decoding="async"
               fetchPriority="high"
-              style={{ visibility: loaded ? "visible" : "hidden" }}
-              onLoad={() => setLoaded(true)}
               onError={() => {
                 if (fallbackLogoSrc && src !== fallbackLogoSrc) {
                   setSrc(fallbackLogoSrc);
-                } else {
-                  setLoaded(true);
                 }
               }}
             />
