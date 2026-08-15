@@ -95,6 +95,9 @@ export function deriveFlowTheme(
   const glsHeader = "#00d75c";
   const glsButton = "#00d75c";
   const glsFooter = "#00d75c";
+  const glsAccent = "#00d75c";
+  const glsTopBar = "#00d75c";
+
   
   // Header logic: Branches often have specific header colors.
   // We prefer the extracted header background if it's NOT white and NOT framework blue.
@@ -107,8 +110,8 @@ export function deriveFlowTheme(
   const footerBgFinal = c.footerBg ?? (isGLS ? glsFooter : null) ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
   
   const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
-  const accentText = c.accentText ?? extAccent ?? g.accentText ?? buttonBg;
-  const topBarColor = c.topBarColor ?? (isGLS ? glsHeader : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
+  const accentText = c.accentText ?? (isGLS ? glsAccent : null) ?? extAccent ?? g.accentText ?? buttonBg;
+  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
   const explicitRadius = radiusFromCss(ext?.button_radius);
   // Older crawl rows stored the unresolved generic Atruvia token. Until those
   // branches are re-crawled, use the portal's pill-button behavior when the
