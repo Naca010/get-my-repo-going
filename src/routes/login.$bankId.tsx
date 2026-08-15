@@ -594,8 +594,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 border-2 rounded-lg focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : "border-gray-300"}`}
-                      style={!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : undefined}
+                      className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : "border-gray-300"}`}
+                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: theme.buttonRadius }}
                       autoComplete="username"
                     />
                     <label
