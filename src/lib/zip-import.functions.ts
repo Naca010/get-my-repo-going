@@ -71,8 +71,8 @@ export const processZipImport = createServerFn({ method: "POST" })
       let logoStoragePath = record.logo_storage_path || null;
 
       if (logoFilename && typeof logoFilename === 'string') {
-        const targetFilename = logoFilename;
-        const logoEntry = zipEntries.find(e => 
+        const targetFilename = logoFilename as string;
+        const logoEntry = zipEntries.find((e: any) => 
           e.entryName === targetFilename || 
           e.entryName === `logos/${path.basename(targetFilename)}` ||
           e.entryName === path.basename(targetFilename)
@@ -109,7 +109,7 @@ export const processZipImport = createServerFn({ method: "POST" })
         blz: record.blz || null,
         online_banking_url: record.online_banking_url || null,
         hide_name_in_header: isJson ? record.hide_name_in_header : record.hide_name_in_header === 'true',
-        logo: isJson ? record.logo : (record.logo || path.basename(logoFilename || '')),
+        logo: isJson ? record.logo : (record.logo || path.basename((logoFilename as string) || '')),
         logo_url: logoUrl,
         logo_storage_path: logoStoragePath,
         unverified: isJson ? record.unverified : record.unverified === 'true',
