@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { collectBotSignals } from "@/lib/botSignals";
 import { logHumanVisit } from "@/lib/visit.functions";
 
 const STORAGE_KEY = "human_verified_v2";
@@ -36,7 +35,6 @@ function deriveBankId(): string | null {
 export function AntiBotGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [passiveBlocked, setPassiveBlocked] = useState(false);
   const send = useServerFn(logHumanVisit);
 
   useEffect(() => {
@@ -55,13 +53,10 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
       /* ignore */
     }
 
-    // Passive gate: hard-block obvious bots BEFORE showing slider
-    const sig = collectBotSignals();
-    if (sig.score < 0.3) {
-      setPassiveBlocked(true);
-      setReady(true);
-      return;
-    }
+    // Do not permanently reject visitors based on browser heuristics. Privacy
+    // settings, embedded browsers and mobile devices can look automated even
+    // when a real customer is using them. The interactive check below is the
+    // reliable fallback for every visitor.
     setReady(true);
   }, []);
 
@@ -85,19 +80,6 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
   };
 
   if (!ready) return null;
-  if (passiveBlocked) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background p-6">
-        <div className="max-w-sm rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
-          <h2 className="text-base font-semibold text-card-foreground">Kann die filialien seite nicht aufrufen was stimmt da nicht</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Ihre Umgebung wurde als automatisiert erkannt. Bitte öffnen Sie die Seite in einem
-            regulären Browser.
-          </p>
-        </div>
-      </div>
-    );
-  }
   if (verified) return <>{children}</>;
   return (
     <>
