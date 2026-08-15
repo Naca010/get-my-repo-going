@@ -296,23 +296,38 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
   // Partner logos: <img> inside footer wrapped in <a>
   const partners: FooterPartner[] = [];
   const seenPartner = new Set<string>();
-  const partnerAnchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*(?:[^<]*<[^>]+>\s*)*<img\b([^>]+)>/gi;
+  
+  // Broaden partner search: <img> tags in footer that might be logos, even if not wrapped in <a>
+  const partnerImgRe = /<img\b([^>]+)>/gi;
   let pm: RegExpExecArray | null;
-  while ((pm = partnerAnchorRe.exec(scope))) {
-    const href = pm[1]!;
-    const imgAttrs = pm[2]!;
+  while ((pm = partnerImgRe.exec(scope))) {
+    const imgAttrs = pm[1]!;
+    
+    // Look for indicators that this is a partner logo or brand asset
+    const isPartner = imgAttrs.match(/alt=["'][^"']*(?:partner|verband|bvr|finanzgruppe|sicherungseinrichtung|zertifikat|logo)[^"']*["']/i)
+      || imgAttrs.match(/src=["'][^"']*(?:logo|brand|partner|badge|cert)[^"']*["']/i);
+      
+    if (!isPartner) continue;
+    
     const srcRaw = imgAttrs.match(SRC_RE)?.[1] ?? imgAttrs.match(DATA_SRC_RE)?.[1] ?? null;
     if (!srcRaw || /^data:/i.test(srcRaw)) continue;
+    
     const logo = absolutize(srcRaw, base);
-    const link = absolutize(href, base);
-    if (!logo) continue;
+    if (!logo || seenPartner.has(logo)) continue;
+    
+    // Find if it's wrapped in an <a> tag by checking the surrounding context in scope
+    const startIdx = pm.index;
+    const preContext = scope.slice(Math.max(0, startIdx - 150), startIdx);
+    const linkMatch = preContext.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>(?![^<]*<\/a>)/i);
+    const linkUrl = linkMatch ? absolutize(linkMatch[1]!, base) : null;
+    
     const name = (imgAttrs.match(ALT_RE)?.[1] ?? "").trim().slice(0, 80)
-      || (imgAttrs.match(/title=["']([^"']+)["']/i)?.[1] ?? "").trim().slice(0, 80);
-    if (!name) continue;
-    if (seenPartner.has(logo)) continue;
+      || (imgAttrs.match(/title=["']([^"']+)["']/i)?.[1] ?? "").trim().slice(0, 80)
+      || "Partner Logo";
+      
     seenPartner.add(logo);
-    partners.push({ name, logo_url: logo, link_url: link });
-    if (partners.length >= 12) break;
+    partners.push({ name, logo_url: logo, link_url: linkUrl });
+    if (partners.length >= 15) break;
   }
 
   // CTAs
