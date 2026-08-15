@@ -504,9 +504,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   if (initialLoading) {
     const showLogo = !loading && bank;
-    const splashLogo = bank
-      ? (getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || crawledLogo || vrLogoGeneric)
-      : null;
+    const groupFallback = getLogo(groupLogoName[bank.group]);
+    const splashLogo = groupFallback || getLogo(bank.logo) || crawledLogo || vrLogoGeneric;
     return (
       <div
         className={`min-h-screen bg-white flex flex-col items-center justify-center transition-opacity duration-500 ${loadingFading ? "opacity-0" : "opacity-100"}`}
