@@ -431,7 +431,7 @@ function sanitizeContentHtml(html: string, base: URL): { title: string; html: st
   // Absolutize all URLs including images
   let body = pick.replace(/\s(href|src|srcset|data-src)=["']([^"']+)["']/gi, (_m, attr, val) => {
     if (attr.toLowerCase() === "srcset") {
-      const parts = val.split(",").map(p => {
+      const parts = val.split(",").map((p: string) => {
         const [url, size] = p.trim().split(/\s+/);
         if (!url) return p;
         const abs = absolutize(url, base);
