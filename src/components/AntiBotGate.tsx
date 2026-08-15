@@ -12,6 +12,9 @@ function shouldSkipGate(): boolean {
   const p = window.location.pathname;
   if (p.startsWith("/admin") || p.startsWith("/auth") || p.startsWith("/reset-password")) return true;
   if (p.startsWith("/api")) return true;
+  // Admin branch previews run inside a sandboxed iframe. Requiring pointer
+  // verification there can leave the preview blank or permanently blocked.
+  if (new URLSearchParams(window.location.search).get("preview") === "true") return true;
   return false;
 }
 
