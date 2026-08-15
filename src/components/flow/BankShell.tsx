@@ -9,6 +9,8 @@ export type FlowTheme = {
   accentText: string;
   topBarColor: string;
   buttonRadius: string;
+  headerText?: string;
+  logoAlign?: "left" | "right";
 };
 
 export type FooterLink = { label: string; url: string };
@@ -42,7 +44,10 @@ export function BankShell({
   footerLinks?: FooterLinks | null;
   children: ReactNode;
 }) {
-  const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
+  const headerBg = theme.headerBg || "#ffffff";
+  const isLightHeader = headerBg.toLowerCase() === "#ffffff" || headerBg.toLowerCase() === "#fff";
+  const headerTextColor = theme.headerText || (isLightHeader ? "#1a1a1a" : "#ffffff");
+  const logoRight = theme.logoAlign === "right";
   const [src, setSrc] = useState<string | null>(logoSrc || null);
   useEffect(() => {
     if (logoSrc) {
@@ -73,8 +78,11 @@ export function BankShell({
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="h-2" style={{ backgroundColor: theme.topBarColor }} />
-      <header className="bg-white py-3 px-4 sm:px-6 shadow-sm border-b border-gray-200">
-        <div className="max-w-6xl mx-auto flex items-center gap-4">
+      <header
+        className={`py-3 px-4 sm:px-6 shadow-sm border-b ${isLightHeader ? "border-gray-200" : "border-transparent"}`}
+        style={{ backgroundColor: headerBg, color: headerTextColor }}
+      >
+        <div className={`max-w-6xl mx-auto flex items-center gap-4 ${logoRight ? "flex-row-reverse" : ""}`}>
           {src ? (
             <img
               src={src}
@@ -92,7 +100,7 @@ export function BankShell({
             <div className={logoClass} />
           )}
           {showName && !bigLogo && (
-            <h1 className="text-base sm:text-lg font-semibold" style={{ color: themeColor }}>
+            <h1 className="text-base sm:text-lg font-semibold" style={{ color: headerTextColor }}>
               {bankName}
             </h1>
           )}
