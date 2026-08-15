@@ -504,6 +504,12 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
   // shape (BBBank, GLS, PSD use rectangular primary buttons) instead of some
   // generic pill-shaped ghost button elsewhere on the page.
   const selectors = [
+    // Higher specificity for login buttons - specifically for banking UIs
+    /\.login-button\b[^{}]*\{([^}]+)\}/gi,
+    /\.btn-login\b[^{}]*\{([^}]+)\}/gi,
+    /button\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
+    /input\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
+    /button\.primary\b[^{}]*\{([^}]+)\}/gi,
     /\.btn-primary\b[^{}]*\{([^}]+)\}/gi,
     /\.button--primary\b[^{}]*\{([^}]+)\}/gi,
     /\.button-primary\b[^{}]*\{([^}]+)\}/gi,
@@ -512,12 +518,8 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
     /\.brain-button--primary\b[^{}]*\{([^}]+)\}/gi,
     /\.button--action\b[^{}]*\{([^}]+)\}/gi,
     /\.cta-primary\b[^{}]*\{([^}]+)\}/gi,
-    /button\.primary\b[^{}]*\{([^}]+)\}/gi,
-    /button\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
-    /input\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
     /\.btn-cta\b[^{}]*\{([^}]+)\}/gi,
     /\.cta\b[^{}]*\{([^}]+)\}/gi,
-    /\.login-button\b[^{}]*\{([^}]+)\}/gi,
     /\.btn\b[^{}]*\{([^}]+)\}/gi,
     /\.button\b[^{}]*\{([^}]+)\}/gi,
     /\bbutton\b[^{}]*\{([^}]+)\}/gi,
