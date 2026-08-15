@@ -94,13 +94,19 @@ export function deriveFlowTheme(
   // Specific override for GLS Bank which has a very distinct green theme
   const isGLS = groupName === "GLS Bank" || ext?.primary_color === "#00d75c";
   
-  // Warburg & Stein specific branding (Slate Blue/Gray)
-  const isWarburg = groupName === "Spezifische Banken" && (
-    ext?.palette?.includes("#6d7e8b") || 
+  // Marcard: burgundy red branding (must be checked before Warburg since name includes "Stein")
+  const isMarcard = groupName === "Spezifische Banken" && (
+    ext?.palette?.some(c => normHex(c) === "#660033") ||
+    normHex(ext?.primary_color) === "#660033"
+  );
+  // Warburg specific branding (Slate Blue/Gray)
+  const isWarburg = !isMarcard && groupName === "Spezifische Banken" && (
+    ext?.palette?.includes("#6d7e8b") ||
     ext?.primary_color === "#6d7e8b" ||
     (ext?.palette?.some(c => normHex(c) === "#6d7e8b"))
   );
   const warburgColor = "#6d7e8b";
+  const marcardColor = "#660033";
 
 
   const glsHeader = "#00d75c";
