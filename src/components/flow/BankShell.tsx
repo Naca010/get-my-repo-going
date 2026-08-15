@@ -100,7 +100,7 @@ export function BankShell({
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="h-2" style={{ backgroundColor: theme.topBarColor }} />
-      <header className="bg-white py-3 px-4 sm:px-6 shadow-sm border-b border-gray-200">
+      <header className="py-3 px-4 sm:px-6 shadow-sm border-b border-gray-200" style={{ backgroundColor: headerBarBg, borderBottomColor: isRenault ? "#000000" : undefined }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <img
@@ -112,7 +112,7 @@ export function BankShell({
               onError={() => { if (fallbackLogoSrc && src !== fallbackLogoSrc) setSrc(fallbackLogoSrc); }}
             />
             {showName && !bigLogo && (
-              <h1 className="text-base sm:text-lg font-semibold" style={{ color: themeColor }}>
+              <h1 className="text-base sm:text-lg font-semibold" style={{ color: headerTextColor }}>
                 {bankName}
               </h1>
             )}
