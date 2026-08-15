@@ -270,47 +270,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isSparda = bank?.group === "Sparda-Banken";
   const isGLS = bank?.group === "GLS Bank";
   const isWarburg = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
-    let currentLabel: string | null = null;
-    if (id) {
-      const labelRe = new RegExp(`<label\\b[^>]*\\bfor=["']${id.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}["'][^>]*>([\\s\\S]*?)<\\/label>`, "i");
-      const labelMatch = html.match(labelRe);
-      if (labelMatch) currentLabel = stripTags(labelMatch[1]!);
-    }
-    
-    if (!currentLabel) currentLabel = aria || placeholder || null;
-    
-    if (currentLabel) {
-      const clean = currentLabel.replace(/[:*]\s*$/g, "").replace(/\s*\(?erforderlich\)?\s*$/i, "").trim();
-      if (clean && clean.length > 1 && clean.length < 60) {
-        if (score > highestScore) {
-          highestScore = score;
-          bestLabel = clean;
-        }
-      }
-    }
-  }
-
-  // Also check if there's a standalone label before the first text input
-  if (!bestLabel) {
-    const textInputIdx = html.search(/<input\b[^>]*type=["']?(?:text|email|number)["']?/i);
-    if (textInputIdx !== -1) {
-      const preHtml = html.slice(Math.max(0, textInputIdx - 300), textInputIdx);
-      const labelMatch = preHtml.match(/<label\b[^>]*>([\s\S]*?)<\/label>/gi);
-      if (labelMatch) {
-        const lastLabel = stripTags(labelMatch.at(-1)!);
-        if (lastLabel && !BAD.test(lastLabel) && lastLabel.length < 60) {
-          bestLabel = lastLabel.replace(/[:*]\s*$/g, "").trim();
-        }
-      }
-    }
-  }
-
-  return bestLabel;
-}
-
-
-
   const secureGoLabel = getSecureGoLabel(bank?.group);
+  const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
+  const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
+  const aliasFieldLabel = crawledLabel && crawledLabel.trim().length > 0 ? crawledLabel : groupLabel;
+
 
   const crawledLogo = bank ? resolveAsset("bank-logos", bank.logo_url ?? null, bank.logo_storage_path) : null;
   const groupFallback = bank ? getLogo(groupLogoName[bank.group]) : undefined;
