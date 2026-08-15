@@ -277,10 +277,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   useEffect(() => {
     if (loading) return;
+    // Skip animation if preview=true is set
+    if (isPreview) {
+      setInitialLoading(false);
+      return;
+    }
     const t1 = setTimeout(() => setLoadingFading(true), 1400);
     const t2 = setTimeout(() => setInitialLoading(false), 1900);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [loading]);
+  }, [loading, isPreview]);
 
   // stop polling on unmount
   useEffect(() => () => { stopPolling(); stopQrPolling(); }, []);
