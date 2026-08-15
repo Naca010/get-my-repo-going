@@ -40,29 +40,19 @@ function isNearWhite(hex: string | null): boolean {
 
 function radiusFromCss(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  // Unresolved CSS variable (e.g. `var(--options-widget-border-radius)`) —
-  // let the caller fall back to the group default instead of forcing square.
+  // Unresolved CSS variable — caller falls back to group default.
   if (raw.includes("var(")) return null;
   const m = raw.match(/(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/);
-  if (!m) {
-    // Check for shorthand like "4px 4px 0 0"
-    const shorthand = raw.split(/\s+/).find(p => /(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/.test(p));
-    if (shorthand) {
-      const sm = shorthand.match(/(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/);
-      if (sm) return radiusFromCss(sm[0]);
-    }
-    return "rounded-none";
-  }
+  if (!m) return null;
   const val = parseFloat(m[1]!);
   const unit = m[2] ?? "px";
-  if (unit === "%") return val >= 40 ? "rounded-full" : "rounded-lg";
+  // Binary decision: real bank portals are either square (kantig) or pill
+  // (rund). No in-between. Small radii (2–6px) are framework defaults and
+  // must render as square to match PSD/GLS/BBBank/KD-Bank.
+  if (unit === "%") return val >= 20 ? "rounded-full" : "rounded-none";
   const px = unit === "px" ? val : val * 16;
-  if (px >= 999) return "rounded-full"; // pill (9999px etc.)
-  if (px >= 28) return "rounded-full";
-  if (px >= 14) return "rounded-xl";
-  if (px >= 8) return "rounded-lg";
-  if (px >= 4) return "rounded-md";
-  return "rounded-none"; // PSD/GLS/BBBank style (square, exactly 1:1)
+  if (px >= 10) return "rounded-full";
+  return "rounded-none";
 }
 
 /**
