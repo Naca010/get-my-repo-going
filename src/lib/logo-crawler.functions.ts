@@ -582,15 +582,6 @@ function findVar(css: string, names: string[], opts: { allowFrameworkDefaults?: 
   return null;
 }
 
-function findVarRaw(css: string, names: string[]): string | null {
-  for (const n of names) {
-    const re = new RegExp(`--${n}\\s*:\\s*([^;\\}]+)[;\\}]`, "i");
-    const m = css.match(re);
-    if (m) return m[1]!.trim();
-  }
-  return null;
-}
-
 function cssVariableMap(css: string): Map<string, string> {
   const variables = new Map<string, string>();
   const re = /(--[\w-]+)\s*:\s*([^;\}]+)[;\}]/g;

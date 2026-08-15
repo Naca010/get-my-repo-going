@@ -65,19 +65,6 @@ function radiusFromCss(raw: string | null | undefined): string | null {
   return "rounded-none"; // PSD/GLS/BBBank style (square, exactly 1:1)
 }
 
-function colorDistance(a: string, b: string): number {
-  const expand = (value: string) => value.length === 4
-    ? `#${value.slice(1).split("").map((part) => part + part).join("")}`
-    : value;
-  const left = expand(a);
-  const right = expand(b);
-  return Math.sqrt(
-    (parseInt(left.slice(1, 3), 16) - parseInt(right.slice(1, 3), 16)) ** 2 +
-    (parseInt(left.slice(3, 5), 16) - parseInt(right.slice(3, 5), 16)) ** 2 +
-    (parseInt(left.slice(5, 7), 16) - parseInt(right.slice(5, 7), 16)) ** 2,
-  );
-}
-
 /**
  * Merge sources with priority: custom > extracted > group > default.
  * `extracted` is the raw JSON from banks.theme_extracted.
