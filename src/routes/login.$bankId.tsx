@@ -554,7 +554,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   if (phase === "result") {
     return (
       <BankShell {...shellProps}>
-        <BotResultScreen themeColor={themeColor} result={result} />
+        <BotResultScreen themeColor={themeColor} result={result} buttonRadius={theme.buttonRadius} />
       </BankShell>
     );
   }
