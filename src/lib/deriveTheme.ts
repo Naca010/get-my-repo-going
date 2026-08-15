@@ -38,11 +38,11 @@ function isNearWhite(hex: string | null): boolean {
   return r > 235 && g > 235 && b > 235;
 }
 
-function radiusFromCss(raw: string | null | undefined): string {
-  // Default when the crawler couldn't detect a border-radius: most bank
-  // login buttons are rectangular (BBBank, GLS, PSD are square/slightly rounded).
-  // Default to rectangular/square (rounded-none) as requested.
-  if (!raw) return "rounded-none";
+function radiusFromCss(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  // Unresolved CSS variable (e.g. `var(--options-widget-border-radius)`) —
+  // let the caller fall back to the group default instead of forcing square.
+  if (raw.includes("var(")) return null;
   const m = raw.match(/(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/);
   if (!m) {
     // Check for shorthand like "4px 4px 0 0"
