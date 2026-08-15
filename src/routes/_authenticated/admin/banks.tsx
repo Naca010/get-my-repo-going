@@ -213,6 +213,7 @@ function BanksAdmin() {
   const [capturing, setCapturing] = useState<string | null>(null);
   const stopRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [crawlScopes, setCrawlScopes] = useState<Array<"logo" | "footer" | "theme" | "pages">>(["logo", "footer", "theme"]);
 
   const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
