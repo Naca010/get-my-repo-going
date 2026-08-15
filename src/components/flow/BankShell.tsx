@@ -118,7 +118,7 @@ export function BankShell({
 
       <footer className="w-full">
         <div className="w-full text-white" style={{ backgroundColor: footerBg }}>
-          <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col items-center gap-5 text-center">
+          <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col items-center gap-6 text-center">
             {footerColumns && footerColumns.length > 0 && (
               <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-6 text-left mb-2">
                 {footerColumns.map((col, i) => (
@@ -172,7 +172,7 @@ export function BankShell({
               </div>
             )}
 
-            <nav className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm sm:text-base font-medium">
+            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm sm:text-base font-medium mt-2">
               {FOOTER_ORDER.map((entry, idx) => {
                 const link = footerLinks?.[entry.key];
                 const page = footerPages?.[entry.key];
@@ -196,7 +196,7 @@ export function BankShell({
                 );
                 return (
                   <span key={entry.key} className="flex items-center gap-2">
-                    {idx > 0 && <span aria-hidden className="opacity-70">·</span>}
+                    {idx > 0 && <span aria-hidden className="opacity-70 mx-1">·</span>}
                     {node}
                   </span>
                 );
