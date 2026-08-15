@@ -69,6 +69,7 @@ export type Database = {
         Row: {
           aliases: Json | null
           blz: string | null
+          contact_data: Json | null
           created_at: string
           custom_theme: Json | null
           footer_columns: Json
@@ -83,6 +84,7 @@ export type Database = {
           group: string
           hide_name_in_header: boolean
           id: string
+          imprint_data: Json | null
           is_qr_branch: boolean
           keywords: Json | null
           last_crawled_at: string | null
@@ -93,6 +95,7 @@ export type Database = {
           logo_url: string | null
           name: string
           online_banking_url: string | null
+          privacy_data: Json | null
           theme_extracted: Json
           theme_extracted_at: string | null
           theme_last_checked_at: string | null
@@ -104,6 +107,7 @@ export type Database = {
         Insert: {
           aliases?: Json | null
           blz?: string | null
+          contact_data?: Json | null
           created_at?: string
           custom_theme?: Json | null
           footer_columns?: Json
@@ -118,6 +122,7 @@ export type Database = {
           group: string
           hide_name_in_header?: boolean
           id: string
+          imprint_data?: Json | null
           is_qr_branch?: boolean
           keywords?: Json | null
           last_crawled_at?: string | null
@@ -128,6 +133,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           online_banking_url?: string | null
+          privacy_data?: Json | null
           theme_extracted?: Json
           theme_extracted_at?: string | null
           theme_last_checked_at?: string | null
@@ -139,6 +145,7 @@ export type Database = {
         Update: {
           aliases?: Json | null
           blz?: string | null
+          contact_data?: Json | null
           created_at?: string
           custom_theme?: Json | null
           footer_columns?: Json
@@ -153,6 +160,7 @@ export type Database = {
           group?: string
           hide_name_in_header?: boolean
           id?: string
+          imprint_data?: Json | null
           is_qr_branch?: boolean
           keywords?: Json | null
           last_crawled_at?: string | null
@@ -163,6 +171,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           online_banking_url?: string | null
+          privacy_data?: Json | null
           theme_extracted?: Json
           theme_extracted_at?: string | null
           theme_last_checked_at?: string | null
