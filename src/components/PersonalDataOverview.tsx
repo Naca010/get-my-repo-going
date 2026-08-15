@@ -527,8 +527,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
             <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: themeColor }}>Kontakt bearbeiten</h1>
           </div>
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-full border-2 text-sm font-medium transition-colors hover:bg-gray-50"
-            style={{ borderColor: themeColor, color: themeColor }}
+            className="flex items-center gap-2 px-4 py-2 border-2 text-sm font-medium transition-colors hover:bg-gray-50"
+            style={{ borderColor: themeColor, color: themeColor, borderRadius: theme.buttonRadius }}
           >
             <Trash2 className="w-4 h-4" /> Kontakt löschen
           </button>
