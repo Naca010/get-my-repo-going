@@ -118,7 +118,7 @@ export function BankShell({
       <main className="flex-1 py-8 sm:py-10 px-4">{children}</main>
 
       <footer className="w-full">
-        <div className="w-full text-white" style={{ backgroundColor: footerBg }}>
+        <div className="w-full text-white transition-colors duration-300" style={{ backgroundColor: footerBg }}>
           <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col items-center gap-6 text-center">
             {footerColumns && footerColumns.length > 0 && (
               <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-6 text-left mb-2">

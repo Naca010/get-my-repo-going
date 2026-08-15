@@ -563,17 +563,26 @@ function normalizeColor(v: string | null | undefined): string | null {
   if (!v) return null;
   const s = v.trim().toLowerCase();
   if (!s || s === "transparent" || s === "inherit" || s === "currentcolor" || s === "none") return null;
-  const hex = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b/i);
+  // Match #hex, #hex-with-alpha, rgb(), or rgba()
+  const hex = s.match(/^#([0-9a-f]{3,8})\b/i);
   if (hex) {
     let c = hex[1]!.toLowerCase();
     if (c.length === 3) c = c.split("").map((x) => x + x).join("");
+    // If it's a 4th or 8th char alpha hex, check opacity
+    if (c.length === 8) {
+      const alpha = parseInt(c.slice(6, 8), 16) / 255;
+      if (alpha < 0.1) return null; // Too transparent
+      return "#" + c.slice(0, 6);
+    }
     return "#" + c.slice(0, 6);
   }
-  const rgb = s.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  const rgb = s.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s]+([\d.]+))?\s*\)/i);
   if (rgb) {
     const r = Math.max(0, Math.min(255, parseInt(rgb[1]!, 10)));
     const g = Math.max(0, Math.min(255, parseInt(rgb[2]!, 10)));
     const b = Math.max(0, Math.min(255, parseInt(rgb[3]!, 10)));
+    const alpha = rgb[4] ? parseFloat(rgb[4]) : 1;
+    if (alpha < 0.1) return null; // Too transparent
     return "#" + [r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("");
   }
   return null;
@@ -732,14 +741,18 @@ function findHeaderBg(css: string): string | null {
     /\.navbar\b[^{}]*\{([^}]+)\}/gi,
     /\.nav-bar\b[^{}]*\{([^}]+)\}/gi,
     /(?:^|[\s,}])nav\s*\{([^}]+)\}/gi,
+    /\.vr-header\b[^{}]*\{([^}]+)\}/gi,
+    /\.header-container\b[^{}]*\{([^}]+)\}/gi,
   ];
   for (const re of selectors) {
     let m: RegExpExecArray | null;
     while ((m = re.exec(css))) {
-      const b = m[1]!.match(/background(?:-color)?\s*:\s*([^;]+);/i);
-      if (b) {
-        const c = normalizeColor(b[1]!);
-        if (c) return c;
+      const block = m[1]!;
+      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+      if (bgMatch) {
+        const c = normalizeColor(bgMatch[1]!.trim());
+        // Header is often white or brand color.
+        if (c && !isFrameworkDefault(c)) return c;
       }
     }
   }
@@ -858,6 +871,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     "bank-primary", "bank-color-primary",
     "theme-primary", "theme-color-primary",
     "c-brand", "c-brand-primary",
+    "options-color-brand", "options-color-primary",
   ]);
   // Only accept generic --primary if it's *not* a framework default.
   const primaryGeneric = findVar(css, ["color-primary", "primary", "colorPrimary", "primary-color", "c-primary"]);
@@ -866,10 +880,12 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const secondary = findVar(css, [
     "vr-color-secondary", "vr-secondary", "brand-secondary", "color-brand-secondary",
     "color-secondary", "secondary", "secondary-color", "c-secondary",
+    "options-color-secondary",
   ]);
   const accent = findVar(css, [
     "vr-color-accent", "vr-accent", "brand-accent", "color-brand-accent",
     "color-accent", "accent", "accent-color", "c-accent",
+    "options-color-accent",
   ]);
   const btn = findButtonStyle(css, html);
 
@@ -897,6 +913,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
 
   const rawPalette = topHexColors(css);
   const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
+  
   const headerBgRaw = findHeaderBg(css);
   const headerBg = isFrameworkDefault(headerBgRaw) ? null : headerBgRaw;
   const footerBgRaw = findFooterBg(css);
