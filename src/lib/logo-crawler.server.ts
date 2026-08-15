@@ -1168,8 +1168,9 @@ export async function crawlBankLogosServer(data: Input, context: any) {
           });
           results.push({ id: b.id, logo: null, error: msg });
         }
-      }),
-    );
+        })
+      );
+    }
 
     if (data.runId) {
       const okCount = results.filter((r) => r.logo).length;
