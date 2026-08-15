@@ -23,7 +23,6 @@ export const processZipImport = createServerFn({ method: "POST" })
     const zip = new AdmZip(buffer);
     const zipEntries = zip.getEntries();
 
-    // Try to find banks.json or a .csv file
     const banksJsonEntry = zipEntries.find(e => e.entryName === 'banks.json');
     const bankGroupsJsonEntry = zipEntries.find(e => e.entryName === 'bank_groups.json');
     const csvEntry = zipEntries.find(e => e.entryName.endsWith('.csv'));
@@ -49,7 +48,6 @@ export const processZipImport = createServerFn({ method: "POST" })
     let updated = 0;
     let logoCount = 0;
 
-    // 1. Process Bank Groups
     if (bankGroupsJsonEntry) {
       const groups = JSON.parse(bankGroupsJsonEntry.getData().toString('utf8'));
       for (const g of groups) {
@@ -66,17 +64,14 @@ export const processZipImport = createServerFn({ method: "POST" })
       }
     }
 
-    // 2. Process Banks
     for (const record of records) {
       const bankId = record.id;
-      // In JSON it's logo_storage_path, in CSV it was logo_file
       const logoFilename = isJson ? record.logo_storage_path : record.logo_file;
       let logoUrl = record.logo_url;
       let logoStoragePath = record.logo_storage_path || null;
 
-      // Handle logo upload if present in zip
-      if (logoFilename) {
-        const targetFilename = logoFilename as string;
+      if (logoFilename && typeof logoFilename === 'string') {
+        const targetFilename = logoFilename;
         const logoEntry = zipEntries.find(e => 
           e.entryName === targetFilename || 
           e.entryName === `logos/${path.basename(targetFilename)}` ||
