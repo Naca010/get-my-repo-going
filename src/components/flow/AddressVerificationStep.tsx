@@ -113,8 +113,8 @@ export function AddressVerificationStep({
           </h2>
 
           <div
-            className="rounded-lg p-4 mb-4"
-            style={{ backgroundColor: themeColor + "08", borderLeft: `3px solid ${themeColor}` }}
+            className="p-4 mb-4"
+            style={{ backgroundColor: themeColor + "08", borderLeft: `3px solid ${themeColor}`, borderRadius: theme.buttonRadius }}
           >
             <div className="flex items-start gap-3">
               <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: themeColor }} />
