@@ -259,6 +259,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
   const buttonBorderRadius = theme.buttonRadius === "rounded-full" ? "9999px" : "0px";
+  
+  // Apply a global CSS variable for inputs and other components that might not use the inline style
+  useEffect(() => {
+    document.documentElement.style.setProperty('--bank-button-radius', buttonBorderRadius);
+  }, [buttonBorderRadius]);
   const isVR = bank?.group === "Volksbanken Raiffeisenbanken";
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";

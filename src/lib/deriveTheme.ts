@@ -95,10 +95,20 @@ export function deriveFlowTheme(
   // Older crawl rows stored the unresolved generic Atruvia token. Until those
   // branches are re-crawled, use the portal's pill-button behavior when the
   // detected button/brand color is clearly branch-specific.
-  const legacyAtruviaRadius = ext?.button_radius?.includes("--options-widget-border-radius") && extButton
-    ? "rounded-full"
-    : null;
-  const buttonRadius = c.buttonRadius ?? explicitRadius ?? legacyAtruviaRadius ?? g.buttonRadius ?? DEFAULT.buttonRadius;
+  // Older crawl rows stored the unresolved generic Atruvia token. Until those
+  // branches are re-crawled, use the portal's pill-button behavior when the
+  // detected button/brand color is clearly branch-specific (non-generic).
+  const legacyAtruviaRadius =
+    ext?.button_radius?.includes("--options-widget-border-radius") ||
+    ext?.button_radius?.includes("--options-button-radius")
+      ? "rounded-full"
+      : null;
+  const buttonRadius =
+    c.buttonRadius ??
+    explicitRadius ??
+    legacyAtruviaRadius ??
+    g.buttonRadius ??
+    DEFAULT.buttonRadius;
 
   return {
     headerBg,
