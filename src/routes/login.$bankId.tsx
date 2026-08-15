@@ -294,7 +294,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const secureGoLabel = getSecureGoLabel(bank?.group);
   const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
-  const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
+  const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NETKEY oder Alias";
   const aliasFieldLabel = crawledLabel && crawledLabel.trim().length > 0 ? crawledLabel : groupLabel;
 
 
