@@ -838,7 +838,7 @@ async function collectCss(html: string, base: URL): Promise<{ css: string; sourc
 
   // Keep stylesheet order stable. Appending inside concurrent requests made a
   // framework bundle occasionally override the bank-specific theme file.
-  const picked = hrefs.slice(0, 6);
+  const picked = hrefs.slice(0, 10); // Check more stylesheets for a more complete theme
   const fetched = await Promise.all(picked.map(async (u) => {
     try {
       const r = await fetchWithTimeout(u, 7000);
