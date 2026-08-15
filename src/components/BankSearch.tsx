@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 import { plzToCity } from "@/data/plz-mapping";
 import { buildBankLoginTarget } from "@/lib/bankSubdomain";
+import { resolveAsset } from "@/lib/bankAssetUrl";
 import { notifyBranchSelected } from "@/lib/notifyBranch.functions";
 
 type Bank = {
@@ -15,6 +16,8 @@ type Bank = {
   aliases: string[] | null;
   keywords: string[] | null;
   logo: string | null;
+  logo_url: string | null;
+  logo_storage_path: string | null;
   online_banking_url: string | null;
   is_qr_branch?: boolean | null;
 };
@@ -39,9 +42,15 @@ const groupLogoName: Record<string, string> = {
   "Sparda-Banken": "sparda-bank-generic-logo",
   BBBank: "bbbank-header-logo",
 };
-// Dropdown: group logo first (matches repo), fall back to bank-specific logo.
+// Always prefer the current uploaded/crawled bank logo. Group and legacy
+// assets are only fallbacks for banks without a current storage logo.
 function bankLogoFor(bank: Bank): string {
-  return getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || vrLogoGeneric;
+  return (
+    resolveAsset("bank-logos", bank.logo_url, bank.logo_storage_path) ||
+    getLogo(bank.logo) ||
+    getLogo(groupLogoName[bank.group]) ||
+    vrLogoGeneric
+  );
 }
 
 const RECENT_KEY = "vr-recent-banks";
@@ -127,12 +136,25 @@ export default function BankSearch() {
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setRecent(getRecentBanks());
     (async () => {
       const { data, error } = await supabase
         .from("banks")
-        .select("id,name,group,blz,aliases,keywords,logo,online_banking_url,is_qr_branch");
-      if (!error && data) setAllBanks(data as any);
+        .select("id,name,group,blz,aliases,keywords,logo,logo_url,logo_storage_path,online_banking_url,is_qr_branch");
+      if (!error && data) {
+        const currentBanks = data as Bank[];
+        setAllBanks(currentBanks);
+
+        // Recent entries in localStorage may contain stale logo URLs. Keep the
+        // chosen order, but replace every entry with its current database row.
+        const currentById = new Map(currentBanks.map((bank) => [bank.id, bank]));
+        const currentRecent = getRecentBanks()
+          .map((bank) => currentById.get(bank.id))
+          .filter((bank): bank is Bank => Boolean(bank));
+        localStorage.setItem(RECENT_KEY, JSON.stringify(currentRecent));
+        setRecent(currentRecent);
+      } else {
+        setRecent(getRecentBanks());
+      }
       setLoading(false);
     })();
   }, []);
