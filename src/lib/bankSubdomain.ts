@@ -26,14 +26,20 @@ function isPathFallbackHost(host: string): boolean {
  * Wir suchen in domain_routes nach dem längsten matching Suffix.
  */
 function getRootHost(host: string): string {
-  // Wenn wir in der Browser-Umgebung sind, können wir versuchen die Domain
-  // aus den konfigurierten Routen zu bestimmen oder wir nutzen eine Heuristik.
   const parts = host.split(".");
   if (parts.length <= 2) return host;
 
-  // Spezialfall de-bund.info: Wenn die letzten beiden Teile bund.info sind
-  // und davor de steht, ist das der Root.
-  if (host.endsWith("de-bund.info")) return "de-bund.info";
+  // Bekannte mehrteilige Apex-Domains (Toplevel + Second Level)
+  const knownMultiPartApex = [
+    "de-bund.info",
+    "de-securego.app",
+    "de-update.support",
+    "de-update.com"
+  ];
+
+  for (const apex of knownMultiPartApex) {
+    if (host.endsWith(apex)) return apex;
+  }
 
   // Standard-Fall: Letzte zwei Teile (z.B. example.com)
   return parts.slice(-2).join(".");
