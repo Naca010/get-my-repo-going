@@ -733,7 +733,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     style={{ 
                       borderColor: (isGLS || isQlick) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
                       color: (isGLS || isQlick) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
-                      borderRadius: (isGLS || isWarburg || isQlick) ? "9999px" : buttonBorderRadius
+                      borderRadius: (isGLS || isWarburg || isMarcard || isQlick) ? "9999px" : buttonBorderRadius
                     }}
 
 
