@@ -264,8 +264,12 @@ function BanksAdmin() {
 
   const startCrawler = async (mode: "missing" | "all" | "filtered" | "outdated") => {
     const pool = mode === "filtered" ? filtered : rows;
+    const groupFilter = crawlGroups.length > 0 ? new Set(crawlGroups) : null;
+    // Kanonische Gruppen (VR/PSD/Sparda) haben feste Portal-Themes -> Theme-Scope überspringen
+    const skipThemeForCanonical = crawlScopes.includes("theme") && !crawlGroups.length;
     const targets = pool.filter((b) => {
       if (!b.online_banking_url) return false;
+      if (groupFilter && !groupFilter.has(b.group)) return false;
       if (mode === "all" || overwrite) return true;
       if (mode === "missing") return !displayLogo(b);
       if (mode === "outdated") {
@@ -278,6 +282,13 @@ function BanksAdmin() {
       return false;
     });
     if (targets.length === 0) { toast.info("Keine passenden Filialen"); return; }
+    if (skipThemeForCanonical) {
+      const canon = new Set(CANONICAL_GROUPS);
+      const canonCount = targets.filter((b) => canon.has(b.group)).length;
+      if (canonCount > 0) {
+        toast.info(`Theme wird für ${canonCount} Filialen aus VR/PSD/Sparda übersprungen (feste Portal-Themes).`);
+      }
+    }
     if (!confirm(`Crawler starten für ${targets.length} Filialen? Tab muss offen bleiben.`)) return;
 
     const { data: run, error } = await supabase.from("crawl_runs").insert({
