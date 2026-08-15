@@ -269,7 +269,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
   const isGLS = bank?.group === "GLS Bank";
-  const isWarburg = groupName === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
+  const isWarburg = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
   const isQlick = bank?.name?.toLowerCase().includes("qlick");
 
   const secureGoLabel = getSecureGoLabel(bank?.group);
