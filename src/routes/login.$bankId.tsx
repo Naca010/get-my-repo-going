@@ -220,6 +220,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       topBarColor: src.topBarColor ?? src.buttonBg ?? "#003399",
       buttonRadius: src.buttonRadius ?? "rounded-full",
       footerBg: src.footerBg,
+      headerText: (src as any).headerText,
+      logoAlign: (src as any).logoAlign,
     };
   }, [bank, groupTheme]);
 
