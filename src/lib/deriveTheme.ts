@@ -67,6 +67,7 @@ export function deriveFlowTheme(
   extracted: ThemeExtracted | null | undefined,
   group: Partial<BankTheme> | null | undefined,
   groupName?: string | null,
+  bankName?: string | null,
 ): FlowTheme {
   const c = (custom && Object.keys(custom).length > 0 ? custom : null) ?? {};
   const g = group ?? {};
