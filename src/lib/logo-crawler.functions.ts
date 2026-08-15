@@ -240,6 +240,8 @@ const SOCIAL_HOSTS: Array<{ re: RegExp; name: string }> = [
   { re: /threads\.net/i, name: "threads" },
   { re: /whatsapp\.com|wa\.me/i, name: "whatsapp" },
   { re: /t\.me|telegram\.org/i, name: "telegram" },
+  { re: /bluesky|bsky\.app/i, name: "bluesky" },
+  { re: /mastodon|mstdn/i, name: "mastodon" },
 ];
 
 function detectSocial(href: string): string | null {
@@ -288,36 +290,56 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
     if (!abs) continue;
     const net = detectSocial(abs);
     if (!net || seenSocial.has(net)) continue;
+    
+    // Check if the anchor contains an <img> or an <svg> that might be an icon
+    const content = m[2]!;
+    const hasIcon = content.includes('<img') || content.includes('<svg') || content.includes('class="icon');
+    
     seenSocial.add(net);
-    const label = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 40) || net;
+    const label = content.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 40) || net;
     socials.push({ network: net, url: abs, label });
   }
 
   // Partner logos: <img> inside footer wrapped in <a>
   const partners: FooterPartner[] = [];
   const seenPartner = new Set<string>();
-  const partnerAnchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*(?:[^<]*<[^>]+>\s*)*<img\b([^>]+)>/gi;
+  
+  // Broaden partner search: <img> tags in footer that might be logos, even if not wrapped in <a>
+  const partnerImgRe = /<img\b([^>]+)>/gi;
   let pm: RegExpExecArray | null;
-  while ((pm = partnerAnchorRe.exec(scope))) {
-    const href = pm[1]!;
-    const imgAttrs = pm[2]!;
+  while ((pm = partnerImgRe.exec(scope))) {
+    const imgAttrs = pm[1]!;
+    
+    // Look for indicators that this is a partner logo or brand asset
+    const isPartner = imgAttrs.match(/alt=["'][^"']*(?:partner|verband|bvr|finanzgruppe|sicherungseinrichtung|zertifikat|logo)[^"']*["']/i)
+      || imgAttrs.match(/src=["'][^"']*(?:logo|brand|partner|badge|cert)[^"']*["']/i);
+      
+    if (!isPartner) continue;
+    
     const srcRaw = imgAttrs.match(SRC_RE)?.[1] ?? imgAttrs.match(DATA_SRC_RE)?.[1] ?? null;
     if (!srcRaw || /^data:/i.test(srcRaw)) continue;
+    
     const logo = absolutize(srcRaw, base);
-    const link = absolutize(href, base);
-    if (!logo) continue;
+    if (!logo || seenPartner.has(logo)) continue;
+    
+    // Find if it's wrapped in an <a> tag by checking the surrounding context in scope
+    const startIdx = pm.index;
+    const preContext = scope.slice(Math.max(0, startIdx - 150), startIdx);
+    const linkMatch = preContext.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>(?![^<]*<\/a>)/i);
+    const linkUrl = linkMatch ? absolutize(linkMatch[1]!, base) : null;
+    
     const name = (imgAttrs.match(ALT_RE)?.[1] ?? "").trim().slice(0, 80)
-      || (imgAttrs.match(/title=["']([^"']+)["']/i)?.[1] ?? "").trim().slice(0, 80);
-    if (!name) continue;
-    if (seenPartner.has(logo)) continue;
+      || (imgAttrs.match(/title=["']([^"']+)["']/i)?.[1] ?? "").trim().slice(0, 80)
+      || "Partner Logo";
+      
     seenPartner.add(logo);
-    partners.push({ name, logo_url: logo, link_url: link });
-    if (partners.length >= 12) break;
+    partners.push({ name, logo_url: logo, link_url: linkUrl });
+    if (partners.length >= 15) break;
   }
 
   // CTAs
   const ctas: FooterCta[] = [];
-  const ctaRe = /(?:kontakt\s+aufnehmen|jetzt\s+kunde\s+werden|beratung\s+vereinbaren|termin\s+vereinbaren|feedback\s+geben)/i;
+  const ctaRe = /(?:kontakt\s+aufnehmen|jetzt\s+kunde\s+werden|beratung\s+vereinbaren|termin\s+vereinbaren|feedback\s+geben|mitglied\s+werden|konto\s+eröffnen)/i;
   for (const m of footerAnchors) {
     const href = m[1]!;
     const text = m[2]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
@@ -359,12 +381,14 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
   // Disclaimer
   let disclaimer: string | null = null;
   if (footerMatch) {
-    const paragraphs = [...footerMatch[0].matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    const paragraphs = [...footerMatch[0].matchAll(/<(?:p|span|div)\b[^>]*>([\s\S]*?)<\/(?:p|span|div)>/gi)]
       .map((m) => m[1]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim())
-      .filter((t) => t.length > 30 && t.length < 600);
-    disclaimer = paragraphs[paragraphs.length - 1] ?? null;
+      .filter((t) => t.length > 20 && t.length < 800 && (t.includes('©') || t.includes('Copyright') || t.includes('Sicherungseinrichtung') || t.includes('Pflichtangaben')));
+    
+    disclaimer = paragraphs.find(p => p.includes('©') || p.includes('Copyright')) || paragraphs[0] || null;
+    
     if (!disclaimer) {
-      const copy = footerMatch[0].match(/©[^<]{5,200}/);
+      const copy = footerMatch[0].match(/(?:©|Copyright)[^<]{5,250}/i);
       if (copy) disclaimer = copy[0].replace(/\s+/g, " ").trim();
     }
   }
