@@ -120,11 +120,11 @@ export function deriveFlowTheme(
   const glsTopBar = "#00d75c";
 
   // Renault Bank direkt branding
-  const isRenault = groupName === "Spezifische Banken" && (
+  const isRenault = bankName?.toLowerCase().includes("renault") || (groupName === "Spezifische Banken" && (
     ext?.palette?.some(c => normHex(c) === "#edee00") ||
     normHex(ext?.primary_color) === "#edee00" ||
     normHex(ext?.button_bg) === "#edee00"
-  );
+  ));
   const renaultButton = "#edee00";
   const renaultHeader = "#000000"; // Black header per screenshot
 
