@@ -698,6 +698,23 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     "color-accent", "accent", "accent-color", "c-accent",
   ]);
   const btn = findButtonStyle(css);
+  
+  // Try to resolve CSS variables for button styles if they were found but unresolved
+  if (btn.bg && btn.bg.startsWith('var(')) {
+    const varName = btn.bg.match(/var\(\s*([^,)]+)/)?.[1]?.trim();
+    if (varName) {
+      const resolved = findVar(css, [varName]);
+      if (resolved) btn.bg = resolved;
+    }
+  }
+  if (btn.color && btn.color.startsWith('var(')) {
+    const varName = btn.color.match(/var\(\s*([^,)]+)/)?.[1]?.trim();
+    if (varName) {
+      const resolved = findVar(css, [varName]);
+      if (resolved) btn.color = resolved;
+    }
+  }
+
   const rawPalette = topHexColors(css);
   const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
   const headerBgRaw = findHeaderBg(css);
