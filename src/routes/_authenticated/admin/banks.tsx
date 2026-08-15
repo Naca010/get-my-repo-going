@@ -214,6 +214,8 @@ function BanksAdmin() {
   const stopRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [crawlScopes, setCrawlScopes] = useState<Array<"logo" | "footer" | "theme" | "pages">>(["logo", "footer", "theme"]);
+  const CANONICAL_GROUPS = ["Volksbanken Raiffeisenbanken", "PSD Banken", "Sparda-Banken"];
+  const [crawlGroups, setCrawlGroups] = useState<string[]>([]); // leer = alle Gruppen
 
   const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
