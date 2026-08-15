@@ -145,10 +145,10 @@ export const processZipImport = createServerFn({ method: "POST" })
       const { data: existing } = await context.supabase
         .from("banks").select("id").eq("id", raw.id).maybeSingle();
       if (existing) {
-        const { error } = await context.supabase.from("banks").update(payload).eq("id", raw.id);
+        const { error } = await context.supabase.from("banks").update(payload as any).eq("id", raw.id);
         if (!error) updated++;
       } else {
-        const { error } = await context.supabase.from("banks").insert(payload);
+        const { error } = await context.supabase.from("banks").insert(payload as any);
         if (!error) created++;
       }
     }
