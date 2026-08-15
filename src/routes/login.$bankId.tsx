@@ -518,9 +518,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   };
 
   if (initialLoading) {
-    const showLogo = !loading && bank;
-    const groupFallback = getLogo(groupLogoName[bank.group]);
-    const splashLogo = groupFallback || getLogo(bank.logo) || crawledLogo || vrLogoGeneric;
+    const showLogo = !loading && Boolean(bank);
+    const loadingGroupFallback = bank ? getLogo(groupLogoName[bank.group]) : undefined;
+    const loadingSplashLogo = bank
+      ? loadingGroupFallback || getLogo(bank.logo) || crawledLogo || vrLogoGeneric
+      : vrLogoGeneric;
     return (
       <div
         className={`min-h-screen bg-white flex flex-col items-center justify-center transition-opacity duration-500 ${loadingFading ? "opacity-0" : "opacity-100"}`}
@@ -530,7 +532,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             {isVR ? (
               <SplashLogoReveal alt={bank?.name || "Volksbank"} className="h-20 sm:h-24" />
             ) : (
-              <SplashLogoReveal logoSrc={splashLogo} alt={bank?.name || ""} className="h-20 sm:h-24" />
+              <SplashLogoReveal logoSrc={loadingSplashLogo} alt={bank?.name || ""} className="h-20 sm:h-24" />
             )}
           </div>
         )}
