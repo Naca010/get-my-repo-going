@@ -689,7 +689,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                 </div>
 
                 <div>
-                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: buttonBorderRadius }}>
+                  <div className={`relative ${pinError ? "bg-red-50" : ""}`} style={{ borderRadius: "4px" }}>
                     <input
                       id="pin"
                       type={showPin ? "text" : "password"}
