@@ -269,7 +269,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
   const isGLS = bank?.group === "GLS Bank";
-  const isWarburg = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
+  const isMarcard = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("marcard") || bank?.name?.toLowerCase().includes("stein"));
+  const isWarburg = !isMarcard && bank?.group === "Spezifische Banken" && bank?.name?.toLowerCase().includes("warburg");
   const isQlick = bank?.name?.toLowerCase().includes("qlick");
 
   const secureGoLabel = getSecureGoLabel(bank?.group);
