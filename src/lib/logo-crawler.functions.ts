@@ -532,23 +532,48 @@ function findButtonStyle(css: string): { bg: string | null; color: string | null
     let m: RegExpExecArray | null;
     while ((m = re.exec(css))) {
       const block = m[1]!;
+      
+      // Look for background-color, but also handle shorthand background and CSS variables
       if (!bg) {
-        const b = block.match(/background(?:-color)?\s*:\s*([^;]+);/i);
-        if (b) bg = normalizeColor(b[1]!);
+        const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+        if (bgMatch) {
+          const rawBg = bgMatch[1]!.trim();
+          // If it's a CSS variable, we can't easily resolve it here without the full computed style,
+          // but we can try to find the variable definition in the same CSS string later.
+          if (!rawBg.startsWith('var(')) {
+            bg = normalizeColor(rawBg);
+          }
+        }
       }
+      
       if (!color) {
-        const c = block.match(/(?<!-)\bcolor\s*:\s*([^;]+);/i);
-        if (c) color = normalizeColor(c[1]!);
+        const colorMatch = block.match(/(?<!-)\bcolor\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+        if (colorMatch) {
+          const rawColor = colorMatch[1]!.trim();
+          if (!rawColor.startsWith('var(')) {
+            color = normalizeColor(rawColor);
+          }
+        }
       }
+      
       if (!radius) {
-        const r = block.match(/border-radius\s*:\s*([^;]+);/i);
-        if (r) radius = r[1]!.trim().replace(/\s+/g, " ").slice(0, 40);
+        // Capture all border-radius variants
+        const radiusMatch = block.match(/border-radius\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+        if (radiusMatch) {
+          radius = radiusMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 40);
+        }
       }
+      
       if (!border) {
-        const bd = block.match(/border(?:-\w+)?\s*:\s*([^;]+);/i);
-        if (bd) border = bd[1]!.trim().replace(/\s+/g, " ").slice(0, 60);
+        const borderMatch = block.match(/border(?:-\w+)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+        if (borderMatch) {
+          border = borderMatch[1]!.trim().replace(/\s+/g, " ").slice(0, 60);
+        }
       }
-      if (bg && color && radius && border) return { bg, color, radius, border };
+
+      // If we found a solid background color and radius, we are likely done for this selector.
+      // We don't return immediately because we might want to find better candidates in subsequent matches.
+      if (bg && color && radius && border) break; 
     }
   }
   return { bg, color, radius, border };
