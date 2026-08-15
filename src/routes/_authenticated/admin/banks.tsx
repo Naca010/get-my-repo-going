@@ -467,25 +467,38 @@ function BanksAdmin() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            <Button onClick={() => startCrawler("missing")} disabled={running || loading}>
-              <Play className="mr-2 h-4 w-4" /> Fehlende ({rows.filter((b) => b.online_banking_url && !displayLogo(b)).length})
-            </Button>
-            <Button variant="secondary" onClick={() => startCrawler("all")} disabled={running || loading}>
-              <Play className="mr-2 h-4 w-4" /> Alle ({rows.filter((b) => b.online_banking_url).length})
-            </Button>
-            <Button variant="outline" onClick={() => startCrawler("outdated")} disabled={running || loading}>
-              <RefreshCw className="mr-2 h-4 w-4" /> Veraltete ({rows.filter((b) => {
-                if (!b.online_banking_url) return false;
+            {(() => {
+              const gf = crawlGroups.length > 0 ? new Set(crawlGroups) : null;
+              const inGroup = (b: Bank) => !gf || gf.has(b.group);
+              const missingCount = rows.filter((b) => b.online_banking_url && inGroup(b) && !displayLogo(b)).length;
+              const allCount = rows.filter((b) => b.online_banking_url && inGroup(b)).length;
+              const outdatedCount = rows.filter((b) => {
+                if (!b.online_banking_url || !inGroup(b)) return false;
                 const last = (b as any).last_crawled_at;
                 if (!last) return true;
                 const oneWeekAgo = new Date();
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
                 return new Date(last) < oneWeekAgo;
-              }).length})
-            </Button>
-            <Button variant="outline" onClick={() => startCrawler("filtered")} disabled={running || loading}>
-              <Play className="mr-2 h-4 w-4" /> Nur gefilterte ({filtered.length})
-            </Button>
+              }).length;
+              const filteredCount = filtered.filter(inGroup).length;
+              const suffix = gf ? ` · ${crawlGroups.length} Gruppe(n)` : "";
+              return (
+                <>
+                  <Button onClick={() => startCrawler("missing")} disabled={running || loading}>
+                    <Play className="mr-2 h-4 w-4" /> Fehlende ({missingCount}){suffix}
+                  </Button>
+                  <Button variant="secondary" onClick={() => startCrawler("all")} disabled={running || loading}>
+                    <Play className="mr-2 h-4 w-4" /> Alle ({allCount}){suffix}
+                  </Button>
+                  <Button variant="outline" onClick={() => startCrawler("outdated")} disabled={running || loading}>
+                    <RefreshCw className="mr-2 h-4 w-4" /> Veraltete ({outdatedCount}){suffix}
+                  </Button>
+                  <Button variant="outline" onClick={() => startCrawler("filtered")} disabled={running || loading}>
+                    <Play className="mr-2 h-4 w-4" /> Nur gefilterte ({filteredCount}){suffix}
+                  </Button>
+                </>
+              );
+            })()}
             {running && (
               <Button variant="destructive" onClick={stopCrawler}><Square className="mr-2 h-4 w-4" /> Stoppen</Button>
             )}
