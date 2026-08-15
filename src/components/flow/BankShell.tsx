@@ -87,7 +87,7 @@ export function BankShell({
             <img
               src={src}
               alt={bankName}
-              className={logoClass}
+              className={`${logoClass} ${logoRight ? "order-2" : ""}`}
               decoding="async"
               fetchPriority="high"
               onError={() => {
@@ -97,10 +97,10 @@ export function BankShell({
               }}
             />
           ) : (
-            <div className={logoClass} />
+            <div className={`${logoClass} ${logoRight ? "order-2" : ""}`} />
           )}
           {showName && !bigLogo && (
-            <h1 className="text-base sm:text-lg font-semibold" style={{ color: headerTextColor }}>
+            <h1 className={`text-base sm:text-lg font-semibold ${logoRight ? "order-1" : ""}`} style={{ color: headerTextColor }}>
               {bankName}
             </h1>
           )}
