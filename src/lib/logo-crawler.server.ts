@@ -355,6 +355,9 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
 
   // Socials disabled per user request
   const socials: FooterSocial[] = [];
+  
+  // Specific override for GLS Bank header green
+  const isGLS = base.hostname.includes("gls") || html.includes("GLS Bank");
 
   // Partner logos: <img> inside footer wrapped in <a>
   const partners: FooterPartner[] = [];
