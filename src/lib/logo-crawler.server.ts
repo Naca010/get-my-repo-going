@@ -948,7 +948,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     // Atruvia's portal bundle contains a generic Material 4px shape. It is not
     // the bank's effective button radius. Leave the value empty on that page so
     // the subsequent bank homepage theme can provide --options-button-radius.
-    button_radius: isGLS ? "rounded-full" : (tokenButtonRadius || (isAtruviaPortal ? null : resolvedRuleRadius)),
+    button_radius: (isGLS || isWarburg) ? "rounded-full" : (tokenButtonRadius || (isAtruviaPortal ? null : resolvedRuleRadius)),
     button_border: btn.border,
     palette,
     css_sources: sources,
