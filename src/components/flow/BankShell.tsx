@@ -62,6 +62,9 @@ export function BankShell({
   children: ReactNode;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
+  const isRenault = bankName.toLowerCase().includes("renault");
+  const headerBarBg = isRenault ? "#000000" : "#ffffff";
+  const headerTextColor = isRenault ? "#ffffff" : themeColor;
   const initial = fallbackLogoSrc || logoSrc;
   const [src, setSrc] = useState(initial);
   useEffect(() => {
