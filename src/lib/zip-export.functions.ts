@@ -68,7 +68,7 @@ export const buildBanksExport = createServerFn({ method: "POST" })
     ));
 
     const logoBatchSize = 10;
-    for (let i = 0; i < logoPaths.size; i += logoBatchSize) {
+    for (let i = 0; i < logoPaths.length; i += logoBatchSize) {
       const batch = logoPaths.slice(i, i + logoBatchSize);
       await Promise.all(batch.map(async (p) => {
         try {
@@ -107,7 +107,7 @@ export const buildBanksExport = createServerFn({ method: "POST" })
               banks: banks.length,
               groups: groups?.length ?? 0,
               partners: partners?.length ?? 0,
-              logos: seen.size,
+              logos: logoPaths.length,
             },
           },
           null,
