@@ -114,11 +114,12 @@ export function deriveFlowTheme(
   // Footer logic: If extracted footer color is a generic framework blue or a framework yellow, ignore it.
   const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff" || extFooter === "#002d87" || extFooter === "#002266";
   const isFrameworkYellow = extFooter === "#ffcc00" || extFooter === "#fecb00" || extFooter === "#ffc107" || extFooter === "#e0a800";
-  const footerBgFinal = c.footerBg ?? (isGLS ? glsFooter : null) ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
+  const footerBgFinal = c.footerBg ?? (isGLS ? glsFooter : null) ?? (isWarburg ? warburgColor : null) ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
   
-  const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
-  const accentText = c.accentText ?? (isGLS ? glsAccent : null) ?? extAccent ?? g.accentText ?? buttonBg;
-  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
+  const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? (isWarburg ? warburgColor : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
+  const accentText = c.accentText ?? (isGLS ? glsAccent : null) ?? (isWarburg ? warburgColor : null) ?? extAccent ?? buttonBg;
+  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? (isWarburg ? warburgColor : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
+
   const explicitRadius = radiusFromCss(ext?.button_radius);
   // Older crawl rows stored the unresolved generic Atruvia token. Until those
   // branches are re-crawled, use the portal's pill-button behavior when the
