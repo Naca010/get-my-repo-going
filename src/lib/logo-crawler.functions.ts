@@ -428,10 +428,21 @@ function sanitizeContentHtml(html: string, base: URL): { title: string; html: st
     s.match(/<body\b[\s\S]*?<\/body>/i)?.[0] ??
     s;
 
-  let body = pick.replace(/\s(href|src)=["']([^"']+)["']/gi, (_m, attr, val) => {
+  // Absolutize all URLs including images
+  let body = pick.replace(/\s(href|src|srcset|data-src)=["']([^"']+)["']/gi, (_m, attr, val) => {
+    if (attr.toLowerCase() === "srcset") {
+      const parts = val.split(",").map(p => {
+        const [url, size] = p.trim().split(/\s+/);
+        if (!url) return p;
+        const abs = absolutize(url, base);
+        return abs ? `${abs}${size ? ` ${size}` : ""}` : p;
+      });
+      return ` ${attr}="${parts.join(", ")}"`;
+    }
     const abs = absolutize(val, base);
-    return abs ? ` ${attr}="${abs}"` : "";
+    return abs ? ` ${attr}="${abs}"` : ` ${attr}="${val}"`;
   });
+  
   body = body.replace(/<a\b([^>]*)>/gi, (_m, attrs) => `<a${attrs} target="_blank" rel="noopener noreferrer">`);
 
   const title = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, " ").trim().slice(0, 120) ?? "";
