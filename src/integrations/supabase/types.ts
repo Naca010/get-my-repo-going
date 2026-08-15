@@ -85,6 +85,7 @@ export type Database = {
           id: string
           is_qr_branch: boolean
           keywords: Json | null
+          last_crawled_at: string | null
           logo: string | null
           logo_source_url: string | null
           logo_storage_path: string | null
@@ -118,6 +119,7 @@ export type Database = {
           id: string
           is_qr_branch?: boolean
           keywords?: Json | null
+          last_crawled_at?: string | null
           logo?: string | null
           logo_source_url?: string | null
           logo_storage_path?: string | null
@@ -151,6 +153,7 @@ export type Database = {
           id?: string
           is_qr_branch?: boolean
           keywords?: Json | null
+          last_crawled_at?: string | null
           logo?: string | null
           logo_source_url?: string | null
           logo_storage_path?: string | null
@@ -183,6 +186,7 @@ export type Database = {
           mode: string
           note: string | null
           processed: number
+          scopes: string[] | null
           started_at: string
           status: string
           succeeded: number
@@ -195,6 +199,7 @@ export type Database = {
           mode: string
           note?: string | null
           processed?: number
+          scopes?: string[] | null
           started_at?: string
           status?: string
           succeeded?: number
@@ -207,6 +212,7 @@ export type Database = {
           mode?: string
           note?: string | null
           processed?: number
+          scopes?: string[] | null
           started_at?: string
           status?: string
           succeeded?: number
