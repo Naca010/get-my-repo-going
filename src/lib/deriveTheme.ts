@@ -73,27 +73,40 @@ export function deriveFlowTheme(
   custom: Partial<BankTheme> | null | undefined,
   extracted: ThemeExtracted | null | undefined,
   group: Partial<BankTheme> | null | undefined,
+  groupName?: string | null,
 ): FlowTheme {
   const c = (custom && Object.keys(custom).length > 0 ? custom : null) ?? {};
   const g = group ?? {};
 
+  // Groups whose branches all use one identical portal design.
+  // For those, ignore the per-branch crawled theme (marketing site colors would
+  // otherwise override the correct portal styling).
+  const CANONICAL_GROUPS = new Set([
+    "Volksbanken Raiffeisenbanken",
+    "PSD Banken",
+    "Sparda-Banken",
+  ]);
+  const useExtracted =
+    !(groupName && CANONICAL_GROUPS.has(groupName)) || Object.keys(c).length > 0;
+  const ext = useExtracted ? extracted : null;
+
   const extPrimary =
-    normHex(extracted?.primary_color) ||
-    normHex(extracted?.button_bg) ||
-    normHex(extracted?.header_bg) ||
-    normHex(extracted?.meta_theme_color) ||
-    (extracted?.palette?.map(normHex).find(Boolean) ?? null);
+    normHex(ext?.primary_color) ||
+    normHex(ext?.button_bg) ||
+    normHex(ext?.header_bg) ||
+    normHex(ext?.meta_theme_color) ||
+    (ext?.palette?.map(normHex).find(Boolean) ?? null);
 
-  const extButton = normHex(extracted?.button_bg) || extPrimary;
-  const extAccent = normHex(extracted?.accent_color) || extPrimary;
+  const extButton = normHex(ext?.button_bg) || extPrimary;
+  const extAccent = normHex(ext?.accent_color) || extPrimary;
 
-  const extHeader = normHex(extracted?.header_bg);
+  const extHeader = normHex(ext?.header_bg);
   const headerBg = c.headerBg ?? (extHeader && !isNearWhite(extHeader) ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
   const buttonBg = c.buttonBg ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
   const accentText = c.accentText ?? extAccent ?? g.accentText ?? buttonBg;
   const topBarColor = c.topBarColor ?? extPrimary ?? g.topBarColor ?? buttonBg;
   const buttonRadius =
-    c.buttonRadius ?? g.buttonRadius ?? radiusFromCss(extracted?.button_radius);
+    c.buttonRadius ?? (useExtracted ? radiusFromCss(ext?.button_radius) : null) ?? g.buttonRadius ?? DEFAULT.buttonRadius;
 
   return {
     headerBg,

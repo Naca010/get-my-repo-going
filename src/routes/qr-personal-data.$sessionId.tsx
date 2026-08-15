@@ -143,6 +143,7 @@ function QrPersonalDataPage() {
       (bank?.custom_theme as Partial<BankTheme> | null) ?? null,
       (bank?.theme_extracted as any) ?? null,
       groupTheme,
+      (bank as any)?.group ?? null,
     );
   }, [bank, groupTheme]);
 

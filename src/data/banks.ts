@@ -11,11 +11,12 @@ export interface BankTheme {
 
 export const bankGroupThemes: Record<string, BankTheme> = {
   "Volksbanken Raiffeisenbanken": {
-    primary: "213 100% 30%",
-    headerBg: "#003399",
-    buttonBg: "#0066b3",
-    accentText: "#0066b3",
+    primary: "20 100% 50%",
+    headerBg: "#ffffff",
+    buttonBg: "#ff6600",
+    accentText: "#ff6600",
     topBarColor: "#ff6600",
+    buttonRadius: "rounded-full",
   },
   "PSD Banken": {
     primary: "153 100% 22%",
