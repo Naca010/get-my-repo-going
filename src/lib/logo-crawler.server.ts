@@ -915,6 +915,8 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
   const headerBgRaw = findHeaderBg(css);
   const headerBg = isFrameworkDefault(headerBgRaw) ? null : headerBgRaw;
+  const footerBgRaw = findFooterBg(css);
+  const footerBg = isFrameworkDefault(footerBgRaw) ? null : footerBgRaw;
 
   // Priority: brand vars > meta theme-color > header bg > palette[0].
   const primaryFinal = primary ?? metaBrand ?? headerBg ?? palette[0] ?? null;
@@ -925,6 +927,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     accent_color: accent ?? palette[2] ?? null,
     meta_theme_color: metaColor,
     header_bg: headerBg,
+    footer_bg: footerBg,
     button_bg: isFrameworkDefault(tokenButtonBg ?? resolvedRuleBg) ? null : (tokenButtonBg ?? resolvedRuleBg),
     button_color: tokenButtonColor ?? resolvedRuleColor,
     // Store the semantic result, not an ambiguous framework radius. Branch
