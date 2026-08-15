@@ -20,7 +20,7 @@ const BANK_FIELDS = [
 
 function hexToHsl(hex: string): string | null {
   const m = hex.replace("#", "").match(/^([0-9a-f]{6})$/i);
-  if (!m) return null;
+  if (!m || !m[1]) return null;
   const n = parseInt(m[1], 16);
   const r1 = ((n >> 16) & 255) / 255, g1 = ((n >> 8) & 255) / 255, b1 = (n & 255) / 255;
   const mx = Math.max(r1, g1, b1), mn = Math.min(r1, g1, b1);
@@ -41,9 +41,9 @@ function hexToHsl(hex: string): string | null {
 function parseRem(v: any): number | null {
   if (typeof v !== "string") return null;
   const m = v.match(/([\d.]+)\s*rem/i);
-  if (m) return parseFloat(m[1]);
+  if (m && m[1]) return parseFloat(m[1]);
   const px = v.match(/([\d.]+)\s*px/i);
-  if (px) return parseFloat(px[1]) / 16;
+  if (px && px[1]) return parseFloat(px[1]) / 16;
   return null;
 }
 
@@ -74,10 +74,11 @@ function pickBank(row: any): Record<string, any> {
   for (const k of BANK_FIELDS) {
     if (row[k] !== undefined) out[k] = row[k];
   }
-  const hasCustom = out.custom_theme && typeof out.custom_theme === "object" && Object.keys(out.custom_theme).length > 0;
+  const cur = out["custom_theme"];
+  const hasCustom = cur && typeof cur === "object" && Object.keys(cur).length > 0;
   if (!hasCustom) {
     const derived = deriveCustomTheme(row.theme_extracted);
-    if (derived) out.custom_theme = derived;
+    if (derived) out["custom_theme"] = derived;
   }
   return out;
 }
