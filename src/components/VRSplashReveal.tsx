@@ -24,17 +24,16 @@ const VRSplashReveal = ({ alt, className = "h-40 sm:h-48 w-40 sm:w-48" }: Props)
   }, []);
 
   return (
-    <div className={`relative ${className}`} aria-label={alt}>
-      <div className="relative w-full h-full flex flex-col items-center justify-center">
-        {/* Oberer (oranger) Teil – oben, unten bündig, damit die Farbtropfen in den blauen Teil laufen */}
+    <div className={`relative overflow-visible ${className}`} aria-label={alt}>
+      <div className="relative h-full w-full">
+        {/* Beide Dateien haben dieselbe 600-px-Breite. Deshalb werden sie auf
+            derselben Fläche positioniert statt als zwei Bilder gestapelt. */}
         <img
           src={topAsset.url}
           alt={alt}
           draggable={false}
-          className="w-full object-contain object-bottom"
+          className="absolute left-0 top-0 block h-auto w-full"
           style={{
-            height: "58%",
-            marginBottom: "-22%",
             opacity: phase >= 1 ? 1 : 0,
             transform: phase >= 1 ? "translateY(0) scale(1)" : "translateY(-14px) scale(0.92)",
             transition:
@@ -42,15 +41,15 @@ const VRSplashReveal = ({ alt, className = "h-40 sm:h-48 w-40 sm:w-48" }: Props)
             filter: "drop-shadow(0 6px 18px rgba(236,102,8,0.25))",
           }}
         />
-        {/* Unterer (blauer) Teil – fällt danach dazu und greift in den oberen */}
+        {/* Der orange Unterteil beginnt innerhalb des blauen Logos. Bei 50 %
+            treffen die identischen Seitenkanten der beiden Originale exakt aufeinander. */}
         <img
           src={bottomAsset.url}
           alt=""
           aria-hidden
           draggable={false}
-          className="w-full object-contain object-top relative"
+          className="absolute left-0 top-1/2 block h-auto w-full"
           style={{
-            height: "58%",
             opacity: phase >= 2 ? 1 : 0,
             transform: phase >= 2 ? "translateY(0) scale(1)" : "translateY(14px) scale(0.92)",
             transition:
