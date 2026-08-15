@@ -18,10 +18,67 @@ const BANK_FIELDS = [
   "last_crawled_at",
 ] as const;
 
+function hexToHsl(hex: string): string | null {
+  const m = hex.replace("#", "").match(/^([0-9a-f]{6})$/i);
+  if (!m || !m[1]) return null;
+  const n = parseInt(m[1], 16);
+  const r1 = ((n >> 16) & 255) / 255, g1 = ((n >> 8) & 255) / 255, b1 = (n & 255) / 255;
+  const mx = Math.max(r1, g1, b1), mn = Math.min(r1, g1, b1);
+  let h = 0, s = 0; const l = (mx + mn) / 2;
+  if (mx !== mn) {
+    const d = mx - mn;
+    s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    switch (mx) {
+      case r1: h = (g1 - b1) / d + (g1 < b1 ? 6 : 0); break;
+      case g1: h = (b1 - r1) / d + 2; break;
+      case b1: h = (r1 - g1) / d + 4; break;
+    }
+    h *= 60;
+  }
+  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+function parseRem(v: any): number | null {
+  if (typeof v !== "string") return null;
+  const m = v.match(/([\d.]+)\s*rem/i);
+  if (m && m[1]) return parseFloat(m[1]);
+  const px = v.match(/([\d.]+)\s*px/i);
+  if (px && px[1]) return parseFloat(px[1]) / 16;
+  return null;
+}
+
+function deriveCustomTheme(te: any): Record<string, any> | null {
+  if (!te || typeof te !== "object") return null;
+  const r = parseRem(te.button_radius);
+  const buttonRadius =
+    r == null ? "rounded-md" :
+    r >= 0.9 ? "rounded-full" :
+    r <= 0.15 ? "rounded-none" :
+    r >= 0.4 ? "rounded-lg" : "rounded-md";
+  const primaryHex: string | null = te.primary_color || te.button_bg || null;
+  const theme: Record<string, any> = {
+    buttonRadius,
+    buttonBg: te.button_bg ?? primaryHex ?? undefined,
+    headerBg: te.header_bg ?? "#ffffff",
+    footerBg: te.footer_bg ?? undefined,
+    accentText: te.accent_color ?? primaryHex ?? undefined,
+    topBarColor: te.primary_color ?? te.button_bg ?? undefined,
+    primary: primaryHex ? hexToHsl(primaryHex) ?? undefined : undefined,
+  };
+  for (const k of Object.keys(theme)) if (theme[k] === undefined) delete theme[k];
+  return theme;
+}
+
 function pickBank(row: any): Record<string, any> {
   const out: Record<string, any> = {};
   for (const k of BANK_FIELDS) {
     if (row[k] !== undefined) out[k] = row[k];
+  }
+  const cur = out["custom_theme"];
+  const hasCustom = cur && typeof cur === "object" && Object.keys(cur).length > 0;
+  if (!hasCustom) {
+    const derived = deriveCustomTheme(row.theme_extracted);
+    if (derived) out["custom_theme"] = derived;
   }
   return out;
 }
