@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronUp, Check } from "lucide-react";
+import { ChevronUp, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FlowTheme = {
@@ -9,10 +9,17 @@ export type FlowTheme = {
   accentText: string;
   topBarColor: string;
   buttonRadius: string;
+  footerBg?: string;
 };
 
 export type FooterLink = { label: string; url: string };
 export type FooterLinks = Partial<Record<"impressum" | "datenschutz" | "agb" | "sicherheit", FooterLink>>;
+export type FooterPage = { title: string; html: string; url: string; fetched_at: string };
+export type FooterPages = Partial<Record<"impressum" | "datenschutz" | "agb" | "sicherheit", FooterPage>>;
+export type FooterPartner = { name: string; logo_url: string; link_url: string | null };
+export type FooterSocial = { network: string; url: string; label: string };
+export type FooterCta = { label: string; url: string };
+export type FooterColumn = { heading: string; links: Array<{ label: string; url: string }> };
 
 type Partner = { id: string; name: string; logo_url: string; link_url: string | null };
 
@@ -31,6 +38,12 @@ export function BankShell({
   showName,
   bigLogo = false,
   footerLinks,
+  footerPages,
+  footerPartners,
+  footerSocials,
+  footerCtas,
+  footerColumns,
+  footerDisclaimer,
   children,
 }: {
   theme: FlowTheme;
@@ -40,24 +53,31 @@ export function BankShell({
   showName: boolean;
   bigLogo?: boolean;
   footerLinks?: FooterLinks | null;
+  footerPages?: FooterPages | null;
+  footerPartners?: FooterPartner[] | null;
+  footerSocials?: FooterSocial[] | null;
+  footerCtas?: FooterCta[] | null;
+  footerColumns?: FooterColumn[] | null;
+  footerDisclaimer?: string | null;
   children: ReactNode;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
-  const [src, setSrc] = useState<string | null>(logoSrc || null);
-  const [loaded, setLoaded] = useState(false);
+  const isRenault = bankName.toLowerCase().includes("renault");
+  const headerBarBg = isRenault ? "#000000" : "#ffffff";
+  const headerTextColor = isRenault ? "#ffffff" : themeColor;
+  const initial = fallbackLogoSrc || logoSrc;
+  const [src, setSrc] = useState(initial);
   useEffect(() => {
-    setLoaded(false);
-    if (logoSrc) {
-      setSrc(logoSrc);
-    } else if (fallbackLogoSrc) {
-      setSrc(fallbackLogoSrc);
-    } else {
-      setSrc(null);
-    }
-  }, [logoSrc, fallbackLogoSrc]);
+    if (!logoSrc || logoSrc === src) return;
+    const img = new Image();
+    img.onload = () => setSrc(logoSrc);
+    img.src = logoSrc;
+  }, [logoSrc]);
 
-  const [partners, setPartners] = useState<Partner[]>([]);
+  const [globalPartners, setGlobalPartners] = useState<Partner[]>([]);
+  const hasBankPartners = (footerPartners?.length ?? 0) > 0;
   useEffect(() => {
+    if (hasBankPartners) return;
     (async () => {
       const { data } = await supabase
         .from("partner_logos")
@@ -65,77 +85,127 @@ export function BankShell({
         .eq("visible", true)
         .order("sort_order")
         .order("name");
-      if (data) setPartners(data as Partner[]);
+      if (data) setGlobalPartners(data as Partner[]);
     })();
-  }, []);
+  }, [hasBankPartners]);
+  const partners: Partner[] = hasBankPartners
+    ? (footerPartners ?? []).map((p, i) => ({ id: `bp-${i}`, ...p }))
+    : globalPartners;
 
   const logoClass = bigLogo ? "h-14 sm:h-16 object-contain" : "h-10 object-contain";
-  const footerBg = theme.topBarColor || "#003399";
+  const footerBg = theme.footerBg ?? theme.topBarColor ?? "#003399";
+  const [popup, setPopup] = useState<{ url: string; title: string; html?: string | null } | null>(null);
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="h-2" style={{ backgroundColor: theme.topBarColor }} />
-      <header className="bg-white py-3 px-4 sm:px-6 shadow-sm border-b border-gray-200">
-        <div className="max-w-6xl mx-auto flex items-center gap-4">
-          {src ? (
+      <header className="py-3 px-4 sm:px-6 shadow-sm border-b border-gray-200" style={{ backgroundColor: headerBarBg, borderBottomColor: isRenault ? "#000000" : undefined }}>
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <img
               src={src}
               alt={bankName}
               className={logoClass}
               decoding="async"
               fetchPriority="high"
-              style={{ visibility: loaded ? "visible" : "hidden" }}
-              onLoad={() => setLoaded(true)}
-              onError={() => {
-                if (fallbackLogoSrc && src !== fallbackLogoSrc) {
-                  setSrc(fallbackLogoSrc);
-                } else {
-                  setLoaded(true);
-                }
-              }}
+              onError={() => { if (fallbackLogoSrc && src !== fallbackLogoSrc) setSrc(fallbackLogoSrc); }}
             />
-          ) : (
-            <div className={logoClass} />
-          )}
-          {showName && !bigLogo && (
-            <h1 className="text-base sm:text-lg font-semibold" style={{ color: themeColor }}>
-              {bankName}
-            </h1>
+            {showName && !bigLogo && (
+              <h1 className="text-base sm:text-lg font-semibold" style={{ color: headerTextColor }}>
+                {bankName}
+              </h1>
+            )}
+          </div>
+          {bankName.toLowerCase().includes("gls") && (
+            <div className="flex items-center gap-1 text-[#002864] font-bold text-sm">
+              <span className="w-2 h-2 rounded-full bg-[#00d75c]"></span>
+              Online-Filiale
+            </div>
           )}
         </div>
       </header>
 
+
       <main className="flex-1 py-8 sm:py-10 px-4">{children}</main>
 
       <footer className="w-full">
-        <div className="w-full text-white" style={{ backgroundColor: footerBg }}>
-          <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col items-center gap-5 text-center">
-            <nav className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm sm:text-base font-medium">
-              {FOOTER_ORDER.map((entry, idx) => {
-                const link = footerLinks?.[entry.key];
-                const label = link?.label || entry.fallback;
-                const node = link ? (
+        <div className="w-full text-white transition-colors duration-300" style={{ backgroundColor: footerBg }}>
+          <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col items-center gap-6 text-center">
+            {footerColumns && footerColumns.length > 0 && (
+              <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-6 text-left mb-2">
+                {footerColumns.map((col, i) => (
+                  <div key={i}>
+                    <h3 className="font-semibold text-sm mb-2 uppercase tracking-wide opacity-90">{col.heading}</h3>
+                    <ul className="space-y-1 text-sm">
+                      {col.links.map((l, j) => (
+                        <li key={j}>
+                          <a href={l.url} target="_blank" rel="noopener noreferrer" className="hover:underline opacity-90">
+                            {l.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {footerCtas && footerCtas.length > 0 && (
+              <div className="flex flex-wrap gap-3 justify-center">
+                {footerCtas.map((c, i) => (
                   <a
-                    href={link.url}
+                    key={i}
+                    href={c.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-sm font-medium transition-colors"
+                    style={{ borderRadius: theme.buttonRadius }}
+                  >
+                    {c.label}
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* Social links disabled per user request */}
+
+            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm sm:text-base font-medium mt-2">
+              {FOOTER_ORDER.map((entry, idx) => {
+                const link = footerLinks?.[entry.key];
+                const page = footerPages?.[entry.key];
+                const label = link?.label || entry.fallback;
+                const node = link || page ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPopup({
+                        url: page?.url || link?.url || "",
+                        title: label,
+                        html: page?.html ?? null,
+                      })
+                    }
                     className="hover:underline"
                   >
                     {label}
-                  </a>
+                  </button>
                 ) : (
                   <Link to="/" className="hover:underline">{label}</Link>
                 );
                 return (
                   <span key={entry.key} className="flex items-center gap-2">
-                    {idx > 0 && <span aria-hidden className="opacity-70">·</span>}
+                    {idx > 0 && <span aria-hidden className="opacity-70 mx-1">·</span>}
                     {node}
                   </span>
                 );
               })}
             </nav>
-            <LanguageSwitcher />
 
+            {footerDisclaimer && (
+              <p className="max-w-3xl text-xs opacity-80 leading-relaxed">{footerDisclaimer}</p>
+            )}
+
+            <LanguageSwitcher />
           </div>
         </div>
 
@@ -168,6 +238,61 @@ export function BankShell({
           </div>
         )}
       </footer>
+
+      {popup && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setPopup(null)}
+        >
+          <div
+            className="bg-white w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden relative"
+            style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "16px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-5 border-b bg-white sticky top-0 z-10">
+              <div className="flex items-center gap-4">
+                <img src={src} alt={bankName} className="h-8 object-contain" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setPopup(null)}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+                aria-label="Schließen"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-white px-8 py-8 custom-scrollbar">
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">{popup.title}</h2>
+                {popup.html ? (
+                  <div
+                    className="prose prose-blue max-w-none text-gray-700 leading-relaxed font-sans"
+                    dangerouslySetInnerHTML={{ __html: popup.html }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                    <X className="w-12 h-12 mb-4 opacity-20" />
+                    <p>Inhalt konnte nicht geladen werden.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-8 py-6 border-t bg-gray-50 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setPopup(null)}
+                className="px-8 py-3 bg-[#005ea8] text-white font-semibold hover:bg-[#004a85] transition-colors min-w-[160px]"
+                style={{ backgroundColor: theme.buttonBg, borderRadius: theme.buttonRadius }}
+              >
+                Alle annehmen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
