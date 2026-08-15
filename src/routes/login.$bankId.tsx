@@ -620,7 +620,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     </div>
                   )}
                   <div className="flex border-b border-gray-200 mb-6">
-                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : (isWarburg || isQlick) ? "text-[#003366] border-[#003366]" : "text-gray-600 border-gray-600"}`}>
+                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : (isWarburg || isQlick) ? "text-[#003366] border-[#003366]" : isMarcard ? "border-current" : "text-gray-600 border-gray-600"}`} style={isMarcard ? { color: theme.buttonBg, borderColor: theme.buttonBg } : undefined}>
                       Mit Zugangsdaten anmelden
                     </button>
                   </div>
