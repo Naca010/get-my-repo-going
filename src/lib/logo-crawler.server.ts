@@ -748,7 +748,7 @@ function findHeaderBg(css: string): string | null {
     let m: RegExpExecArray | null;
     while ((m = re.exec(css))) {
       const block = m[1]!;
-      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*;/i);
+      const bgMatch = block.match(/background(?:-color)?\s*:\s*([^;!]+)(?:\s*!important)?\s*[;}]/i);
       if (bgMatch) {
         const c = normalizeColor(bgMatch[1]!.trim());
         // Header is often white or brand color.
