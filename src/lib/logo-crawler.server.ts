@@ -1,7 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-type Input = {
+export type Input = {
   banks: Array<{ id: string; url: string }>;
   runId?: string;
   scopes?: Array<"logo" | "footer" | "theme" | "pages">;
@@ -612,6 +609,20 @@ function resolvedVariable(variables: Map<string, string>, names: string[]): stri
   return null;
 }
 
+function classifyButtonRadius(raw: string | null | undefined): "rounded-full" | "rounded-none" | null {
+  if (!raw || raw.includes("var(")) return null;
+  const values = [...raw.matchAll(/(-?\d+(?:\.\d+)?)\s*(px|rem|em|%)?/gi)];
+  if (!values.length) return null;
+  const rounded = values.some((match) => {
+    const value = Number.parseFloat(match[1] ?? "0");
+    const unit = (match[2] ?? "px").toLowerCase();
+    if (unit === "%") return value >= 20;
+    const pixels = unit === "px" ? value : value * 16;
+    return pixels >= 10;
+  });
+  return rounded ? "rounded-full" : "rounded-none";
+}
+
 function escapeCssIdentifier(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -840,8 +851,8 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   ]));
   const tokenButtonRadius = resolvedVariable(variables, [
     "options-button-radius",
-    "mat-button-filled-container-shape",
     "options-widget-border-radius",
+    "mat-button-filled-container-shape",
   ]);
 
   const resolvedRuleBg = normalizeColor(resolveCssValue(btn.bg, variables));
@@ -864,7 +875,10 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     header_bg: headerBg,
     button_bg: isFrameworkDefault(tokenButtonBg ?? resolvedRuleBg) ? null : (tokenButtonBg ?? resolvedRuleBg),
     button_color: tokenButtonColor ?? resolvedRuleColor,
-    button_radius: tokenButtonRadius ?? resolvedRuleRadius,
+    // Store the semantic result, not an ambiguous framework radius. Branch
+    // tokens such as --options-button-radius are authoritative; generic
+    // Material values are only a last fallback.
+    button_radius: classifyButtonRadius(tokenButtonRadius ?? resolvedRuleRadius),
     button_border: btn.border,
     palette,
     css_sources: sources,
@@ -997,14 +1011,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
 }
 
 
-export const crawlBankLogos = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: Input) => {
-    if (!data || !Array.isArray(data.banks)) throw new Error("banks required");
-    if (data.banks.length > 25) throw new Error("max 25 banks per call");
-    return data;
-  })
-  .handler(async ({ data, context }) => {
+export async function crawlBankLogosServer(data: Input, context: any) {
     const { data: isAdmin, error: rpcErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId, _role: "admin",
     });
@@ -1110,4 +1117,4 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
     }
 
     return { results };
-  });
+}
