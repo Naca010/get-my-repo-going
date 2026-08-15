@@ -534,7 +534,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
           <div className="p-5 sm:p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{editContactTypeLabel}</h2>
             <div className="flex flex-row gap-3 items-end">
@@ -626,7 +626,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
           <div className="p-5 sm:p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-5">Hauptadresse (Wohnsitz)</h2>
 
@@ -746,7 +746,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
       {/* Popup overlay */}
       {showPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-md overflow-hidden">
+          <div className="bg-white shadow-2xl w-[90%] max-w-md overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             {/* Deep colored header with info icon */}
             <div
               className="flex items-center justify-center py-10"
@@ -784,7 +784,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
       )}
 
       {/* Personal info card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white shadow-sm border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
         <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between">
             <div>
@@ -836,7 +836,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
       </div>
 
       {/* Contact card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible">
+      <div className="bg-white shadow-sm border border-gray-200 overflow-visible" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
 
         <div className="p-5 sm:p-6">
           <div className="flex items-center justify-between mb-4">
