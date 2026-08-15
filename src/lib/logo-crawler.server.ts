@@ -1005,6 +1005,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
     mergeFooter(portal.footer);
     mergeTheme(portal.theme);
     mergeLoginLabel(portal.loginFieldLabel);
+    if (portal.logo && portal.loginFieldLabel) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
     if (portal.logo) return { logo: portal.logo, sourceUrl: portal.sourceUrl, footer: bestFooter, theme: bestTheme, loginFieldLabel: bestLoginLabel };
   }
 
