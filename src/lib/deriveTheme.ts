@@ -108,7 +108,7 @@ export function deriveFlowTheme(
   
   const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
   const accentText = c.accentText ?? extAccent ?? g.accentText ?? buttonBg;
-  const topBarColor = c.topBarColor ?? extPrimary ?? g.topBarColor ?? buttonBg;
+  const topBarColor = c.topBarColor ?? (isGLS ? glsHeader : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
   const explicitRadius = radiusFromCss(ext?.button_radius);
   // Older crawl rows stored the unresolved generic Atruvia token. Until those
   // branches are re-crawled, use the portal's pill-button behavior when the
