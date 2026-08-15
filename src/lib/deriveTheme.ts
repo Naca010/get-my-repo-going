@@ -62,7 +62,7 @@ function radiusFromCss(raw: string | null | undefined): string {
   if (px >= 14) return "rounded-xl";
   if (px >= 8) return "rounded-lg";
   if (px >= 4) return "rounded-md";
-  if (px >= 2) return "rounded-sm";
+  if (px >= 2) return "rounded-none"; // PSD/GLS/BBBank style (square)
   return "rounded-none";
 }
 
