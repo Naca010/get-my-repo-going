@@ -582,11 +582,32 @@ function findVar(css: string, names: string[], opts: { allowFrameworkDefaults?: 
   return null;
 }
 
-function findVarRaw(css: string, names: string[]): string | null {
-  for (const n of names) {
-    const re = new RegExp(`--${n}\\s*:\\s*([^;\\}]+)[;\\}]`, "i");
-    const m = css.match(re);
-    if (m) return m[1]!.trim();
+function cssVariableMap(css: string): Map<string, string> {
+  const variables = new Map<string, string>();
+  const re = /(--[\w-]+)\s*:\s*([^;\}]+)[;\}]/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(css))) {
+    const name = match[1];
+    const value = match[2];
+    if (name && value) variables.set(name.toLowerCase(), value.trim());
+  }
+  return variables;
+}
+
+function resolveCssValue(raw: string | null | undefined, variables: Map<string, string>, depth = 0): string | null {
+  if (!raw || depth > 8) return null;
+  const value = raw.trim();
+  const variable = value.match(/^var\(\s*(--[\w-]+)(?:\s*,\s*([^\)]+))?\s*\)$/i);
+  if (!variable) return value;
+  const resolved = variables.get(variable[1]!.toLowerCase()) ?? variable[2] ?? null;
+  return resolveCssValue(resolved, variables, depth + 1);
+}
+
+function resolvedVariable(variables: Map<string, string>, names: string[]): string | null {
+  for (const name of names) {
+    const key = name.startsWith("--") ? name.toLowerCase() : `--${name.toLowerCase()}`;
+    const resolved = resolveCssValue(variables.get(key), variables);
+    if (resolved) return resolved;
   }
   return null;
 }
@@ -745,17 +766,22 @@ async function collectCss(html: string, base: URL): Promise<{ css: string; sourc
     if (abs && !hrefs.includes(abs)) hrefs.push(abs);
   }
 
-  // limit to first 6 stylesheets to bound work but capture more candidates
+  // Keep stylesheet order stable. Appending inside concurrent requests made a
+  // framework bundle occasionally override the bank-specific theme file.
   const picked = hrefs.slice(0, 6);
-  await Promise.all(picked.map(async (u) => {
+  const fetched = await Promise.all(picked.map(async (u) => {
     try {
       const r = await fetchWithTimeout(u, 7000);
-      if (!r.ok) return;
+      if (!r.ok) return null;
       const t = (await r.text()).slice(0, 800_000);
-      css += "\n" + t;
-      sources.push(u);
-    } catch { /* ignore */ }
+      return { url: u, css: t };
+    } catch { return null; }
   }));
+  for (const item of fetched) {
+    if (!item) continue;
+    css += "\n" + item.css;
+    sources.push(item.url);
+  }
   return { css, sources };
 }
 
@@ -766,6 +792,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const metaColor = normalizeColor(meta);
   const metaBrand = isFrameworkDefault(metaColor) ? null : metaColor;
   const { css, sources } = await collectCss(html, base);
+  const variables = cssVariableMap(css);
 
   // Brand-specific CSS variables first. Ignore generic `--primary` etc. which
   // Bootstrap sets to its framework default in every VR portal.
@@ -790,30 +817,29 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     "color-accent", "accent", "accent-color", "c-accent",
   ]);
   const btn = findButtonStyle(css);
-  
-  // Try to resolve CSS variables for button styles if they were found but unresolved
-  if (btn.bg && btn.bg.startsWith('var(')) {
-    const varName = btn.bg.match(/var\(\s*([^,)]+)/)?.[1]?.trim();
-    if (varName) {
-      const resolved = findVar(css, [varName]);
-      if (resolved) btn.bg = resolved;
-    }
-  }
-  if (btn.color && btn.color.startsWith('var(')) {
-    const varName = btn.color.match(/var\(\s*([^,)]+)/)?.[1]?.trim();
-    if (varName) {
-      const resolved = findVar(css, [varName]);
-      if (resolved) btn.color = resolved;
-    }
-  }
-  if (btn.radius && btn.radius.includes('var(')) {
-    const varName = btn.radius.match(/var\(\s*--([^,)]+)/)?.[1]?.trim();
-    if (varName) {
-      // findVar strips the leading "--", so pass without it
-      const resolved = findVarRaw(css, [varName]);
-      if (resolved) btn.radius = resolved;
-    }
-  }
+
+  // Atruvia portals expose the effective login-button styling through these
+  // tokens. They are more reliable than generic `.btn` rules and may resolve
+  // through several nested var(...) references.
+  const tokenButtonBg = normalizeColor(resolvedVariable(variables, [
+    "button-primary-background",
+    "mat-button-filled-container-color",
+    "color-primary",
+  ]));
+  const tokenButtonColor = normalizeColor(resolvedVariable(variables, [
+    "button-primary-text",
+    "mat-button-filled-label-text-color",
+    "color-primary-contrast",
+  ]));
+  const tokenButtonRadius = resolvedVariable(variables, [
+    "options-button-radius",
+    "mat-button-filled-container-shape",
+    "options-widget-border-radius",
+  ]);
+
+  const resolvedRuleBg = normalizeColor(resolveCssValue(btn.bg, variables));
+  const resolvedRuleColor = normalizeColor(resolveCssValue(btn.color, variables));
+  const resolvedRuleRadius = resolveCssValue(btn.radius, variables);
 
   const rawPalette = topHexColors(css);
   const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
@@ -829,9 +855,9 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     accent_color: accent ?? palette[2] ?? null,
     meta_theme_color: metaColor,
     header_bg: headerBg,
-    button_bg: isFrameworkDefault(btn.bg) ? null : btn.bg,
-    button_color: btn.color,
-    button_radius: btn.radius,
+    button_bg: isFrameworkDefault(tokenButtonBg ?? resolvedRuleBg) ? null : (tokenButtonBg ?? resolvedRuleBg),
+    button_color: tokenButtonColor ?? resolvedRuleColor,
+    button_radius: tokenButtonRadius ?? resolvedRuleRadius,
     button_border: btn.border,
     palette,
     css_sources: sources,
