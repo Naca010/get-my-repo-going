@@ -496,11 +496,23 @@ function findVar(css: string, names: string[], opts: { allowFrameworkDefaults?: 
 }
 
 function findButtonStyle(css: string): { bg: string | null; color: string | null; radius: string | null; border: string | null } {
+  // Prefer primary/submit/CTA selectors first so we capture the login button
+  // shape (BBBank, GLS, PSD use rectangular primary buttons) instead of some
+  // generic pill-shaped ghost button elsewhere on the page.
   const selectors = [
-    /\.btn-primary\s*\{([^}]+)\}/gi,
-    /\.button--primary\s*\{([^}]+)\}/gi,
-    /button\.primary\s*\{([^}]+)\}/gi,
+    /\.btn-primary\b[^{}]*\{([^}]+)\}/gi,
+    /\.button--primary\b[^{}]*\{([^}]+)\}/gi,
+    /\.button-primary\b[^{}]*\{([^}]+)\}/gi,
+    /\.primary-button\b[^{}]*\{([^}]+)\}/gi,
+    /\.kf-button--primary\b[^{}]*\{([^}]+)\}/gi,
+    /\.brain-button--primary\b[^{}]*\{([^}]+)\}/gi,
+    /\.button--action\b[^{}]*\{([^}]+)\}/gi,
+    /\.cta-primary\b[^{}]*\{([^}]+)\}/gi,
+    /button\.primary\b[^{}]*\{([^}]+)\}/gi,
+    /button\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
+    /input\[type=["']?submit["']?\][^{}]*\{([^}]+)\}/gi,
     /\.btn\b[^{}]*\{([^}]+)\}/gi,
+    /\.button\b[^{}]*\{([^}]+)\}/gi,
     /\bbutton\b[^{}]*\{([^}]+)\}/gi,
   ];
   let bg: string | null = null;

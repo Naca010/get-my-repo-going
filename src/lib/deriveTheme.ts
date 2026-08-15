@@ -19,7 +19,7 @@ const DEFAULT: FlowTheme = {
   buttonBg: "#003399",
   accentText: "#003399",
   topBarColor: "#003399",
-  buttonRadius: "rounded-full",
+  buttonRadius: "rounded-sm",
 };
 
 function normHex(v: unknown): string | null {
@@ -39,17 +39,21 @@ function isNearWhite(hex: string | null): boolean {
 }
 
 function radiusFromCss(raw: string | null | undefined): string {
-  if (!raw) return "rounded-full";
-  const m = raw.match(/(\d+(?:\.\d+)?)\s*(px|rem|em)?/);
-  if (!m) return "rounded-full";
+  // Default when the crawler couldn't detect a border-radius: most bank
+  // login buttons are rectangular (BBBank, GLS, PSD are square/slightly rounded).
+  if (!raw) return "rounded-sm";
+  const m = raw.match(/(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/);
+  if (!m) return "rounded-sm";
   const val = parseFloat(m[1]!);
   const unit = m[2] ?? "px";
+  if (unit === "%") return val >= 40 ? "rounded-full" : "rounded-lg";
   const px = unit === "px" ? val : val * 16;
-  if (px >= 100) return "rounded-full";
-  if (px >= 20) return "rounded-full";
-  if (px >= 10) return "rounded-xl";
-  if (px >= 5) return "rounded-md";
-  if (px >= 1) return "rounded-sm";
+  if (px >= 999) return "rounded-full"; // pill (9999px etc.)
+  if (px >= 28) return "rounded-full";
+  if (px >= 14) return "rounded-xl";
+  if (px >= 8) return "rounded-lg";
+  if (px >= 4) return "rounded-md";
+  if (px >= 2) return "rounded-sm";
   return "rounded-none";
 }
 
