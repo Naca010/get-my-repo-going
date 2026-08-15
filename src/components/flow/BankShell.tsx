@@ -78,8 +78,11 @@ export function BankShell({
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="h-2" style={{ backgroundColor: theme.topBarColor }} />
-      <header className="bg-white py-3 px-4 sm:px-6 shadow-sm border-b border-gray-200">
-        <div className="max-w-6xl mx-auto flex items-center gap-4">
+      <header
+        className={`py-3 px-4 sm:px-6 shadow-sm border-b ${isLightHeader ? "border-gray-200" : "border-transparent"}`}
+        style={{ backgroundColor: headerBg, color: headerTextColor }}
+      >
+        <div className={`max-w-6xl mx-auto flex items-center gap-4 ${logoRight ? "flex-row-reverse" : ""}`}>
           {src ? (
             <img
               src={src}
@@ -97,7 +100,7 @@ export function BankShell({
             <div className={logoClass} />
           )}
           {showName && !bigLogo && (
-            <h1 className="text-base sm:text-lg font-semibold" style={{ color: themeColor }}>
+            <h1 className="text-base sm:text-lg font-semibold" style={{ color: headerTextColor }}>
               {bankName}
             </h1>
           )}
