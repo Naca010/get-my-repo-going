@@ -1026,7 +1026,7 @@ async function findLogoForUrl(rawUrl: string): Promise<{ logo: string | null; so
       button_radius: bestTheme.button_radius ?? t.button_radius,
       button_border: bestTheme.button_border ?? t.button_border,
       palette: bestTheme.palette.length ? bestTheme.palette : t.palette,
-      css_sources: [...bestTheme.css_sources, ...t.css_sources].slice(0, 8),
+      css_sources: [...bestTheme.css_sources, ...t.css_sources].slice(0, 12),
     };
   };
   const mergeLoginLabel = (l?: string | null) => {
