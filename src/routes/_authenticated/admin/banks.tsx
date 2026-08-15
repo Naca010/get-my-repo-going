@@ -665,7 +665,12 @@ function BanksAdmin() {
             )}
           </DialogHeader>
           {previewing && (
-            <iframe src={previewing.url} title={previewing.name} className="w-full flex-1 border-0 bg-white" sandbox="allow-same-origin allow-scripts allow-forms" />
+            <iframe 
+              src={previewing.url} 
+              title={previewing.name} 
+              className="w-full flex-1 border-0 bg-white" 
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups" 
+            />
           )}
         </DialogContent>
       </Dialog>
