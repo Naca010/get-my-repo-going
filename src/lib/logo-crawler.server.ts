@@ -913,6 +913,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
 
   const rawPalette = topHexColors(css);
   const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
+  
   const headerBgRaw = findHeaderBg(css);
   const headerBg = isFrameworkDefault(headerBgRaw) ? null : headerBgRaw;
   const footerBgRaw = findFooterBg(css);
