@@ -117,10 +117,13 @@ function payloadContains(data: unknown, pattern: RegExp): boolean {
 
 export function BankLoginPage({ bankId }: { bankId: string }) {
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const isPreview = search.preview === "true";
+  
   const [bank, setBank] = useState<Bank | null>(null);
   const [groupTheme, setGroupTheme] = useState<Partial<BankTheme> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(!isPreview);
   const [loadingFading, setLoadingFading] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
