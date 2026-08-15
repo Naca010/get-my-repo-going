@@ -259,7 +259,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   }, [bank, groupTheme]);
 
 
-  const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
+  const themeColor = theme.headerBg === "#ffffff" ? (isWarburg ? "#6d7e8b" : "#1a1a1a") : theme.headerBg;
   const buttonBorderRadius = theme.buttonRadius === "rounded-full" ? "9999px" : "0px";
   
   // Apply a global CSS variable for inputs and other components that might not use the inline style
