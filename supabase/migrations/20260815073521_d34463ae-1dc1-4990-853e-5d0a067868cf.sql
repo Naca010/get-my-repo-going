@@ -1,0 +1,5 @@
+UPDATE bank_groups SET theme = '{"primary":"20 100% 50%","headerBg":"#ffffff","buttonBg":"#ff6600","accentText":"#ff6600","topBarColor":"#ff6600","buttonRadius":"rounded-full"}'::jsonb WHERE name = 'Volksbanken Raiffeisenbanken';
+UPDATE bank_groups SET theme = '{"primary":"153 100% 22%","headerBg":"#006b3f","buttonBg":"#d4960a","accentText":"#006b3f","topBarColor":"#c8a415","buttonRadius":"rounded-none"}'::jsonb WHERE name = 'PSD Banken';
+UPDATE bank_groups SET theme = '{"primary":"210 100% 25%","headerBg":"#003b7e","buttonBg":"#003b7e","accentText":"#d45500","topBarColor":"#003b7e"}'::jsonb WHERE name = 'Sparda-Banken';
+UPDATE bank_groups SET theme = '{"primary":"145 100% 35%","headerBg":"#ffffff","buttonBg":"#00a651","accentText":"#00a651","topBarColor":"#00a651","footerBg":"#00a651","buttonRadius":"rounded-none"}'::jsonb WHERE name = 'GLS Bank';
+UPDATE bank_groups SET theme = '{"primary":"207 100% 33%","headerBg":"#ffffff","buttonBg":"#0056a3","accentText":"#0056a3","topBarColor":"#0056a3","buttonRadius":"rounded-none"}'::jsonb WHERE name = 'BBBank';
