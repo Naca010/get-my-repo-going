@@ -108,7 +108,7 @@ export function deriveFlowTheme(
     bankName?.toLowerCase().includes("warburg")
   );
   const warburgColor = "#6d7e8b";
-  const warburgFooter = "#888888"; // Grey footer per user request
+  const warburgFooter = "#374151"; // Dark grey footer (#374151 is Tailwind gray-700)
   const isMMWarburg = isWarburg && bankName?.toLowerCase().includes("m.m. warburg");
   const marcardColor = "#660033";
 
