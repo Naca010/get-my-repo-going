@@ -115,21 +115,32 @@ export function deriveFlowTheme(
   const glsAccent = "#00d75c";
   const glsTopBar = "#00d75c";
 
+  // Renault Bank direkt branding
+  const isRenault = groupName === "Spezifische Banken" && (
+    ext?.palette?.some(c => normHex(c) === "#edee00") ||
+    normHex(ext?.primary_color) === "#edee00" ||
+    normHex(ext?.button_bg) === "#edee00"
+  );
+  const renaultButton = "#edee00";
+  const renaultHeader = "#000000"; // Black header per screenshot
+
+
 
   
   // Header logic: Branches often have specific header colors.
   // We prefer the extracted header background if it's NOT white and NOT framework blue.
   const isExtHeaderGenericBlue = extHeader === "#003399" || extHeader === "#3333ff" || extHeader === "#002d87" || extHeader === "#002266";
-  const headerBg = c.headerBg ?? (isGLS ? glsHeader : null) ?? (isWarburg ? warburgColor : null) ?? (isMarcard ? marcardColor : null) ?? (extHeader && !isNearWhite(extHeader) && !isExtHeaderGenericBlue ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
+  const headerBg = c.headerBg ?? (isGLS ? glsHeader : null) ?? (isWarburg ? warburgColor : null) ?? (isMarcard ? marcardColor : null) ?? (isRenault ? renaultHeader : null) ?? (extHeader && !isNearWhite(extHeader) && !isExtHeaderGenericBlue ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
   
   // Footer logic: If extracted footer color is a generic framework blue or a framework yellow, ignore it.
   const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff" || extFooter === "#002d87" || extFooter === "#002266";
   const isFrameworkYellow = extFooter === "#ffcc00" || extFooter === "#fecb00" || extFooter === "#ffc107" || extFooter === "#e0a800";
-  const footerBgFinal = c.footerBg ?? (isGLS ? glsFooter : null) ?? (isWarburg ? warburgColor : null) ?? (isMarcard ? marcardColor : null) ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
+  const footerBgFinal = c.footerBg ?? (isGLS ? glsFooter : null) ?? (isWarburg ? warburgColor : null) ?? (isMarcard ? marcardColor : null) ?? (isRenault ? renaultHeader : null) ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
   
-  const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
-  const accentText = c.accentText ?? (isGLS ? glsAccent : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? extAccent ?? buttonBg;
-  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
+  const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultButton : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
+  const accentText = c.accentText ?? (isGLS ? glsAccent : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultButton : null) ?? extAccent ?? buttonBg;
+  const topBarColor = c.topBarColor ?? (isGLS ? glsTopBar : null) ?? (isMarcard ? marcardColor : null) ?? (isWarburg ? warburgColor : null) ?? (isRenault ? renaultHeader : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
+
 
   const explicitRadius = radiusFromCss(ext?.button_radius);
   // Older crawl rows stored the unresolved generic Atruvia token. Until those
@@ -145,7 +156,7 @@ export function deriveFlowTheme(
       : null;
   const buttonRadius =
     c.buttonRadius ??
-    (isWarburg ? "rounded-none" : null) ??
+    (isWarburg || isRenault ? "rounded-none" : null) ??
     explicitRadius ??
     legacyAtruviaRadius ??
     g.buttonRadius ??

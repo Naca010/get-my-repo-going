@@ -85,7 +85,12 @@ function pickHeaderLogo(html: string, base: URL): string | null {
   const headerMatch = html.match(/<header\b[\s\S]*?<\/header>/i);
   const scopes: Array<{ html: string; boost: number }> = [];
   if (headerMatch) scopes.push({ html: headerMatch[0], boost: 200 });
+  
+  // Renault check
+  const isRenault = base.hostname.includes("renaultbank-direkt");
+  
   scopes.push({ html, boost: 0 });
+
 
   const candidates: Array<{ url: string; score: number }> = [];
   for (const scope of scopes) {
