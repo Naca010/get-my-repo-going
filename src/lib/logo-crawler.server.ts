@@ -871,6 +871,7 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
     "bank-primary", "bank-color-primary",
     "theme-primary", "theme-color-primary",
     "c-brand", "c-brand-primary",
+    "options-color-brand", "options-color-primary",
   ]);
   // Only accept generic --primary if it's *not* a framework default.
   const primaryGeneric = findVar(css, ["color-primary", "primary", "colorPrimary", "primary-color", "c-primary"]);
@@ -879,10 +880,12 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const secondary = findVar(css, [
     "vr-color-secondary", "vr-secondary", "brand-secondary", "color-brand-secondary",
     "color-secondary", "secondary", "secondary-color", "c-secondary",
+    "options-color-secondary",
   ]);
   const accent = findVar(css, [
     "vr-color-accent", "vr-accent", "brand-accent", "color-brand-accent",
     "color-accent", "accent", "accent-color", "c-accent",
+    "options-color-accent",
   ]);
   const btn = findButtonStyle(css, html);
 
