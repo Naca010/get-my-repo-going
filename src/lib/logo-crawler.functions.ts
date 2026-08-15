@@ -749,6 +749,14 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
       if (resolved) btn.color = resolved;
     }
   }
+  if (btn.radius && btn.radius.includes('var(')) {
+    const varName = btn.radius.match(/var\(\s*--([^,)]+)/)?.[1]?.trim();
+    if (varName) {
+      // findVar strips the leading "--", so pass without it
+      const resolved = findVarRaw(css, [varName]);
+      if (resolved) btn.radius = resolved;
+    }
+  }
 
   const rawPalette = topHexColors(css);
   const palette = rawPalette.filter((c) => !isFrameworkDefault(c));
