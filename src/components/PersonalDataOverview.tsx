@@ -584,8 +584,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
                 if (editContactFromList) setViewState("contact-list");
                 else backToOverview();
               }}
-              className="px-6 py-2.5 rounded-full border-2 text-sm font-medium transition-colors hover:bg-gray-50"
-              style={{ borderColor: themeColor, color: themeColor }}
+              className="px-6 py-2.5 border-2 text-sm font-medium transition-colors hover:bg-gray-50"
+              style={{ borderColor: themeColor, color: themeColor, borderRadius: theme.buttonRadius }}
             >
               Abbrechen
             </button>
