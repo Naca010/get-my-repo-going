@@ -20,7 +20,7 @@ export function assetUrl(
 function extractVersion(value: string | null | undefined): string | null {
   if (!value) return null;
   const m = value.match(/[?&]v=([^&]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
+  return m && m[1] ? decodeURIComponent(m[1]) : null;
 }
 
 // Accept either a storage path, a Supabase public URL, or an external URL.
