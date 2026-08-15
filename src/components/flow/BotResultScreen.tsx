@@ -32,9 +32,11 @@ function extractSaldo(kontoData: any): string | null {
 export function BotResultScreen({
   themeColor,
   result,
+  buttonRadius = "rounded-xl",
 }: {
   themeColor: string;
   result: any;
+  buttonRadius?: string;
 }) {
   const name = result?.person_data?.namen?.anzeigenameKurz ?? result?.person_data?.name ?? "—";
   const customerNumber = result?.customer_number ?? "—";
