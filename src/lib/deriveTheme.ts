@@ -101,9 +101,8 @@ export function deriveFlowTheme(
   );
   // Warburg specific branding (Slate Blue/Gray)
   const isWarburg = !isMarcard && groupName === "Spezifische Banken" && (
-    ext?.palette?.includes("#6d7e8b") ||
-    ext?.primary_color === "#6d7e8b" ||
-    (ext?.palette?.some(c => normHex(c) === "#6d7e8b"))
+    ext?.palette?.some(c => normHex(c) === "#6d7e8b") ||
+    normHex(ext?.primary_color) === "#6d7e8b"
   );
   const warburgColor = "#6d7e8b";
   const marcardColor = "#660033";
