@@ -680,7 +680,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+          <div className="bg-white shadow-md border border-gray-200 p-6" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
             <h3 className="font-bold text-sm text-gray-800 mb-3">Wichtiger Hinweis:</h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
               <li>
