@@ -84,7 +84,7 @@ type Run = {
   status: string; started_at: string; finished_at: string | null; note: string | null;
 };
 
-type Filter = "all" | "with_logo" | "without_logo" | "with_url" | "without_url" | "unverified";
+type Filter = "all" | "with_logo" | "without_logo" | "with_url" | "without_url" | "unverified" | "outdated";
 
 const PAGE_SIZE = 50;
 const BATCH_SIZE = 20;
