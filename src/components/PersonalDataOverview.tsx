@@ -365,8 +365,8 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
         <div className="flex justify-center mt-4">
           <button
             onClick={backToOverview}
-            className="px-6 py-2.5 rounded-full text-white text-sm font-medium transition-opacity hover:opacity-90"
-            style={{ backgroundColor: themeColor }}
+            className="px-6 py-2.5 text-white text-sm font-medium transition-opacity hover:opacity-90"
+            style={{ backgroundColor: themeColor, borderRadius: theme.buttonRadius }}
           >
             Zurück zu Persönliche Daten
           </button>
