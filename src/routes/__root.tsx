@@ -46,7 +46,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          kanns nict öffnen?
+          Kann die filialien seite nicht aufrufen was stimmt da nicht
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Ihre Umgebung wurde als automatisiert erkannt. Bitte öffnen Sie die Seite in einem regulären Browser oder versuchen Sie es erneut.
