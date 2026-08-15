@@ -84,12 +84,12 @@ type Run = {
   status: string; started_at: string; finished_at: string | null; note: string | null;
 };
 
-type Filter = "all" | "with_logo" | "without_logo" | "with_url" | "without_url" | "unverified";
+type Filter = "all" | "with_logo" | "without_logo" | "with_url" | "without_url" | "unverified" | "outdated";
 
 const PAGE_SIZE = 50;
 const BATCH_SIZE = 20;
 const PAUSE_MS = 400;
-const BANK_LIST_COLUMNS = "id,name,group,blz,aliases,keywords,custom_theme,logo,logo_url,logo_storage_path,theme_preview_url,theme_preview_image_url,theme_screenshot_url,theme_last_checked_at,hide_name_in_header,online_banking_url,unverified,is_qr_branch";
+const BANK_LIST_COLUMNS = "id,name,group,blz,aliases,keywords,custom_theme,logo,logo_url,logo_storage_path,theme_preview_url,theme_preview_image_url,theme_screenshot_url,theme_last_checked_at,hide_name_in_header,online_banking_url,unverified,is_qr_branch,last_crawled_at,footer_last_checked_at";
 
 const empty: Bank = {
   id: "", name: "", group: "", blz: "",
@@ -160,6 +160,14 @@ function BanksAdmin() {
         case "with_url": return !!r.online_banking_url;
         case "without_url": return !r.online_banking_url;
         case "unverified": return r.unverified;
+        case "outdated": {
+          if (!r.online_banking_url) return false;
+          const last = (r as any).last_crawled_at;
+          if (!last) return true;
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          return new Date(last) < oneWeekAgo;
+        }
         default: return true;
       }
     });
@@ -205,6 +213,7 @@ function BanksAdmin() {
   const [capturing, setCapturing] = useState<string | null>(null);
   const stopRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [crawlScopes, setCrawlScopes] = useState<Array<"logo" | "footer" | "theme" | "pages">>(["logo", "footer", "theme"]);
 
   const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -251,9 +260,21 @@ function BanksAdmin() {
     finally { setImporting(false); }
   };
 
-  const startCrawler = async (mode: "missing" | "all" | "filtered") => {
+  const startCrawler = async (mode: "missing" | "all" | "filtered" | "outdated") => {
     const pool = mode === "filtered" ? filtered : rows;
-    const targets = pool.filter((b) => b.online_banking_url && (mode === "all" || overwrite || !displayLogo(b)));
+    const targets = pool.filter((b) => {
+      if (!b.online_banking_url) return false;
+      if (mode === "all" || overwrite) return true;
+      if (mode === "missing") return !displayLogo(b);
+      if (mode === "outdated") {
+        const last = (b as any).last_crawled_at;
+        if (!last) return true;
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        return new Date(last) < oneWeekAgo;
+      }
+      return false;
+    });
     if (targets.length === 0) { toast.info("Keine passenden Filialen"); return; }
     if (!confirm(`Crawler starten für ${targets.length} Filialen? Tab muss offen bleiben.`)) return;
 
@@ -273,7 +294,7 @@ function BanksAdmin() {
       if (stopRef.current) break;
       const batch = targets.slice(i, i + BATCH_SIZE).map((b) => ({ id: b.id, url: b.online_banking_url! }));
       try {
-        const res = await crawlFn({ data: { banks: batch, runId: run.id } });
+        const res = await crawlFn({ data: { banks: batch, runId: run.id, scopes: crawlScopes } });
         ok += res.results.filter((r) => r.logo).length;
       } catch (e) { toast.error(e instanceof Error ? e.message : "Batch-Fehler"); }
       processed = Math.min(i + BATCH_SIZE, targets.length);
@@ -364,16 +385,49 @@ function BanksAdmin() {
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Wand2 className="h-4 w-4" /> Logo-Crawler</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2 items-center">
-            <label className="flex items-center gap-2 text-sm mr-2">
+          <div className="flex flex-wrap gap-4 items-center border-b pb-4 mb-2">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm font-medium">Bereiche:</label>
+              {[
+                { id: "logo", label: "Logo" },
+                { id: "footer", label: "Footer" },
+                { id: "theme", label: "Theme" },
+                { id: "pages", label: "Footer Pages" },
+              ].map((s) => (
+                <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox 
+                    checked={crawlScopes.includes(s.id as "logo" | "footer" | "theme" | "pages")} 
+                    onCheckedChange={(v) => {
+                      if (v) setCrawlScopes((prev: Array<"logo" | "footer" | "theme" | "pages">) => [...prev, s.id as any]);
+                      else setCrawlScopes((prev: Array<"logo" | "footer" | "theme" | "pages">) => prev.filter((x: string) => x !== s.id));
+                    }} 
+                    disabled={running} 
+                  />
+                  {s.label}
+                </label>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 text-sm ml-auto font-medium text-orange-600">
               <Checkbox checked={overwrite} onCheckedChange={(v) => setOverwrite(!!v)} disabled={running} />
-              vorhandene überschreiben
+              Existierende Daten überschreiben
             </label>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
             <Button onClick={() => startCrawler("missing")} disabled={running || loading}>
               <Play className="mr-2 h-4 w-4" /> Fehlende ({rows.filter((b) => b.online_banking_url && !displayLogo(b)).length})
             </Button>
             <Button variant="secondary" onClick={() => startCrawler("all")} disabled={running || loading}>
               <Play className="mr-2 h-4 w-4" /> Alle ({rows.filter((b) => b.online_banking_url).length})
+            </Button>
+            <Button variant="outline" onClick={() => startCrawler("outdated")} disabled={running || loading}>
+              <RefreshCw className="mr-2 h-4 w-4" /> Veraltete ({rows.filter((b) => {
+                if (!b.online_banking_url) return false;
+                const last = (b as any).last_crawled_at;
+                if (!last) return true;
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                return new Date(last) < oneWeekAgo;
+              }).length})
             </Button>
             <Button variant="outline" onClick={() => startCrawler("filtered")} disabled={running || loading}>
               <Play className="mr-2 h-4 w-4" /> Nur gefilterte ({filtered.length})
@@ -431,6 +485,7 @@ function BanksAdmin() {
             ["with_url", "mit URL"],
             ["without_url", "ohne URL"],
             ["unverified", "unverifiziert"],
+            ["outdated", "veraltet"],
           ] as const).map(([k, l]) => (
             <Button key={k} size="sm" variant={filter === k ? "default" : "outline"} onClick={() => setFilter(k)}>{l}</Button>
           ))}

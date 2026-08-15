@@ -43,7 +43,15 @@ function radiusFromCss(raw: string | null | undefined): string {
   // login buttons are rectangular (BBBank, GLS, PSD are square/slightly rounded).
   if (!raw) return "rounded-sm";
   const m = raw.match(/(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/);
-  if (!m) return "rounded-sm";
+  if (!m) {
+    // Check for shorthand like "4px 4px 0 0"
+    const shorthand = raw.split(/\s+/).find(p => /(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/.test(p));
+    if (shorthand) {
+      const sm = shorthand.match(/(\d+(?:\.\d+)?)\s*(px|rem|em|%)?/);
+      if (sm) return radiusFromCss(sm[0]);
+    }
+    return "rounded-sm";
+  }
   const val = parseFloat(m[1]!);
   const unit = m[2] ?? "px";
   if (unit === "%") return val >= 40 ? "rounded-full" : "rounded-lg";

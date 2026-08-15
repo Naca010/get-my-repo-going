@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type Input = { banks: Array<{ id: string; url: string }>; runId?: string };
+type Input = {
+  banks: Array<{ id: string; url: string }>;
+  runId?: string;
+  scopes?: Array<"logo" | "footer" | "theme" | "pages">;
+};
 type ResultItem = { id: string; logo: string | null; error?: string };
 
 async function storeLogoInBucket(
@@ -805,41 +809,56 @@ export const crawlBankLogos = createServerFn({ method: "POST" })
     if (rpcErr || !isAdmin) throw new Error("Forbidden");
 
     const results: ResultItem[] = [];
+    const scopes = data.scopes ?? ["logo", "footer", "theme", "pages"];
+
     await Promise.all(
       data.banks.map(async (b) => {
         try {
           const { logo, sourceUrl, footer, theme } = await findLogoForUrl(b.url);
+          
           let storedUrl: string | null = null;
           let storedPath: string | null = null;
-          if (logo) {
+          
+          if (logo && scopes.includes("logo")) {
             const stored = await storeLogoInBucket(context.supabase, b.id, logo);
             if (stored) {
               storedUrl = stored.publicUrl;
               storedPath = stored.path;
             }
           }
-          const footerPages = await fetchFooterPages(footer.links);
+
           const patch: Record<string, unknown> = {
-            footer_links: footer.links,
-            footer_language: footer.language,
-            footer_last_checked_at: new Date().toISOString(),
-            footer_pages: footerPages,
-            footer_partners: footer.partners,
-            footer_socials: footer.socials,
-            footer_ctas: footer.ctas,
-            footer_columns: footer.columns,
-            footer_disclaimer: footer.disclaimer,
+            last_crawled_at: new Date().toISOString(),
           };
-          if (theme) {
+
+          if (scopes.includes("footer")) {
+            patch["footer_links"] = footer.links;
+            patch["footer_language"] = footer.language;
+            patch["footer_last_checked_at"] = new Date().toISOString();
+            patch["footer_partners"] = footer.partners;
+            patch["footer_socials"] = footer.socials;
+            patch["footer_ctas"] = footer.ctas;
+            patch["footer_columns"] = footer.columns;
+            patch["footer_disclaimer"] = footer.disclaimer;
+            
+            if (scopes.includes("pages")) {
+              const footerPages = await fetchFooterPages(footer.links);
+              patch["footer_pages"] = footerPages;
+            }
+          }
+
+          if (theme && scopes.includes("theme")) {
             patch["theme_extracted"] = theme;
             patch["theme_extracted_at"] = new Date().toISOString();
           }
-          if (logo) {
+
+          if (logo && scopes.includes("logo")) {
             patch["logo"] = logo;
             patch["logo_source_url"] = sourceUrl;
             if (storedUrl) patch["logo_url"] = storedUrl;
             if (storedPath) patch["logo_storage_path"] = storedPath;
           }
+
           const { error } = await context.supabase.from("banks").update(patch as any).eq("id", b.id);
           if (error) {
             await context.supabase.from("logo_crawl_log").upsert({
