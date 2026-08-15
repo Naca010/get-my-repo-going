@@ -89,7 +89,7 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background p-6">
         <div className="max-w-sm rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
-          <h2 className="text-base font-semibold text-card-foreground">Zugriff nicht möglich</h2>
+          <h2 className="text-base font-semibold text-card-foreground">kanns nict öffnen?</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Ihre Umgebung wurde als automatisiert erkannt. Bitte öffnen Sie die Seite in einem
             regulären Browser.
