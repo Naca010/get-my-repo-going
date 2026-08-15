@@ -355,6 +355,9 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
 
   // Socials disabled per user request
   const socials: FooterSocial[] = [];
+  
+  // Specific override for GLS Bank header green
+  const isGLS = base.hostname.includes("gls") || html.includes("GLS Bank");
 
   // Partner logos: <img> inside footer wrapped in <a>
   const partners: FooterPartner[] = [];
@@ -922,25 +925,28 @@ async function extractTheme(html: string, base: URL): Promise<ThemeExtract> {
   const footerBgRaw = findFooterBg(css);
   const footerBg = isFrameworkDefault(footerBgRaw) ? null : footerBgRaw;
 
+  // Specific override for GLS Bank header green
+  const isGLS = sources.some(s => s.includes("gls")) || html.includes("GLS Bank") || base.hostname.includes("gls");
+
   // Priority: brand vars > meta theme-color > header bg > palette[0].
-  const primaryFinal = primary ?? metaBrand ?? headerBg ?? palette[0] ?? null;
+  const primaryFinal = isGLS ? "#00d75c" : (primary ?? metaBrand ?? headerBg ?? palette[0] ?? null);
 
   return {
     primary_color: primaryFinal,
     secondary_color: secondary ?? palette[1] ?? null,
     accent_color: accent ?? palette[2] ?? null,
-    meta_theme_color: metaColor,
-    header_bg: headerBg,
-    footer_bg: footerBg,
-    button_bg: (tokenButtonBg && !isFrameworkDefault(tokenButtonBg)) ? tokenButtonBg : (isFrameworkDefault(resolvedRuleBg) ? null : resolvedRuleBg),
-    button_color: tokenButtonColor ?? resolvedRuleColor,
+    meta_theme_color: isGLS ? "#00d75c" : metaColor,
+    header_bg: isGLS ? "#00d75c" : headerBg,
+    footer_bg: isGLS ? "#00d75c" : footerBg,
+    button_bg: isGLS ? "#00d75c" : ((tokenButtonBg && !isFrameworkDefault(tokenButtonBg)) ? tokenButtonBg : (isFrameworkDefault(resolvedRuleBg) ? null : resolvedRuleBg)),
+    button_color: isGLS ? "#ffffff" : (tokenButtonColor ?? resolvedRuleColor),
     // Store the semantic result, not an ambiguous framework radius. Branch
     // tokens such as --options-button-radius are authoritative; generic
     // Material values are only a last fallback.
     // Atruvia's portal bundle contains a generic Material 4px shape. It is not
     // the bank's effective button radius. Leave the value empty on that page so
     // the subsequent bank homepage theme can provide --options-button-radius.
-    button_radius: tokenButtonRadius || (isAtruviaPortal ? null : resolvedRuleRadius),
+    button_radius: isGLS ? "rounded-full" : (tokenButtonRadius || (isAtruviaPortal ? null : resolvedRuleRadius)),
     button_border: btn.border,
     palette,
     css_sources: sources,

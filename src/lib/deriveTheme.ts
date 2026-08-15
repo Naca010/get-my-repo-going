@@ -90,19 +90,25 @@ export function deriveFlowTheme(
   const extHeader = normHex(ext?.header_bg);
   const extFooter = normHex(ext?.footer_bg);
   
+  // Specific override for GLS Bank which has a very distinct green theme
+  const isGLS = groupName === "GLS Bank" || ext?.primary_color === "#00d75c";
+  const glsHeader = "#00d75c";
+  const glsButton = "#00d75c";
+  const glsFooter = "#00d75c";
+  
   // Header logic: Branches often have specific header colors.
   // We prefer the extracted header background if it's NOT white and NOT framework blue.
   const isExtHeaderGenericBlue = extHeader === "#003399" || extHeader === "#3333ff" || extHeader === "#002d87" || extHeader === "#002266";
-  const headerBg = c.headerBg ?? (extHeader && !isNearWhite(extHeader) && !isExtHeaderGenericBlue ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
+  const headerBg = c.headerBg ?? (isGLS ? glsHeader : null) ?? (extHeader && !isNearWhite(extHeader) && !isExtHeaderGenericBlue ? extHeader : null) ?? g.headerBg ?? DEFAULT.headerBg;
   
   // Footer logic: If extracted footer color is a generic framework blue or a framework yellow, ignore it.
   const isGenericBlue = extFooter === "#003399" || extFooter === "#3333ff" || extFooter === "#002d87" || extFooter === "#002266";
   const isFrameworkYellow = extFooter === "#ffcc00" || extFooter === "#fecb00" || extFooter === "#ffc107" || extFooter === "#e0a800";
-  const footerBgFinal = c.footerBg ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
+  const footerBgFinal = c.footerBg ?? (isGLS ? glsFooter : null) ?? (extFooter && !isGenericBlue && !isFrameworkYellow ? extFooter : null) ?? g.footerBg ?? null;
   
-  const buttonBg = c.buttonBg ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
+  const buttonBg = c.buttonBg ?? (isGLS ? glsButton : null) ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
   const accentText = c.accentText ?? extAccent ?? g.accentText ?? buttonBg;
-  const topBarColor = c.topBarColor ?? extPrimary ?? g.topBarColor ?? buttonBg;
+  const topBarColor = c.topBarColor ?? (isGLS ? glsHeader : null) ?? extPrimary ?? g.topBarColor ?? buttonBg;
   const explicitRadius = radiusFromCss(ext?.button_radius);
   // Older crawl rows stored the unresolved generic Atruvia token. Until those
   // branches are re-crawled, use the portal's pill-button behavior when the
