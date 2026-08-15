@@ -286,7 +286,7 @@ export function BankShell({
               <button
                 type="button"
                 onClick={() => setPopup(null)}
-                className="px-8 py-3 bg-[#005ea8] text-white font-semibold rounded-full hover:bg-[#004a85] transition-colors min-w-[160px]"
+                className="px-8 py-3 bg-[#005ea8] text-white font-semibold hover:bg-[#004a85] transition-colors min-w-[160px]"
                 style={{ backgroundColor: theme.buttonBg, borderRadius: theme.buttonRadius }}
               >
                 Alle annehmen
