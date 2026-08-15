@@ -79,7 +79,10 @@ export function deriveFlowTheme(
     normHex(ext?.meta_theme_color) ||
     (ext?.palette?.map(normHex).find(Boolean) ?? null);
 
-  const extButton = normHex(ext?.button_bg) || extPrimary;
+  // Never substitute a header, meta, or palette color for the submit button.
+  // If the crawler did not identify the actual button rule, the curated group
+  // button color is safer than an unrelated color sampled elsewhere.
+  const extButton = normHex(ext?.button_bg);
   const extAccent = normHex(ext?.accent_color) || extPrimary;
 
   const extHeader = normHex(ext?.header_bg);
