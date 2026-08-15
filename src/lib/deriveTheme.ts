@@ -19,7 +19,7 @@ const DEFAULT: FlowTheme = {
   buttonBg: "#003399",
   accentText: "#003399",
   topBarColor: "#003399",
-  buttonRadius: "rounded-sm",
+  buttonRadius: "rounded-none",
 };
 
 function normHex(v: unknown): string | null {
