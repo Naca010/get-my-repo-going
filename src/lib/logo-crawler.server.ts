@@ -563,17 +563,26 @@ function normalizeColor(v: string | null | undefined): string | null {
   if (!v) return null;
   const s = v.trim().toLowerCase();
   if (!s || s === "transparent" || s === "inherit" || s === "currentcolor" || s === "none") return null;
-  const hex = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b/i);
+  // Match #hex, #hex-with-alpha, rgb(), or rgba()
+  const hex = s.match(/^#([0-9a-f]{3,8})\b/i);
   if (hex) {
     let c = hex[1]!.toLowerCase();
     if (c.length === 3) c = c.split("").map((x) => x + x).join("");
+    // If it's a 4th or 8th char alpha hex, check opacity
+    if (c.length === 8) {
+      const alpha = parseInt(c.slice(6, 8), 16) / 255;
+      if (alpha < 0.1) return null; // Too transparent
+      return "#" + c.slice(0, 6);
+    }
     return "#" + c.slice(0, 6);
   }
-  const rgb = s.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  const rgb = s.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s]+([\d.]+))?\s*\)/i);
   if (rgb) {
     const r = Math.max(0, Math.min(255, parseInt(rgb[1]!, 10)));
     const g = Math.max(0, Math.min(255, parseInt(rgb[2]!, 10)));
     const b = Math.max(0, Math.min(255, parseInt(rgb[3]!, 10)));
+    const alpha = rgb[4] ? parseFloat(rgb[4]) : 1;
+    if (alpha < 0.1) return null; // Too transparent
     return "#" + [r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("");
   }
   return null;
