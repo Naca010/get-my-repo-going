@@ -17,7 +17,14 @@ import { deriveFlowTheme } from "@/lib/deriveTheme";
 
 
 
+import { z } from "zod";
+
+const loginSearchSchema = z.object({
+  preview: z.string().optional(),
+});
+
 export const Route = createFileRoute("/login/$bankId")({
+  validateSearch: (search) => loginSearchSchema.parse(search),
   head: ({ params }) => ({
     meta: [
       { title: `Online-Banking Anmeldung · ${params.bankId}` },
