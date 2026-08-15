@@ -436,6 +436,36 @@ function BanksAdmin() {
               Existierende Daten überschreiben
             </label>
           </div>
+          <div className="flex flex-wrap gap-2 items-center border-b pb-4 mb-2">
+            <span className="text-sm font-medium mr-2">Gruppen:</span>
+            <Button size="sm" variant={crawlGroups.length === 0 ? "default" : "outline"} onClick={() => setCrawlGroups([])} disabled={running}>
+              Alle ({groups.length})
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setCrawlGroups(groups.filter((g) => !CANONICAL_GROUPS.includes(g)))} disabled={running}>
+              Nur nicht-kanonische
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setCrawlGroups(CANONICAL_GROUPS.filter((g) => groups.includes(g)))} disabled={running}>
+              Nur VR / PSD / Sparda
+            </Button>
+            <div className="flex flex-wrap gap-1 ml-2 max-w-full">
+              {groups.map((g) => {
+                const active = crawlGroups.includes(g);
+                const isCanon = CANONICAL_GROUPS.includes(g);
+                return (
+                  <button
+                    key={g}
+                    type="button"
+                    disabled={running}
+                    onClick={() => setCrawlGroups((prev) => prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g])}
+                    className={`text-xs px-2 py-1 rounded border ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"} ${isCanon ? "italic" : ""}`}
+                    title={isCanon ? "Kanonische Gruppe — Theme wird übersprungen" : ""}
+                  >
+                    {g}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="flex flex-wrap gap-2 items-center">
             <Button onClick={() => startCrawler("missing")} disabled={running || loading}>
               <Play className="mr-2 h-4 w-4" /> Fehlende ({rows.filter((b) => b.online_banking_url && !displayLogo(b)).length})
