@@ -11,6 +11,7 @@ export type ThemeExtracted = {
   button_color?: string | null;
   button_radius?: string | null;
   button_border?: string | null;
+  footer_bg?: string | null;
   palette?: string[] | null;
 };
 
