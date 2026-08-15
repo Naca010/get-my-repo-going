@@ -90,13 +90,22 @@ export const processZipImport = createServerFn({ method: "POST" })
           if (newUrl) b.logo_url = newUrl;
         }
 
+        // Handle possible extra fields from manifest/version 2
+        const payload = { ...b };
+        // If importing into an older schema, Supabase will ignore unknown columns,
+        // but it's safer to ensure we don't break if columns were renamed.
+
         const { data: existing } = await context.supabase
-          .from("banks").select("id").eq("id", b.id).maybeSingle();
+          .from("banks")
+          .select("id")
+          .eq("id", b.id)
+          .maybeSingle();
+
         if (existing) {
-          await context.supabase.from("banks").update(b).eq("id", b.id);
+          await context.supabase.from("banks").update(payload).eq("id", b.id);
           updated++;
         } else {
-          await context.supabase.from("banks").insert(b);
+          await context.supabase.from("banks").insert(payload);
           created++;
         }
       }
