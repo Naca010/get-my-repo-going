@@ -83,7 +83,7 @@ export function AddressVerificationStep({
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
       {/* Reassurance banner */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+      <div className="bg-white shadow-md border border-gray-200 p-5" style={{ borderRadius: theme.buttonRadius === "rounded-none" ? "0px" : "12px" }}>
         <div className="flex items-start gap-3">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
