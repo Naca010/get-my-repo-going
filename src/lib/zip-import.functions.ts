@@ -49,7 +49,6 @@ export const processZipImport = createServerFn({ method: "POST" })
       throw new Error("Weder banks.json noch eine CSV-Datei im ZIP gefunden.");
     }
 
-    const records = rawRecords;
     let createdCount = 0;
     let updatedCount = 0;
     let logosImported = 0;
@@ -58,19 +57,21 @@ export const processZipImport = createServerFn({ method: "POST" })
       const groups = JSON.parse(bankGroupsJsonEntry.getData().toString('utf8'));
       for (const g of groups) {
         await context.supabase.from("bank_groups").upsert({
-          name: g.name,
-          theme: g.theme || {},
-          is_active: g.is_active ?? true
-        }, { onConflict: "name" });
+          name: g.name as string,
+          theme: (g.theme || {}) as any
+        });
       }
     } else {
-      const groupNames = Array.from(new Set(records.map((r: any) => (isJson ? r.group : r.gruppe) || "Volksbanken Raiffeisenbanken")));
+      const groupNames = Array.from(new Set(rawRecords.map((r) => (isJson ? r.group : r.gruppe) || "Volksbanken Raiffeisenbanken")));
       for (const name of groupNames) {
-        await context.supabase.from("bank_groups").upsert({ name, theme: {} }, { onConflict: "name" });
+        await context.supabase.from("bank_groups").upsert({ 
+          name: name as string, 
+          theme: {} as any 
+        });
       }
     }
 
-    for (const record of records) {
+    for (const record of rawRecords) {
       const bankId = record.id;
       const logoFilename = isJson ? record.logo_storage_path : record.logo_file;
       let logoUrl = record.logo_url;
@@ -120,10 +121,10 @@ export const processZipImport = createServerFn({ method: "POST" })
         logo_storage_path: logoStoragePath,
         unverified: isJson ? record.unverified : record.unverified === 'true',
         is_qr_branch: record.is_qr_branch ?? false,
-        footer_links: record.footer_links || null,
+        footer_links: (record.footer_links || {}) as any,
         footer_language: record.footer_language || 'de',
         logo_source_url: record.logo_source_url || null,
-        custom_theme: record.custom_theme || record.theme_extracted || null,
+        custom_theme: (record.custom_theme || record.theme_extracted || null) as any,
         theme_screenshot_url: record.theme_screenshot_url || null,
         theme_preview_image_url: record.theme_preview_image_url || null,
       };
