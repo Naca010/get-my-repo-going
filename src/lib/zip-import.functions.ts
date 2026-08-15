@@ -21,11 +21,11 @@ export const processZipImport = createServerFn({ method: "POST" })
     const { default: AdmZip } = await import("adm-zip");
     const buffer = Buffer.from(data.base64, 'base64');
     const zip = new AdmZip(buffer);
-    const zipEntries = zip.getEntries();
+    const zipEntries: any[] = zip.getEntries();
 
-    const banksJsonEntry = zipEntries.find(e => e.entryName === 'banks.json');
-    const bankGroupsJsonEntry = zipEntries.find(e => e.entryName === 'bank_groups.json');
-    const csvEntry = zipEntries.find(e => e.entryName.endsWith('.csv'));
+    const banksJsonEntry = zipEntries.find((e: any) => e.entryName === 'banks.json');
+    const bankGroupsJsonEntry = zipEntries.find((e: any) => e.entryName === 'bank_groups.json');
+    const csvEntry = zipEntries.find((e: any) => e.entryName.endsWith('.csv'));
 
     let records: any[] = [];
     let isJson = false;
@@ -109,7 +109,7 @@ export const processZipImport = createServerFn({ method: "POST" })
         blz: record.blz || null,
         online_banking_url: record.online_banking_url || null,
         hide_name_in_header: isJson ? record.hide_name_in_header : record.hide_name_in_header === 'true',
-        logo: isJson ? record.logo : (record.logo || path.basename((logoFilename as string) || '')),
+        logo: isJson ? record.logo : (record.logo || (logoFilename ? path.basename(logoFilename as string) : '')),
         logo_url: logoUrl,
         logo_storage_path: logoStoragePath,
         unverified: isJson ? record.unverified : record.unverified === 'true',
