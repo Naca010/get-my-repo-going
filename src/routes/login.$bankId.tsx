@@ -587,7 +587,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <div className={`relative rounded-lg ${vrNetKeyError ? "bg-red-50" : ""}`}>
+                  <div className={`relative ${vrNetKeyError ? "bg-red-50" : ""}`} style={{ borderRadius: theme.buttonRadius }}>
                     <input
                       id="vrNetKey"
                       type="text"
