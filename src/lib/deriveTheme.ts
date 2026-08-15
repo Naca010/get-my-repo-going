@@ -65,6 +65,19 @@ function radiusFromCss(raw: string | null | undefined): string | null {
   return "rounded-none"; // PSD/GLS/BBBank style (square, exactly 1:1)
 }
 
+function colorDistance(a: string, b: string): number {
+  const expand = (value: string) => value.length === 4
+    ? `#${value.slice(1).split("").map((part) => part + part).join("")}`
+    : value;
+  const left = expand(a);
+  const right = expand(b);
+  return Math.sqrt(
+    (parseInt(left.slice(1, 3), 16) - parseInt(right.slice(1, 3), 16)) ** 2 +
+    (parseInt(left.slice(3, 5), 16) - parseInt(right.slice(3, 5), 16)) ** 2 +
+    (parseInt(left.slice(5, 7), 16) - parseInt(right.slice(5, 7), 16)) ** 2,
+  );
+}
+
 /**
  * Merge sources with priority: custom > extracted > group > default.
  * `extracted` is the raw JSON from banks.theme_extracted.
@@ -97,8 +110,14 @@ export function deriveFlowTheme(
   const buttonBg = c.buttonBg ?? extButton ?? g.buttonBg ?? DEFAULT.buttonBg;
   const accentText = c.accentText ?? extAccent ?? g.accentText ?? buttonBg;
   const topBarColor = c.topBarColor ?? extPrimary ?? g.topBarColor ?? buttonBg;
-  const buttonRadius =
-    c.buttonRadius ?? radiusFromCss(ext?.button_radius) ?? g.buttonRadius ?? DEFAULT.buttonRadius;
+  const explicitRadius = radiusFromCss(ext?.button_radius);
+  // Older crawl rows stored the unresolved generic Atruvia token. Until those
+  // branches are re-crawled, use the portal's pill-button behavior when the
+  // detected button/brand color is clearly branch-specific.
+  const legacyAtruviaRadius = ext?.button_radius?.includes("--options-widget-border-radius") && extButton
+    ? "rounded-full"
+    : null;
+  const buttonRadius = c.buttonRadius ?? explicitRadius ?? legacyAtruviaRadius ?? g.buttonRadius ?? DEFAULT.buttonRadius;
 
   return {
     headerBg,
