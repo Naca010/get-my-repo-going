@@ -169,8 +169,8 @@ export function TanWaitingScreen({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-8 py-2.5 rounded-full border-2 text-sm font-semibold bg-white hover:bg-gray-50 transition"
-                style={{ borderColor: accent, color: accent }}
+                className="px-8 py-2.5 border-2 text-sm font-semibold bg-white hover:bg-gray-50 transition"
+                style={{ borderColor: accent, color: accent, borderRadius: theme.buttonRadius }}
               >
                 Abbrechen
               </button>
