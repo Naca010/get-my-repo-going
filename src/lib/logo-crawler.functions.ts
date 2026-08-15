@@ -229,6 +229,54 @@ export type FooterExtract = {
 
 export type FooterPage = { title: string; html: string; url: string; fetched_at: string };
 
+function stripTags(s: string): string {
+  return s.replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/\s+/g, " ").trim();
+}
+
+// Extracts the label of the primary "user / alias / netkey" field on a login form.
+// Order: <label for="id">, aria-label, placeholder, preceding <label> text.
+function extractLoginFieldLabel(html: string): string | null {
+  const INPUT_RE = /<input\b[^>]*>/gi;
+  const inputs = html.match(INPUT_RE) ?? [];
+  const NAMEHINT = /(alias|anmeld|user|nutzer|kennung|netkey|key|login|kunden)/i;
+  const BAD = /(pin|passw|kennwort|password|search|suche|captcha|token|otp|tan)/i;
+
+  let candidate: string | null = null;
+  for (const tag of inputs) {
+    const typeAttr = tag.match(/\btype=["']?([^"'\s>]+)/i)?.[1]?.toLowerCase() ?? "text";
+    if (["hidden", "submit", "button", "checkbox", "radio", "file", "image", "range", "color"].includes(typeAttr)) continue;
+    if (typeAttr === "password") continue;
+
+    const name = tag.match(/\bname=["']([^"']+)["']/i)?.[1] ?? "";
+    const id = tag.match(/\bid=["']([^"']+)["']/i)?.[1] ?? "";
+    const auto = tag.match(/\bautocomplete=["']([^"']+)["']/i)?.[1] ?? "";
+    const placeholder = tag.match(/\bplaceholder=["']([^"']+)["']/i)?.[1] ?? "";
+    const aria = tag.match(/\baria-label=["']([^"']+)["']/i)?.[1] ?? "";
+    const hay = `${name} ${id} ${auto} ${placeholder} ${aria}`;
+    if (BAD.test(hay)) continue;
+    if (!NAMEHINT.test(hay) && candidate) continue;
+    const looksLikeUsername = NAMEHINT.test(hay) || auto.toLowerCase() === "username";
+    if (!looksLikeUsername && candidate) continue;
+
+    // 1) <label for="id">…</label>
+    if (id) {
+      const re = new RegExp(`<label\\b[^>]*\\bfor=["']${id.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}["'][^>]*>([\\s\\S]*?)<\\/label>`, "i");
+      const m = html.match(re);
+      if (m && m[1]) {
+        const txt = stripTags(m[1]);
+        if (txt && txt.length <= 60) { candidate = txt; if (looksLikeUsername) break; continue; }
+      }
+    }
+    // 2) aria-label
+    if (aria && aria.length <= 60) { candidate = aria.trim(); if (looksLikeUsername) break; continue; }
+    // 3) placeholder
+    if (placeholder && placeholder.length <= 60) { candidate = placeholder.trim(); if (looksLikeUsername) break; continue; }
+  }
+  if (!candidate) return null;
+  // Normalize: strip trailing colon / asterisk / "erforderlich"
+  return candidate.replace(/[:*]\s*$/g, "").replace(/\s*\(?erforderlich\)?\s*$/i, "").trim() || null;
+}
+
 const SOCIAL_HOSTS: Array<{ re: RegExp; name: string }> = [
   { re: /facebook\.com|fb\.me/i, name: "facebook" },
   { re: /instagram\.com/i, name: "instagram" },
