@@ -130,7 +130,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [bank, setBank] = useState<Bank | null>(null);
   const [groupTheme, setGroupTheme] = useState<Partial<BankTheme> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialLoading, setInitialLoading] = useState(!isPreview);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loadingFading, setLoadingFading] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
