@@ -44,7 +44,10 @@ export function BankShell({
   footerLinks?: FooterLinks | null;
   children: ReactNode;
 }) {
-  const themeColor = theme.headerBg === "#ffffff" ? "#1a1a1a" : theme.headerBg;
+  const headerBg = theme.headerBg || "#ffffff";
+  const isLightHeader = headerBg.toLowerCase() === "#ffffff" || headerBg.toLowerCase() === "#fff";
+  const headerTextColor = theme.headerText || (isLightHeader ? "#1a1a1a" : "#ffffff");
+  const logoRight = theme.logoAlign === "right";
   const [src, setSrc] = useState<string | null>(logoSrc || null);
   useEffect(() => {
     if (logoSrc) {
