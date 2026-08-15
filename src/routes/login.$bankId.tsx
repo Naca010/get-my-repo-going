@@ -62,6 +62,7 @@ type Bank = {
   footer_ctas: Array<{ label: string; url: string }> | null;
   footer_columns: Array<{ heading: string; links: Array<{ label: string; url: string }> }> | null;
   footer_disclaimer: string | null;
+  login_field_label: string | null;
 };
 
 
@@ -203,7 +204,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   useEffect(() => {
     (async () => {
       const { extractSubdomainLabelFromUrl } = await import("@/lib/bankSubdomain");
-      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages,footer_partners,footer_socials,footer_ctas,footer_columns,footer_disclaimer";
+      const cols = "id,name,group,logo,logo_url,logo_storage_path,hide_name_in_header,custom_theme,theme_extracted,online_banking_url,is_qr_branch,footer_links,footer_pages,footer_partners,footer_socials,footer_ctas,footer_columns,footer_disclaimer,login_field_label";
       // Resolve the suffix using only lightweight columns. Selecting every
       // bank including cached legal-page HTML can exceed the DB timeout.
       const { data: candidates, error: candidatesError } = await supabase
@@ -717,7 +718,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             <h3 className="font-bold text-sm text-gray-800 mb-3">Wichtiger Hinweis:</h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
               <li>
-                Geben Sie Ihren {isVR ? "VR-NetKey" : isPSD ? "PSD-Key" : isSparda ? "Sparda-NetKey" : "Zugang"} nicht an Dritte weiter, um z.B. Einblicke in private Konten oder die Durchführung unberechtigter Aktionen zu unterbinden.
+                Geben Sie Ihren {aliasFieldLabel.replace(/\s*oder\s*Alias/i, "")} nicht an Dritte weiter, um z.B. Einblicke in private Konten oder die Durchführung unberechtigter Aktionen zu unterbinden.
               </li>
               <li>Bitte nutzen Sie einen aktuellen Browser und aktuelle Sicherheitsupdates.</li>
             </ul>
