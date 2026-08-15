@@ -381,12 +381,14 @@ function extractFooterLinks(html: string, base: URL): FooterExtract {
   // Disclaimer
   let disclaimer: string | null = null;
   if (footerMatch) {
-    const paragraphs = [...footerMatch[0].matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    const paragraphs = [...footerMatch[0].matchAll(/<(?:p|span|div)\b[^>]*>([\s\S]*?)<\/(?:p|span|div)>/gi)]
       .map((m) => m[1]!.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim())
-      .filter((t) => t.length > 30 && t.length < 600);
-    disclaimer = paragraphs[paragraphs.length - 1] ?? null;
+      .filter((t) => t.length > 20 && t.length < 800 && (t.includes('©') || t.includes('Copyright') || t.includes('Sicherungseinrichtung') || t.includes('Pflichtangaben')));
+    
+    disclaimer = paragraphs.find(p => p.includes('©') || p.includes('Copyright')) || paragraphs[0] || null;
+    
     if (!disclaimer) {
-      const copy = footerMatch[0].match(/©[^<]{5,200}/);
+      const copy = footerMatch[0].match(/(?:©|Copyright)[^<]{5,250}/i);
       if (copy) disclaimer = copy[0].replace(/\s+/g, " ").trim();
     }
   }
