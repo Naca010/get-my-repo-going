@@ -271,6 +271,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const themeColor = theme.headerBg === "#ffffff" ? (isWarburg ? "#6d7e8b" : "#1a1a1a") : theme.headerBg;
   const buttonBorderRadius = theme.buttonRadius === "rounded-full" ? "9999px" : "0px";
+  const hexToRgba = (hex: string, alpha: number) => {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex?.trim() ?? "");
+    if (!m) return `rgba(59,130,246,${alpha})`;
+    return `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${alpha})`;
+  };
+  const focusAccent = theme.accentText || themeColor;
+  const focusTint = hexToRgba(focusAccent, 0.08);
   
   // Apply a global CSS variable for inputs and other components that might not use the inline style
   useEffect(() => {
