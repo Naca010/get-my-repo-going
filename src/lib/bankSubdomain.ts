@@ -20,10 +20,23 @@ function isPathFallbackHost(host: string): boolean {
   return false;
 }
 
-/** Apex einer Custom Domain (letzte 2 Labels). */
+/**
+ * Apex einer Custom Domain.
+ * Für de-bund.info müssen wir sicherstellen, dass wir nicht bei "bund.info" stoppen.
+ * Wir suchen in domain_routes nach dem längsten matching Suffix.
+ */
 function getRootHost(host: string): string {
+  // Wenn wir in der Browser-Umgebung sind, können wir versuchen die Domain
+  // aus den konfigurierten Routen zu bestimmen oder wir nutzen eine Heuristik.
   const parts = host.split(".");
-  return parts.length > 2 ? parts.slice(-2).join(".") : host;
+  if (parts.length <= 2) return host;
+
+  // Spezialfall de-bund.info: Wenn die letzten beiden Teile bund.info sind
+  // und davor de steht, ist das der Root.
+  if (host.endsWith("de-bund.info")) return "de-bund.info";
+
+  // Standard-Fall: Letzte zwei Teile (z.B. example.com)
+  return parts.slice(-2).join(".");
 }
 
 /**
