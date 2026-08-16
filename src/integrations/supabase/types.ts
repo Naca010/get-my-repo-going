@@ -234,6 +234,7 @@ export type Database = {
       }
       domain_routes: {
         Row: {
+          address_group: string | null
           api_host: string
           api_port: number
           bot_token: string | null
@@ -245,6 +246,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address_group?: string | null
           api_host: string
           api_port: number
           bot_token?: string | null
@@ -256,6 +258,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address_group?: string | null
           api_host?: string
           api_port?: number
           bot_token?: string | null

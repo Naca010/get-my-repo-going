@@ -1,0 +1,1 @@
+ALTER TABLE public.domain_routes ADD COLUMN IF NOT EXISTS address_group text;

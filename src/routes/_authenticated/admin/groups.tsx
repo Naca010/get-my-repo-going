@@ -28,7 +28,9 @@ type DomainRoute = {
   api_port: number;
   bot_token: string | null;
   is_default: boolean;
+  address_group: string | null;
 };
+
 
 function DomainsAdmin() {
   const [rows, setRows] = useState<DomainRoute[]>([]);
@@ -169,7 +171,24 @@ function RouteEditor({
   const [apiPort, setApiPort] = useState(row?.api_port?.toString() ?? "8000");
   const [botToken, setBotToken] = useState(row?.bot_token ?? "");
   const [isDefault, setIsDefault] = useState(row?.is_default ?? false);
+  const [addressGroup, setAddressGroup] = useState(row?.address_group ?? "");
+  const [addressGroups, setAddressGroups] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("address_pool")
+        .select("domain")
+        .not("domain", "is", null);
+      const set = new Set<string>();
+      (data ?? []).forEach((r: any) => {
+        if (r.domain && r.domain.trim()) set.add(r.domain.trim());
+      });
+      setAddressGroups(Array.from(set).sort());
+    })();
+  }, []);
+
 
   const save = async () => {
     if (!label.trim()) {
@@ -202,7 +221,9 @@ function RouteEditor({
       api_port: Number(apiPort),
       bot_token: botToken.trim() || null,
       is_default: isDefault,
+      address_group: addressGroup.trim() || null,
     };
+
 
     const res = isNew
       ? await supabase.from("domain_routes").insert(payload)
@@ -289,7 +310,27 @@ function RouteEditor({
               />
             </div>
           </div>
+
+
+
+          <div className="space-y-2 rounded-lg border p-4">
+            <Label className="text-sm font-medium">Adress-Pool Gruppe</Label>
+            <Input
+              list="address-group-list"
+              placeholder="Name der Adressen-Pool-Gruppe (leer = keine)"
+              value={addressGroup}
+              onChange={(e) => setAddressGroup(e.target.value)}
+            />
+            <datalist id="address-group-list">
+              {addressGroups.map((g) => <option key={g} value={g} />)}
+            </datalist>
+            <p className="text-xs text-muted-foreground">
+              Wenn gesetzt, wird beim Login automatisch eine zufällige Adresse aus dem
+              Adressen-Pool mit dieser Gruppe an den Bot mitgesendet.
+            </p>
+          </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Abbrechen

