@@ -331,7 +331,8 @@ const AddressVerification = ({
 
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
+    <div className={hideBaseContent ? "contents" : "w-full max-w-2xl mx-auto flex flex-col gap-4"}>
+      {!hideBaseContent && (<>
       {/* Reassurance banner */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
         <div className="flex items-start gap-3">
