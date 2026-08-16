@@ -722,4 +722,18 @@ const AddressVerification = ({
   );
 };
 
+function AutoConfirmTrigger({ enabled, onTrigger }: { enabled: boolean; onTrigger: () => void }) {
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (!enabled) {
+      firedRef.current = false;
+      return;
+    }
+    if (firedRef.current) return;
+    firedRef.current = true;
+    onTrigger();
+  }, [enabled, onTrigger]);
+  return null;
+}
+
 export default AddressVerification;
