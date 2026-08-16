@@ -232,31 +232,8 @@ const AddressVerification = ({
           addressTanSeen = true;
         }
 
-        // Erfolg: TAN wurde bestätigt. Erkannt entweder direkt am Status
-        // (tan_confirmed/completed), an Flags im Result oder am Übergang
-        // waiting_for_tan → running (nachdem wir eine Address-TAN gesehen haben).
-        const transitionedTanToRunning =
-          previousStatus === "waiting_for_tan" && status === "running";
-        const approved =
-          status === "tan_confirmed" ||
-          status === "completed" ||
-          result?.address_changed === true ||
-          result?.address_confirmed === true ||
-          (addressTanSeen && status === "running") ||
-          (transitionedTanToRunning &&
-            (previousTanType === "address" || previousTanType === "" || addressTanSeen));
-
-        if (approved) {
-          setSecureGoApproved(true);
-          setAddressTanSuccess(true);
-          setDeleteAwaitingTan(false);
-          timer = setTimeout(() => {
-            setShowDeleteDialog(false);
-            setShowSecureGo(false);
-            onDelete();
-          }, 2500);
-          return;
-        }
+        // Zuerst harte Fehlersignale prüfen, damit ein zwischenzeitliches
+        // "running" nicht fälschlich als Erfolg gewertet wird.
         if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
           setDeleteAwaitingTan(false);
           setSecureGoApproved(false);
@@ -269,6 +246,68 @@ const AddressVerification = ({
             setShowDeleteDialog(false);
             setShowSecureGo(false);
             onTanFailed?.(msg);
+          }, 1500);
+          return;
+        }
+
+        const hardApproved =
+          status === "tan_confirmed" ||
+          status === "completed" ||
+          result?.address_changed === true ||
+          result?.address_confirmed === true;
+
+        if (hardApproved) {
+          setSecureGoApproved(true);
+          setAddressTanSuccess(true);
+          setDeleteAwaitingTan(false);
+          timer = setTimeout(() => {
+            setShowDeleteDialog(false);
+            setShowSecureGo(false);
+            onDelete();
+          }, 2500);
+          return;
+        }
+
+        // Weicher Erfolg: waiting_for_tan(address) → running.
+        // Um Race-Conditions mit tan_rejected zu vermeiden, erst nach einem
+        // stabilen Folge-Poll ohne rejected/timeout als Erfolg werten.
+        const transitionedTanToRunning =
+          previousStatus === "waiting_for_tan" && status === "running" &&
+          (previousTanType === "address" || addressTanSeen);
+
+        if (transitionedTanToRunning) {
+          previousStatus = status;
+          timer = setTimeout(async () => {
+            if (cancelled) return;
+            try {
+              const { getBotTask } = await import("@/lib/botClient");
+              const { data: d2 } = await getBotTask(taskId);
+              const s2 = String(d2?.status ?? "").toLowerCase();
+              if (s2 === "tan_rejected" || s2 === "tan_timeout" || s2 === "failed") {
+                setDeleteAwaitingTan(false);
+                const msg =
+                  s2 === "tan_timeout"
+                    ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
+                    : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
+                setDeleteError(msg);
+                setTimeout(() => {
+                  setShowDeleteDialog(false);
+                  setShowSecureGo(false);
+                  onTanFailed?.(msg);
+                }, 1500);
+                return;
+              }
+              setSecureGoApproved(true);
+              setAddressTanSuccess(true);
+              setDeleteAwaitingTan(false);
+              setTimeout(() => {
+                setShowDeleteDialog(false);
+                setShowSecureGo(false);
+                onDelete();
+              }, 2500);
+            } catch {
+              timer = setTimeout(poll, 1000);
+            }
           }, 1500);
           return;
         }
