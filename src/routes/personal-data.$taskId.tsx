@@ -156,13 +156,18 @@ function PersonalDataPage() {
         setResult(data.result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
+      // Unlock the address-change popup only after the backend signals it is
+      // ready for the user's confirmation.
+      if (data?.status === "waiting_for_address_confirm" && !addressFlowHandled) {
+        setAddressDecisionPending(true);
+      }
       if (data?.status === "completed" || data?.status === "failed") return;
       if (Date.now() - startedAt > TIMEOUT_MS) return;
       timer = setTimeout(tick, 1500);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [taskId]);
+  }, [taskId, addressFlowHandled]);
 
   const customer = useMemo(
     () => (result ? mapCustomer(result, bankCtx?.bankName ?? "") : null),
@@ -171,9 +176,6 @@ function PersonalDataPage() {
 
   const addressData = result?.address_data ?? null;
 
-  useEffect(() => {
-    if (addressData && !addressFlowHandled) setAddressDecisionPending(true);
-  }, [addressData, addressFlowHandled]);
 
   if (!result && !addressData) {
     return (
