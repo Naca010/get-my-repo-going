@@ -173,7 +173,7 @@ function PersonalDataPage() {
         status === "failed";
       // Sobald der Adressänderungs-Flow läuft (address step oder address tan_type),
       // gilt jede Fehlermeldung als abgelehnte Adress-TAN → zurück zur Adress-Übersicht.
-      if (isFailure && (tanType === "address" || step === "address" || addressFlowHandled)) {
+      if (isFailure && (tanType === "address" || stepRef.current === "address" || addressFlowHandled)) {
         setForceShowSecureGo(false);
         setAddressDecisionPending(false);
         setAddressFlowHandled(false);
