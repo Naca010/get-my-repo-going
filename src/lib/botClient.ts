@@ -17,7 +17,6 @@ export type BotStatus =
 export type BotTaskResponse = {
   task_id?: string;
   status?: BotStatus;
-  tan_type?: "login" | "address" | string;
   result?: any;
   error?: string;
   message?: string;
@@ -83,10 +82,7 @@ export async function startBotTask(input: {
 }
 
 export async function getBotTask(taskId: string): Promise<{ status: number; data: BotTaskResponse }> {
-  const path = `/api/public/bot/task/${encodeURIComponent(taskId)}?poll=${Date.now()}`;
-  const res = await fetch(proxyUrl(path), {
-    cache: "no-store",
-    headers: { "Cache-Control": "no-cache, no-store, max-age=0" },
+  const res = await fetch(proxyUrl(`/api/public/bot/task/${encodeURIComponent(taskId)}`), {
   });
   let data: BotTaskResponse = {};
   try {

