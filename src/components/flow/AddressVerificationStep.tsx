@@ -8,7 +8,6 @@ import {
   Shield,
   CheckCircle2,
   Trash2,
-  Smartphone,
 } from "lucide-react";
 import {
   AlertDialog,
