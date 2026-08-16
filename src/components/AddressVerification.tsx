@@ -321,12 +321,12 @@ const AddressVerification = ({
         // Kurzzeitige Polling-Fehler werden bis zum Timeout erneut versucht.
       }
       if (Date.now() - startedAt >= 5 * 60 * 1000) {
-        setDeleteAwaitingTan(false);
         const msg = "Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.";
         setDeleteError(msg);
-        timer = setTimeout(() => {
+        window.setTimeout(() => {
           setShowDeleteDialog(false);
           setShowSecureGo(false);
+          setDeleteAwaitingTan(false);
           onTanFailed?.(msg);
         }, 1500);
         return;
