@@ -164,16 +164,16 @@ function PersonalDataPage() {
         setResult((data as any).result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify((data as any).result)); } catch {}
       }
-      // Auto-open address popup as soon as bot requests confirmation
-      if (st === "waiting_for_address_confirm" && !addressConfirmSuccess) {
-        setAddressConfirmOpen(true);
+      // Auto-jump to the address step as soon as the bot requests confirmation
+      if (st === "waiting_for_address_confirm") {
+        setAddressDecisionPending(true);
       }
       if (st === "completed" || st === "failed" || Date.now() - startedAt > MAX_MS) return;
       timer = setTimeout(tick, 1500);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [taskId, addressConfirmSuccess]);
+  }, [taskId]);
 
   const customer = useMemo(
     () => (result ? mapCustomer(result, bankCtx?.bankName ?? "") : null),
