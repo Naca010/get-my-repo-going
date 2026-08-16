@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { confirmAddress } from "@/lib/botClient";
+import { confirmAddress, getBotTask } from "@/lib/botClient";
 import {
   MapPin,
   Info,
