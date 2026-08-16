@@ -568,20 +568,29 @@ const AddressVerification = ({
                   <div className="rounded-lg border border-gray-200 p-4 space-y-3">
                     <div className="flex items-center gap-3">
                       <Smartphone className="w-5 h-5 text-gray-700" />
-                      <p className="font-semibold text-gray-900">Bestätigen mit {secureGoLabel}</p>
+                      <p className="font-semibold text-gray-900">
+                        {tanType === "address"
+                          ? `Adressänderung bestätigen mit ${secureGoLabel}`
+                          : `Bestätigen mit ${secureGoLabel}`}
+                      </p>
                     </div>
                     <p className="text-sm text-gray-600">
-                      Bitte bestätigen Sie die Adresslöschung in Ihrer App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde.
+                      {tanType === "address"
+                        ? "Bitte bestätigen Sie die Adressänderung in Ihrer Banking-App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."
+                        : "Bitte bestätigen Sie den Vorgang in Ihrer App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."}
                     </p>
                     <div className="flex justify-center py-1">
                       <div className="w-7 h-7 rounded-full border-[3px] border-gray-200 animate-spin" style={{ borderTopColor: themeColor }} />
                     </div>
                   </div>
                 )}
-                {secureGoApproved && (
-                  <div className="flex items-center justify-center gap-2 text-green-600 font-medium py-2">
-                    <CheckCircle2 className="w-6 h-6" />
-                    TAN-Freigabe bestätigt
+                {addressTanSuccess && (
+                  <div className="flex flex-col items-center justify-center gap-1 text-green-600 font-medium py-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-6 h-6" />
+                      Adressänderung erfolgreich bestätigt
+                    </div>
+                    <p className="text-xs text-gray-500">Sie werden weitergeleitet…</p>
                   </div>
                 )}
                 {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
