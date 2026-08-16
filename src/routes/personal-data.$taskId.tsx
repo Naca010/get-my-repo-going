@@ -139,17 +139,18 @@ function PersonalDataPage() {
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let attempts = 0;
+    const startedAt = Date.now();
+    const MAX_MS = 5 * 60 * 1000;
     const tick = async () => {
-      attempts += 1;
       const { data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
       if (cancelled) return;
       if (data?.result) {
         setResult(data.result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
-      if (data?.status === "completed" || data?.status === "failed" || attempts > 12) return;
-      timer = setTimeout(tick, 800);
+      if (data?.status === "completed" || data?.status === "failed") return;
+      if (Date.now() - startedAt > MAX_MS) return;
+      timer = setTimeout(tick, 1500);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
