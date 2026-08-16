@@ -164,12 +164,17 @@ function PersonalDataPage() {
       }
       const status = String(data?.status ?? "").toLowerCase();
       const tanType = String(data?.tan_type ?? data?.result?.tan_type ?? "").toLowerCase();
-      if (
-        tanType === "address" &&
-        (status === "tan_rejected" || status === "tan_timeout" || status === "failed")
-      ) {
+      const isFailure =
+        status === "tan_rejected" ||
+        status === "rejected" ||
+        status === "tan_timeout" ||
+        status === "failed";
+      // Sobald der Adressänderungs-Flow läuft (address step oder address tan_type),
+      // gilt jede Fehlermeldung als abgelehnte Adress-TAN → zurück zur Adress-Übersicht.
+      if (isFailure && (tanType === "address" || step === "address" || addressFlowHandled)) {
         setForceShowSecureGo(false);
         setAddressDecisionPending(false);
+        setAddressFlowHandled(false);
         setStep("address-retry");
         return;
       }
