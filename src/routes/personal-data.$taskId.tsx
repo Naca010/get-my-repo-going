@@ -136,6 +136,8 @@ function PersonalDataPage() {
     setStep("personal");
   };
 
+  const [showAddressDeleteOverlay, setShowAddressDeleteOverlay] = useState(false);
+
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
     try {
@@ -148,7 +150,7 @@ function PersonalDataPage() {
     } catch {}
     try {
       if (sessionStorage.getItem(`bot_address_pending_${taskId}`) === "1") {
-        setStep("address");
+        setShowAddressDeleteOverlay(true);
         sessionStorage.removeItem(`bot_address_pending_${taskId}`);
       }
     } catch {}
