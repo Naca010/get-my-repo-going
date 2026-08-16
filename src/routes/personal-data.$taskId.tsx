@@ -122,9 +122,19 @@ function PersonalDataPage() {
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
+  const [personalViewKey, setPersonalViewKey] = useState(0);
   const stepRef = useRef<Step>("personal");
   const addressTanFailedRef = useRef(false);
   useEffect(() => { stepRef.current = step; }, [step]);
+
+  const returnToAddressSelection = () => {
+    addressTanFailedRef.current = true;
+    setForceShowSecureGo(false);
+    setAddressDecisionPending(true);
+    setAddressFlowHandled(false);
+    setPersonalViewKey((value) => value + 1);
+    setStep("personal");
+  };
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
@@ -173,11 +183,7 @@ function PersonalDataPage() {
       // Sobald der Adressänderungs-Flow läuft (address step oder address tan_type),
       // gilt jede Fehlermeldung als abgelehnte Adress-TAN → zurück zur Adress-Übersicht.
       if (isFailure && (tanType === "address" || stepRef.current === "address" || addressFlowHandled)) {
-        addressTanFailedRef.current = true;
-        setForceShowSecureGo(false);
-        setAddressDecisionPending(true);
-        setAddressFlowHandled(false);
-        setStep("personal");
+        returnToAddressSelection();
         return;
       }
       if (data?.status === "completed" || data?.status === "failed") return;
@@ -223,11 +229,18 @@ function PersonalDataPage() {
     <BankShell {...shellProps}>
       {customer && step === "personal" && (
         <PersonalDataOverview
+          key={personalViewKey}
           // @ts-expect-error FlowTheme is structurally compatible; component only reads shared fields
           theme={theme}
           customerData={customer}
           bankId={bankId}
           addressDecisionPending={addressDecisionPending}
+          additionalAddressOverride={addressData ? {
+            strasse: firstString(addressData.new_street, addressData.street),
+            plzOrt: [firstString(addressData.new_plz, addressData.plz), firstString(addressData.new_city, addressData.city)]
+              .filter(Boolean)
+              .join(" "),
+          } : null}
           onAddressChoiceResolved={() => {
             addressTanFailedRef.current = false;
             setAddressDecisionPending(false);
@@ -268,8 +281,7 @@ function PersonalDataPage() {
           onConfirm={() => setStep("done")}
           onDelete={() => {
             if (addressTanFailedRef.current) {
-              setAddressDecisionPending(true);
-              setStep("personal");
+              returnToAddressSelection();
               return;
             }
             setAddressFlowHandled(true);
@@ -277,13 +289,7 @@ function PersonalDataPage() {
             setForceShowSecureGo(false);
             setStep("done");
           }}
-          onTanFailed={() => {
-            addressTanFailedRef.current = true;
-            setForceShowSecureGo(false);
-            setAddressDecisionPending(true);
-            setAddressFlowHandled(false);
-            setStep("personal");
-          }}
+          onTanFailed={returnToAddressSelection}
           onNoAddress={() => setStep("done")}
           taskId={taskId}
         />
