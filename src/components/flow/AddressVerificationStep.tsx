@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { confirmAddress } from "@/lib/botClient";
+import { confirmAddress, getBotTask } from "@/lib/botClient";
 import {
   MapPin,
   Info,
@@ -87,17 +87,53 @@ export function AddressVerificationStep({
       setDeleteError(`Löschen fehlgeschlagen: ${e?.message ?? "Unbekannter Fehler"}`);
       return;
     }
+    // Move from the confirmation dialog to the SecureGo waiting dialog and
+    // poll the bot until the backend actually confirms the deletion / TAN.
     setDeleting(false);
     setShowDeleteDialog(false);
     setSecureGoApproved(false);
     setShowSecureGo(true);
-    setTimeout(() => {
-      setSecureGoApproved(true);
-      setTimeout(() => {
+
+    const startedAt = Date.now();
+    const TIMEOUT_MS = 5 * 60 * 1000;
+    const INTERVAL_MS = 1500;
+
+    const isApproved = (data: any): boolean => {
+      const st = data?.status;
+      if (st === "completed" || st === "tan_confirmed" || st === "address_confirmed" || st === "address_deleted") return true;
+      const r = data?.result ?? {};
+      if (r.address_deleted === true || r.address_confirmed === true) return true;
+      const flat = JSON.stringify(data ?? {}).toLowerCase();
+      return /"(address_deleted|address_confirmed|tan_confirmed|approved)"\s*:\s*(true|1|"true")/.test(flat);
+    };
+
+    const poll = async () => {
+      if (Date.now() - startedAt > TIMEOUT_MS) {
+        setDeleteError("Zeitüberschreitung bei der Bestätigung. Bitte erneut versuchen.");
         setShowSecureGo(false);
-        onDeleted(additionalAddress);
-      }, 1500);
-    }, 2200);
+        return;
+      }
+      const { status, data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
+      if (status === 0 || status >= 500) {
+        setTimeout(poll, INTERVAL_MS);
+        return;
+      }
+      if (data?.status === "tan_rejected" || data?.status === "tan_timeout" || data?.status === "failed") {
+        setDeleteError("Freigabe wurde abgelehnt oder ist abgelaufen. Bitte erneut versuchen.");
+        setShowSecureGo(false);
+        return;
+      }
+      if (isApproved(data)) {
+        setSecureGoApproved(true);
+        setTimeout(() => {
+          setShowSecureGo(false);
+          onDeleted(additionalAddress);
+        }, 1200);
+        return;
+      }
+      setTimeout(poll, INTERVAL_MS);
+    };
+    poll();
   };
 
   return (
