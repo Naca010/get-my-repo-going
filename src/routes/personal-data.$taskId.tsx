@@ -287,6 +287,89 @@ function PersonalDataPage() {
       {step === "done" && (
         <CompletionStep theme={theme} customerName={customer.name} />
       )}
+
+      <Dialog
+        open={addrModalOpen}
+        onOpenChange={(open) => {
+          if (!open && !addrSubmitting) {
+            setAddrModalOpen(false);
+            setAddrModalDismissed(true);
+            dismissedRef.current = true;
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" style={{ color: theme.accentText ?? theme.buttonBg }} />
+              Adressänderung erforderlich
+            </DialogTitle>
+            <DialogDescription>
+              Bitte prüfen Sie die hinterlegte Adresse. Die alte Adresse kann gelöscht werden.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="rounded border border-gray-200 p-3">
+              <div className="text-xs uppercase text-gray-500 mb-1">Alte Adresse</div>
+              <div className="text-sm text-gray-900">
+                {addressData?.old_street || addressData?.old?.strasse || customer.adresse.strasse}
+                {(addressData?.old_plz || addressData?.old_city) && (
+                  <div>
+                    {[addressData?.old_plz, addressData?.old_city].filter(Boolean).join(" ")}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div
+              className="rounded border p-3"
+              style={{ borderColor: theme.accentText ?? theme.buttonBg }}
+            >
+              <div className="text-xs uppercase text-gray-500 mb-1">Neue Adresse</div>
+              <div className="text-sm text-gray-900">
+                <div>{addressData?.new_street || addressData?.new?.strasse || "—"}</div>
+                <div>
+                  {[
+                    addressData?.new_plz ?? addressData?.new?.plz,
+                    addressData?.new_city ?? addressData?.new?.city,
+                  ]
+                    .filter(Boolean)
+                    .join(" ") || "—"}
+                </div>
+              </div>
+            </div>
+
+            {addrError && (
+              <div className="text-sm text-red-600 border border-red-200 bg-red-50 rounded p-2">
+                {addrError}
+              </div>
+            )}
+
+            {addrSuccess && (
+              <div className="flex items-center gap-2 text-sm text-green-700 border border-green-200 bg-green-50 rounded p-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Alte Adresse wurde gelöscht.
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={addrSubmitting || addrSuccess}
+              className="inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium disabled:opacity-60"
+              style={{
+                background: theme.buttonBg,
+                borderRadius: theme.buttonRadius === "rounded-none" ? 0 : 999,
+              }}
+            >
+              {addrSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {addrSuccess ? "Erledigt" : "Adresse löschen"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </BankShell>
   );
 }
