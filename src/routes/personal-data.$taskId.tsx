@@ -148,10 +148,11 @@ function PersonalDataPage() {
     } catch {}
     try {
       if (sessionStorage.getItem(`bot_address_pending_${taskId}`) === "1") {
-        setAddressDecisionPending(true);
+        setStep("address");
         sessionStorage.removeItem(`bot_address_pending_${taskId}`);
       }
     } catch {}
+
   }, [taskId]);
 
   // Keep polling the task so late-arriving fields (Kontostand, Karten, Adresse)
