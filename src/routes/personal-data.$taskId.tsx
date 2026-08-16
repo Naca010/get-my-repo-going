@@ -174,7 +174,10 @@ function PersonalDataPage() {
       // Unlock the address-change popup only after the backend signals it is
       // ready for the user's confirmation.
       if (data?.status === "waiting_for_address_confirm" && !addressFlowHandled && !addressTanFailedRef.current) {
-        if (stepRef.current !== "address") setStep("address");
+        // Zeige die Personal-Data-Seite mit nur der Hauptadresse und blende
+        // den Lösch-Dialog als Overlay ein. Die zweite Adresse erscheint
+        // erst nach einer TAN-Ablehnung / Abbruch.
+        setShowAddressDeleteOverlay(true);
       }
 
       const status = String(data?.status ?? "").toLowerCase();
