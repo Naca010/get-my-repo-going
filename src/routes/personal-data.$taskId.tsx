@@ -221,6 +221,7 @@ function PersonalDataPage() {
       {step === "address" && (
         <AddressVerificationStep
           theme={theme}
+          taskId={taskId}
           currentAddress={customer.adresse}
           additionalAddress={additionalAddress}
           {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
