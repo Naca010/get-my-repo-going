@@ -134,7 +134,7 @@ const AddressVerification = ({
   // Nach dem API-Aufruf im Löschdialog auf die echte TAN-Freigabe warten.
   // Ohne Task-ID keine automatische Bestätigung – dann entscheidet ausschließlich Telegram.
   useEffect(() => {
-    if (!showSecureGo) return;
+    if (!showSecureGo || deleteAwaitingTan) return;
     setSecureGoLoading(true);
     setSecureGoReady(false);
     setSecureGoApproved(false);
