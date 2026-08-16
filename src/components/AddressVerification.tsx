@@ -214,6 +214,8 @@ const AddressVerification = ({
     const MAX_MS = 5 * 60 * 1000;
 
     const fail = (msg: string) => {
+      if (cancelled) return;
+      cancelled = true;
       setDeleteError(msg);
       window.setTimeout(() => {
         setShowDeleteDialog(false);
@@ -232,14 +234,27 @@ const AddressVerification = ({
         const status = String(data?.status ?? "").toLowerCase();
         const result = data?.result as any;
         const tt = String(data?.tan_type ?? result?.tan_type ?? "").toLowerCase();
+        const resultStatus = String(result?.status ?? result?.tan_status ?? result?.tan_result ?? "").toLowerCase();
+        const errorSignal = String(data?.error ?? data?.message ?? result?.error ?? result?.message ?? "").toLowerCase();
         if (tt === "address" || tt === "login") setTanType(tt as "address" | "login");
-        console.log(`[address-tan] status=${status} tan_type=${tt}`);
+        console.log(`[address-tan] status=${status} tan_type=${tt} result_status=${resultStatus}`);
 
-        // Harte Fehlersignale zuerst — nie durch spätere Status überstimmen.
-        if (status === "tan_rejected" || status === "failed") {
+        const rejected =
+          status === "tan_rejected" ||
+          status === "rejected" ||
+          resultStatus === "tan_rejected" ||
+          resultStatus === "rejected" ||
+          /tan.{0,20}(abgelehnt|rejected)|abgelehnt.{0,20}tan/.test(errorSignal);
+        const timedOut =
+          status === "tan_timeout" ||
+          resultStatus === "tan_timeout" ||
+          /tan.{0,20}(timeout|zeitüberschreitung)|zeitüberschreitung.{0,20}tan/.test(errorSignal);
+
+        // Harte Fehlersignale zuerst und sofort behandeln.
+        if (rejected || (status === "failed" && !timedOut)) {
           return fail("Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.");
         }
-        if (status === "tan_timeout") {
+        if (timedOut) {
           return fail("Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut.");
         }
 
