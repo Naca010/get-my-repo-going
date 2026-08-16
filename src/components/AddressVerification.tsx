@@ -83,6 +83,7 @@ const AddressVerification = ({
   onNoAddress,
   forceShowSecureGo = false,
   onSecureGoOpened,
+  onTanFailed,
   taskId,
   apiBaseUrl,
 }: AddressVerificationProps) => {
