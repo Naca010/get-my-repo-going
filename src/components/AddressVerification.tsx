@@ -735,6 +735,8 @@ const AddressVerification = ({
         </AlertDialogContent>
       </AlertDialog>
 
+      {!hideBaseContent && (
+      <>
       {/* Security footer note */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
         <div className="flex items-start gap-3">
@@ -747,6 +749,8 @@ const AddressVerification = ({
           </div>
         </div>
       </div>
+      </>
+      )}
       {/* SmartTanOverlay wird global in BankLogin gerendert – hier bewusst weggelassen, um Doppel-Overlay zu vermeiden. */}
     </div>
   );
