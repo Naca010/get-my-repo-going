@@ -308,7 +308,10 @@ function RouteEditor({
                 value={botToken}
                 onChange={(e) => setBotToken(e.target.value)}
               />
+            </div>
           </div>
+
+
 
           <div className="space-y-2 rounded-lg border p-4">
             <Label className="text-sm font-medium">Adress-Pool Gruppe</Label>
