@@ -207,7 +207,7 @@ const AddressVerification = ({
   const [addressTanSuccess, setAddressTanSuccess] = useState(false);
 
   useEffect(() => {
-    if (!showDeleteDialog || !deleteAwaitingTan || !taskId) return;
+    if (!deleteAwaitingTan || !taskId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     // Vorherigen Status & TAN-Typ merken, damit wir den Übergang
