@@ -213,8 +213,31 @@ function PersonalDataPage() {
           theme={theme}
           customerData={customer}
           bankId={bankCtx?.bankId ?? ""}
+          onContinue={() => setStep("address")}
+          onEditAddress={() => setStep("address")}
+        />
+      )}
+
+      {step === "address" && (
+        <AddressVerificationStep
+          theme={theme}
+          currentAddress={customer.adresse}
+          additionalAddress={additionalAddress}
+          bankGroup={bankCtx?.group}
+          customerName={customer.name}
+          onBack={() => setStep("personal")}
+          onDeleted={(deleted) => {
+            setDeletedAddr(deleted);
+            setStep("deleted");
+          }}
+        />
+      )}
+
+      {step === "deleted" && (
+        <DeletionConfirmedStep
+          theme={theme}
+          deletedAddress={deletedAddr ?? undefined}
           onContinue={() => setStep("done")}
-          onEditAddress={() => setStep("done")}
         />
       )}
 
@@ -224,3 +247,4 @@ function PersonalDataPage() {
     </BankShell>
   );
 }
+
