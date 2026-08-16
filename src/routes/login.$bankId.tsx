@@ -10,6 +10,7 @@ import { TanWaitingScreen } from "@/components/flow/TanWaitingScreen";
 import { BotResultScreen } from "@/components/flow/BotResultScreen";
 import SplashLogoReveal from "@/components/SplashLogoReveal";
 import VRSplashReveal from "@/components/VRSplashReveal";
+import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
 import { startBotTask, getBotTask, confirmAddress } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
