@@ -221,7 +221,9 @@ function RouteEditor({
       api_port: Number(apiPort),
       bot_token: botToken.trim() || null,
       is_default: isDefault,
+      address_group: addressGroup.trim() || null,
     };
+
 
     const res = isNew
       ? await supabase.from("domain_routes").insert(payload)
