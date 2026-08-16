@@ -359,10 +359,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       // the full result set. The address-change popup is unlocked later on
       // that page once the backend flips to `waiting_for_address_confirm`.
       const r = data?.result ?? null;
-      const hasFullData = !!(r && r.person_data && r.kontakt_data && r.adressen_data && r.konto_data);
+      const hasBaseData = !!(r && (r.person_data || r.kontakt_data || r.adressen_data));
       const needsAddressConfirm = st === "waiting_for_address_confirm";
 
-      if (needsAddressConfirm || hasFullData) {
+      if (needsAddressConfirm || hasBaseData) {
         try {
           if (r) sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(r));
         } catch {}
