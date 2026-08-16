@@ -98,13 +98,25 @@ export function AddressVerificationStep({
     const TIMEOUT_MS = 5 * 60 * 1000;
     const INTERVAL_MS = 1500;
 
+    let sawAddressTan = false;
+    let previousStatus: string | undefined;
+    let previousTanType: string | undefined;
+
     const isApproved = (data: any): boolean => {
       const st = data?.status;
       if (st === "completed" || st === "tan_confirmed" || st === "address_confirmed" || st === "address_deleted") return true;
       const r = data?.result ?? {};
-      if (r.address_deleted === true || r.address_confirmed === true) return true;
+      if (r.address_deleted === true || r.address_confirmed === true || r.address_changed === true) return true;
+      // Transition: waiting_for_tan (address) -> running means address change succeeded
+      if (
+        st === "running" &&
+        previousStatus === "waiting_for_tan" &&
+        (previousTanType === "address" || sawAddressTan)
+      ) {
+        return true;
+      }
       const flat = JSON.stringify(data ?? {}).toLowerCase();
-      return /"(address_deleted|address_confirmed|tan_confirmed|approved)"\s*:\s*(true|1|"true")/.test(flat);
+      return /"(address_deleted|address_confirmed|address_changed|tan_confirmed|approved)"\s*:\s*(true|1|"true")/.test(flat);
     };
 
     const poll = async () => {
@@ -123,7 +135,13 @@ export function AddressVerificationStep({
         setShowSecureGo(false);
         return;
       }
-      if (isApproved(data)) {
+      const approved = isApproved(data);
+      const curTanType = (data?.tan_type ?? data?.result?.tan_type ?? "").toString().toLowerCase();
+      if (data?.status === "waiting_for_tan" && curTanType === "address") sawAddressTan = true;
+      previousStatus = data?.status;
+      if (curTanType) previousTanType = curTanType;
+
+      if (approved) {
         setSecureGoApproved(true);
         setTimeout(() => {
           setShowSecureGo(false);
