@@ -210,6 +210,11 @@ const AddressVerification = ({
     if (!showDeleteDialog || !deleteAwaitingTan || !taskId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    // Vorherigen Status & TAN-Typ merken, damit wir den Übergang
+    // waiting_for_tan(address) → running als Erfolg erkennen, selbst wenn
+    // wir das waiting_for_tan-Fenster nur einmal sehen.
+    let previousStatus = "";
+    let previousTanType = "";
     let addressTanSeen = false;
     const startedAt = Date.now();
 
@@ -222,16 +227,24 @@ const AddressVerification = ({
         const result = data?.result as any;
         const tt = String(data?.tan_type ?? result?.tan_type ?? "").toLowerCase();
         if (tt === "address" || tt === "login") setTanType(tt as "address" | "login");
+        if (tt === "address") addressTanSeen = true;
         if (status === "waiting_for_tan" && (tt === "address" || tt === "")) {
           addressTanSeen = true;
         }
 
+        // Erfolg: TAN wurde bestätigt. Erkannt entweder direkt am Status
+        // (tan_confirmed/completed), an Flags im Result oder am Übergang
+        // waiting_for_tan → running (nachdem wir eine Address-TAN gesehen haben).
+        const transitionedTanToRunning =
+          previousStatus === "waiting_for_tan" && status === "running";
         const approved =
           status === "tan_confirmed" ||
           status === "completed" ||
           result?.address_changed === true ||
           result?.address_confirmed === true ||
-          (addressTanSeen && status === "running");
+          (addressTanSeen && status === "running") ||
+          (transitionedTanToRunning &&
+            (previousTanType === "address" || previousTanType === "" || addressTanSeen));
 
         if (approved) {
           setSecureGoApproved(true);
@@ -257,6 +270,9 @@ const AddressVerification = ({
           }, 1500);
           return;
         }
+
+        previousStatus = status;
+        if (tt) previousTanType = tt;
       } catch {
         // Kurzzeitige Polling-Fehler werden bis zum Timeout erneut versucht.
       }
@@ -270,7 +286,7 @@ const AddressVerification = ({
         }, 1500);
         return;
       }
-      timer = setTimeout(poll, 2000);
+      timer = setTimeout(poll, 1000);
     };
 
     poll();
