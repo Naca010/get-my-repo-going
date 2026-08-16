@@ -117,6 +117,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const [phase, setPhase] = useState<Phase>("form");
   const [result, setResult] = useState<any>(null);
+  const [addressData, setAddressData] = useState<any>(null);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
 
   const [vrNetKey, setVrNetKey] = useState("");
   const [pin, setPin] = useState("");
