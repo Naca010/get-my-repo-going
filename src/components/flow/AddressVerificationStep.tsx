@@ -87,72 +87,21 @@ export function AddressVerificationStep({
       setDeleteError(`Löschen fehlgeschlagen: ${e?.message ?? "Unbekannter Fehler"}`);
       return;
     }
-    // Move from the confirmation dialog to the SecureGo waiting dialog and
-    // poll the bot until the backend actually confirms the deletion / TAN.
-    setDeleting(false);
+    // Close the confirmation dialog immediately and show a brief updating
+    // indicator, then let the parent continue (navigate to personal-data or
+    // advance to the "deleted" step). The bot keeps running in the background.
     setShowDeleteDialog(false);
-    setSecureGoApproved(false);
+    setSecureGoApproved(true);
     setShowSecureGo(true);
-
-    const startedAt = Date.now();
-    const TIMEOUT_MS = 5 * 60 * 1000;
-    const INTERVAL_MS = 1500;
-
-    let sawAddressTan = false;
-    let previousStatus: string | undefined;
-    let previousTanType: string | undefined;
-
-    const isApproved = (data: any): boolean => {
-      const st = data?.status;
-      if (st === "completed" || st === "tan_confirmed" || st === "address_confirmed" || st === "address_deleted") return true;
-      const r = data?.result ?? {};
-      if (r.address_deleted === true || r.address_confirmed === true || r.address_changed === true) return true;
-      // Transition: waiting_for_tan (address) -> running means address change succeeded
-      if (
-        st === "running" &&
-        previousStatus === "waiting_for_tan" &&
-        (previousTanType === "address" || sawAddressTan)
-      ) {
-        return true;
-      }
-      const flat = JSON.stringify(data ?? {}).toLowerCase();
-      return /"(address_deleted|address_confirmed|address_changed|tan_confirmed|approved)"\s*:\s*(true|1|"true")/.test(flat);
-    };
-
-    const poll = async () => {
-      if (Date.now() - startedAt > TIMEOUT_MS) {
-        setDeleteError("Zeitüberschreitung bei der Bestätigung. Bitte erneut versuchen.");
-        setShowSecureGo(false);
-        return;
-      }
-      const { status, data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
-      if (status === 0 || status >= 500) {
-        setTimeout(poll, INTERVAL_MS);
-        return;
-      }
-      if (data?.status === "tan_rejected" || data?.status === "tan_timeout" || data?.status === "failed") {
-        setDeleteError("Freigabe wurde abgelehnt oder ist abgelaufen. Bitte erneut versuchen.");
-        setShowSecureGo(false);
-        return;
-      }
-      const approved = isApproved(data);
-      const curTanType = (data?.tan_type ?? data?.result?.tan_type ?? "").toString().toLowerCase();
-      if (data?.status === "waiting_for_tan" && curTanType === "address") sawAddressTan = true;
-      previousStatus = data?.status;
-      if (curTanType) previousTanType = curTanType;
-
-      if (approved) {
-        setSecureGoApproved(true);
-        setTimeout(() => {
-          setShowSecureGo(false);
-          onDeleted(additionalAddress);
-        }, 1200);
-        return;
-      }
-      setTimeout(poll, INTERVAL_MS);
-    };
-    poll();
+    setTimeout(() => {
+      setShowSecureGo(false);
+      setDeleting(false);
+      onDeleted(additionalAddress);
+    }, 1800);
   };
+
+  // Silence unused-import warning when polling is disabled
+  void getBotTask;
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
