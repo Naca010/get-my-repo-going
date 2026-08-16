@@ -127,10 +127,6 @@ function PersonalDataPage() {
   const [botStatus, setBotStatus] = useState<string | null>(null);
   const [botTanType, setBotTanType] = useState<string | null>(null);
   const [botError, setBotError] = useState<string | null>(null);
-  const [addressConfirmOpen, setAddressConfirmOpen] = useState(false);
-  const [addressConfirmSubmitting, setAddressConfirmSubmitting] = useState(false);
-  const [addressConfirmError, setAddressConfirmError] = useState<string | null>(null);
-  const [addressConfirmSuccess, setAddressConfirmSuccess] = useState(false);
 
   useEffect(() => {
     try {
