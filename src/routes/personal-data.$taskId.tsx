@@ -280,7 +280,6 @@ function PersonalDataPage() {
                 }
               : { strasse: "", plzOrt: "" }
           }
-          bankGroup={bankCtx?.group}
           customerName={customer.name}
           onBack={() => setStep("personal")}
           onDeleted={() => setStep("done")}
