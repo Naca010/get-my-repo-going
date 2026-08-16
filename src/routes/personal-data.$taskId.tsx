@@ -130,6 +130,7 @@ function PersonalDataPage() {
   const returnToAddressSelection = () => {
     addressTanFailedRef.current = true;
     setForceShowSecureGo(false);
+    setShowAddressDeleteOverlay(false);
     setAddressDecisionPending(true);
     setAddressFlowHandled(false);
     setPersonalViewKey((value) => value + 1);
