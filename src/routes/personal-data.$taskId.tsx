@@ -251,10 +251,39 @@ function PersonalDataPage() {
             setAddressFlowHandled(true);
             setAddressDecisionPending(false);
             setForceShowSecureGo(false);
-            setStep("personal");
+            setStep("done");
+          }}
+          onTanFailed={() => {
+            setForceShowSecureGo(false);
+            setStep("address-retry");
           }}
           onNoAddress={() => setStep("done")}
           taskId={taskId}
+        />
+      )}
+
+      {customer && step === "address-retry" && (
+        <AddressVerificationStep
+          // @ts-expect-error FlowTheme is compatible
+          theme={theme}
+          currentAddress={customer.adresse}
+          additionalAddress={
+            addressData
+              ? {
+                  strasse: firstString(addressData.new_street, addressData.street),
+                  plzOrt: [
+                    firstString(addressData.new_plz, addressData.plz),
+                    firstString(addressData.new_city, addressData.city),
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                }
+              : { strasse: "", plzOrt: "" }
+          }
+          bankGroup={bankCtx?.group}
+          customerName={customer.name}
+          onBack={() => setStep("personal")}
+          onDeleted={() => setStep("done")}
         />
       )}
 
