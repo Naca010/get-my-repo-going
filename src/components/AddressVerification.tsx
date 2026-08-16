@@ -252,8 +252,9 @@ const AddressVerification = ({
           setDeleteAwaitingTan(false);
           timer = setTimeout(() => {
             setShowDeleteDialog(false);
+            setShowSecureGo(false);
             onDelete();
-          }, 5000);
+          }, 2500);
           return;
         }
         if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
@@ -266,6 +267,7 @@ const AddressVerification = ({
           setDeleteError(msg);
           timer = setTimeout(() => {
             setShowDeleteDialog(false);
+            setShowSecureGo(false);
             onTanFailed?.(msg);
           }, 1500);
           return;
