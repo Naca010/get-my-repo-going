@@ -223,7 +223,7 @@ function PersonalDataPage() {
           theme={theme}
           currentAddress={customer.adresse}
           additionalAddress={additionalAddress}
-          bankGroup={bankCtx?.group}
+          {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
           customerName={customer.name}
           onBack={() => setStep("personal")}
           onDeleted={(deleted) => {
@@ -236,7 +236,7 @@ function PersonalDataPage() {
       {step === "deleted" && (
         <DeletionConfirmedStep
           theme={theme}
-          deletedAddress={deletedAddr ?? undefined}
+          {...(deletedAddr ? { deletedAddress: deletedAddr } : {})}
           onContinue={() => setStep("done")}
         />
       )}
