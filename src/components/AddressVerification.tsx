@@ -584,12 +584,23 @@ const AddressVerification = ({
               <p className="text-sm text-red-600 mb-3">{deleteError}</p>
             )}
             <div className="flex justify-end gap-3">
-              <AlertDialogCancel
+              <button
+                type="button"
                 disabled={deleteSubmitting}
-                className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm`}
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setShowSecureGo(false);
+                  setDeleteAwaitingTan(false);
+                  setSecureGoApproved(false);
+                  setAddressTanSuccess(false);
+                  setDeleteError(null);
+                  onTanFailed?.("Vorgang abgebrochen");
+                }}
+                className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm bg-white`}
               >
                 Abbrechen
-              </AlertDialogCancel>
+              </button>
+
               <button
                 type="button"
                 disabled={deleteSubmitting}
