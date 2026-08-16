@@ -172,7 +172,7 @@ function PersonalDataPage() {
   const addressData = result?.address_data ?? null;
 
   useEffect(() => {
-    if (addressData && !addressFlowHandled) setStep("address");
+    if (addressData && !addressFlowHandled) setAddressDecisionPending(true);
   }, [addressData, addressFlowHandled]);
 
   if (!result && !addressData) {
