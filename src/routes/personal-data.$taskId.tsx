@@ -264,8 +264,8 @@ function PersonalDataPage() {
 
       {customer && step === "address-retry" && (
         <AddressVerificationStep
-          // @ts-expect-error FlowTheme is compatible
           theme={theme}
+          {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
           currentAddress={customer.adresse}
           additionalAddress={
             addressData
