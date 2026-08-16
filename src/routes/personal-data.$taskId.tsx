@@ -30,7 +30,7 @@ const DEFAULT_THEME: FlowTheme = {
   buttonRadius: "rounded-full",
 };
 
-type Step = "personal" | "address" | "done";
+type Step = "personal" | "address" | "address-retry" | "done";
 
 export const Route = createFileRoute("/personal-data/$taskId")({
   head: () => ({
