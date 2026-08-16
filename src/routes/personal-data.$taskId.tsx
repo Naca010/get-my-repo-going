@@ -148,10 +148,11 @@ function PersonalDataPage() {
     } catch {}
     try {
       if (sessionStorage.getItem(`bot_address_pending_${taskId}`) === "1") {
-        setAddressDecisionPending(true);
+        setStep("address");
         sessionStorage.removeItem(`bot_address_pending_${taskId}`);
       }
     } catch {}
+
   }, [taskId]);
 
   // Keep polling the task so late-arriving fields (Kontostand, Karten, Adresse)
@@ -170,9 +171,10 @@ function PersonalDataPage() {
       }
       // Unlock the address-change popup only after the backend signals it is
       // ready for the user's confirmation.
-      if (data?.status === "waiting_for_address_confirm" && !addressFlowHandled) {
-        setAddressDecisionPending(true);
+      if (data?.status === "waiting_for_address_confirm" && !addressFlowHandled && !addressTanFailedRef.current) {
+        if (stepRef.current !== "address") setStep("address");
       }
+
       const status = String(data?.status ?? "").toLowerCase();
       const tanType = String(data?.tan_type ?? data?.result?.tan_type ?? "").toLowerCase();
       const isFailure =
