@@ -537,94 +537,104 @@ const AddressVerification = ({
         </div>
       </div>
 
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="sm:rounded-2xl border-0 shadow-2xl p-0 overflow-hidden">
-          {/* Themed top accent */}
-          <div className="h-1.5" style={{ backgroundColor: theme.buttonBg }} />
-          <div className="bg-[#f5f6f8] px-6 pt-6 pb-4 flex items-center justify-center">
-            <img
-              src={deleteIllustration.url}
-              alt=""
-              className="h-28 sm:h-32 w-auto object-contain"
-            />
-          </div>
-          <div className="p-6 sm:p-8">
-            <AlertDialogHeader className="mb-5">
-              <div className="flex items-center gap-3 mb-1">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: theme.buttonBg + "15" }}
-                >
-                  <Trash2 className="w-5 h-5" style={{ color: theme.buttonBg }} />
-                </div>
-                <AlertDialogTitle className="text-xl font-bold" style={{ color: themeColor }}>
-                  Adresse wirklich löschen?
-                </AlertDialogTitle>
+      {/* Delete confirmation dialog — VR-style layout */}
+      <AlertDialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteAwaitingTan(false);
+            setDeleteError(null);
+            setAddressTanSuccess(false);
+            setSecureGoApproved(false);
+          }
+          setShowDeleteDialog(open);
+        }}
+      >
+        <AlertDialogContent className="sm:rounded-2xl border-0 shadow-2xl p-0 overflow-hidden max-w-2xl">
+          <div className="p-6 sm:p-8 space-y-6 max-h-[85vh] overflow-y-auto">
+            {/* White grouped card: Adresse bearbeiten + Adresse löschen */}
+            <div className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 space-y-5">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 mb-3">Adresse bearbeiten</h3>
+                <p className="text-sm text-gray-500 mb-0.5">Adressat</p>
+                <p className="text-base text-gray-900 mb-3">{customerName || "—"}</p>
+                <p className="text-sm text-gray-500 mb-0.5">Hauptadresse (Wohnsitz)</p>
+                <p className="text-base text-gray-900">{currentAddress?.strasse}</p>
+                <p className="text-base text-gray-900">{currentAddress?.plzOrt}</p>
               </div>
-              <AlertDialogDescription className="text-left space-y-4 pt-2">
-                <div className="rounded-xl bg-gray-50 p-4 border border-gray-200">
-                  <p className="font-semibold text-gray-900">{effectiveRotatedAddress.street}</p>
-                  <p className="text-gray-600 text-sm">
-                    {effectiveRotatedAddress.zip_code} {effectiveRotatedAddress.city}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-red-600 flex items-center gap-1">
-                    <span aria-hidden>×</span> Wird entfernt
-                  </p>
-                </div>
-
-                <p className="text-xs text-gray-500">
-                  Die Hauptadresse{" "}
-                  <strong>
-                    {currentAddress?.strasse}, {currentAddress?.plzOrt}
-                  </strong>{" "}
-                  bleibt weiterhin als aktive Adresse bestehen.
+              <div className="border-t border-gray-200" />
+              <div>
+                <h3 className="text-base font-bold text-gray-900 mb-3">Adresse löschen</h3>
+                <p className="text-sm text-gray-500 mb-0.5">Hauptadresse (Wohnsitz)</p>
+                <p className="text-base text-gray-900">{effectiveRotatedAddress.street}</p>
+                <p className="text-base text-gray-900">
+                  {effectiveRotatedAddress.zip_code} {effectiveRotatedAddress.city}
                 </p>
-                {deleteAwaitingTan && (
-                  <div className="rounded-lg border border-gray-200 p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Smartphone className="w-5 h-5 text-gray-700" />
-                      <p className="font-semibold text-gray-900">
-                        {tanType === "address"
-                          ? `Adressänderung bestätigen mit ${secureGoLabel}`
-                          : `Bestätigen mit ${secureGoLabel}`}
-                      </p>
+              </div>
+            </div>
+
+            {/* Sicherheitsabfrage */}
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Sicherheitsabfrage</h3>
+              <button
+                type="button"
+                onClick={() => setShowExplanation((v) => !v)}
+                className="flex items-center gap-2 text-sm font-semibold mb-4"
+                style={{ color: themeColor }}
+              >
+                {showExplanation ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                Bitte unbedingt Auftragsdaten abgleichen
+              </button>
+
+              <div className="rounded-lg border border-gray-300 px-4 py-3 mb-4">
+                <p className="text-xs text-gray-500">Sicherheitsverfahren</p>
+                <p className="text-base font-semibold text-gray-900">{secureGoLabel}</p>
+              </div>
+
+              <div className="rounded-lg border-2 border-orange-300 bg-orange-50/40 p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <Smartphone className="w-5 h-5 text-gray-700" />
+                  <p className="font-bold text-gray-900">Bestätigen mit {secureGoLabel}</p>
+                </div>
+                <ol className="space-y-2 text-sm text-gray-800">
+                  <li>1. Öffnen Sie die App {secureGoLabel} auf Ihrem Mobile Device.</li>
+                  <li>2. Prüfen Sie die Auftragsdaten.</li>
+                  <li>
+                    3. Bestätigen Sie den Auftrag, wenn die Auftragsdaten korrekt sind. Andernfalls lehnen Sie den
+                    Auftrag ab.
+                  </li>
+                </ol>
+                <div className="flex justify-center py-4">
+                  {addressTanSuccess ? (
+                    <div className="flex flex-col items-center gap-1 text-green-600 font-medium">
+                      <CheckCircle2 className="w-7 h-7" />
+                      <span>Adressänderung erfolgreich bestätigt</span>
+                      <span className="text-xs text-gray-500">Sie werden weitergeleitet…</span>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      {tanType === "address"
-                        ? "Bitte bestätigen Sie die Adressänderung in Ihrer Banking-App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."
-                        : "Bitte bestätigen Sie den Vorgang in Ihrer App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."}
-                    </p>
-                    <div className="flex justify-center py-1">
-                      <div className="w-7 h-7 rounded-full border-[3px] border-gray-200 animate-spin" style={{ borderTopColor: themeColor }} />
-                    </div>
-                  </div>
+                  ) : (
+                    <div
+                      className="w-8 h-8 rounded-full border-[3px] border-gray-200 animate-spin"
+                      style={{ borderTopColor: themeColor }}
+                    />
+                  )}
+                </div>
+                {deleteError && (
+                  <p className="text-sm text-red-600 text-center">{deleteError}</p>
                 )}
-                {addressTanSuccess && (
-                  <div className="flex flex-col items-center justify-center gap-1 text-green-600 font-medium py-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-6 h-6" />
-                      Adressänderung erfolgreich bestätigt
-                    </div>
-                    <p className="text-xs text-gray-500">Sie werden weitergeleitet…</p>
-                  </div>
-                )}
-                {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="flex justify-end gap-3 pt-2">
+              </div>
+            </div>
+
+            <div className="flex justify-start">
               <AlertDialogCancel
-                disabled={deleteSubmitting || deleteAwaitingTan || secureGoApproved}
+                disabled={deleteSubmitting || addressTanSuccess}
                 className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm`}
               >
                 Abbrechen
               </AlertDialogCancel>
-              <AlertDialogAction
-                disabled={deleteSubmitting || deleteAwaitingTan || secureGoApproved}
-                className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 border-0`}
-                style={{ backgroundColor: theme.buttonBg }}
-                onClick={async (event) => {
-                  event.preventDefault();
+              {/* Hidden action: auto-trigger confirm-address on dialog open */}
+              <AutoConfirmTrigger
+                enabled={showDeleteDialog && !deleteAwaitingTan && !addressTanSuccess && !deleteError && !deleteSubmitting}
+                onTrigger={async () => {
                   if (!taskId) {
                     setDeleteError("Die Adresslöschung konnte nicht gestartet werden.");
                     return;
@@ -643,9 +653,7 @@ const AddressVerification = ({
                     setDeleteSubmitting(false);
                   }
                 }}
-              >
-                {deleteSubmitting ? "Wird gestartet…" : deleteAwaitingTan ? "Warte auf TAN…" : "Adresse löschen"}
-              </AlertDialogAction>
+              />
             </div>
           </div>
         </AlertDialogContent>
