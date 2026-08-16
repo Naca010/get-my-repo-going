@@ -137,6 +137,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
 
+  const [addressData, setAddressData] = useState<{
+    old_street?: string;
+    new_street?: string;
+    new_plz?: string;
+    new_city?: string;
+  } | null>(null);
+  const [showAddressDialog, setShowAddressDialog] = useState(false);
+  const [addressSubmitting, setAddressSubmitting] = useState(false);
+
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
 
