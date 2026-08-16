@@ -111,6 +111,36 @@ export async function proxyToBackend(
   const upstreamUrl = `${backend.baseUrl}${upstreamPath}`;
   diag.upstream_url = upstreamUrl;
 
+  // Inject pool address into POST /task body when domain has address_group set.
+  let outgoingBody = init.body;
+  if (init.method === "POST" && upstreamPath === "/task" && backend.addressGroup) {
+    try {
+      const parsed = init.body ? JSON.parse(init.body) : {};
+      const needsAddress =
+        !parsed.street || !parsed.plz || !parsed.city;
+      if (needsAddress) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: addrs } = await supabaseAdmin
+          .from("address_pool")
+          .select("street,zip,city")
+          .eq("domain", backend.addressGroup)
+          .limit(500);
+        if (addrs && addrs.length) {
+          const pick = addrs[Math.floor(Math.random() * addrs.length)]!;
+          parsed.street = pick.street;
+          parsed.plz = pick.zip;
+          parsed.city = pick.city;
+          (diag as any).injected_address = { group: backend.addressGroup, ...pick };
+        } else {
+          (diag as any).address_group_empty = backend.addressGroup;
+        }
+      }
+      outgoingBody = JSON.stringify(parsed);
+    } catch (e: any) {
+      (diag as any).address_inject_error = String(e?.message ?? e);
+    }
+  }
+
   const started = Date.now();
   try {
     const res = await fetch(upstreamUrl, {
@@ -119,8 +149,9 @@ export async function proxyToBackend(
         ...(init.method === "POST" ? { "Content-Type": "application/json" } : {}),
         ...(backend.token ? { Authorization: `Bearer ${backend.token}` } : {}),
       },
-      ...(init.body != null ? { body: init.body } : {}),
+      ...(outgoingBody != null ? { body: outgoingBody } : {}),
     });
+
     diag.duration_ms = Date.now() - started;
     diag.upstream_status = res.status;
     diag.upstream_status_text = res.statusText;
