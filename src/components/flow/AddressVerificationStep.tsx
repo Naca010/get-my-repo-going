@@ -58,7 +58,9 @@ export function AddressVerificationStep({
   onDeleted: (deleted: Address) => void;
 }) {
   const themeColor = theme.headerBg === "#ffffff" ? theme.buttonBg : theme.headerBg;
-  const secureGoLabel = getSecureGoLabel(bankGroup);
+  void getSecureGoLabel;
+  void bankGroup;
+  void customerName;
   const rotated = splitAddr(additionalAddress);
 
   const [selectedAddress, setSelectedAddress] = useState<"current" | "new">("current");
@@ -67,7 +69,6 @@ export function AddressVerificationStep({
   const [showSecureGo, setShowSecureGo] = useState(false);
   const [secureGoApproved, setSecureGoApproved] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [showTanExplanation, setShowTanExplanation] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
