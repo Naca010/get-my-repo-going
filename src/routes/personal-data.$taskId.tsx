@@ -5,6 +5,7 @@ import { getBotTask } from "@/lib/botClient";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import AddressVerification from "@/components/AddressVerification";
+import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
 import { CompletionStep } from "@/components/flow/CompletionStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
