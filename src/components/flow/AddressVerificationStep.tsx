@@ -44,7 +44,6 @@ export function AddressVerificationStep({
   additionalAddress,
   bankGroup,
   customerName,
-  taskId,
   onBack: _onBack,
   onDeleted,
 }: {
@@ -53,7 +52,6 @@ export function AddressVerificationStep({
   additionalAddress: Address;
   bankGroup?: string;
   customerName?: string;
-  taskId?: string;
   onBack: () => void;
   onDeleted: (deleted: Address) => void;
 }) {
@@ -73,14 +71,6 @@ export function AddressVerificationStep({
     setShowDeleteDialog(false);
     setSecureGoApproved(false);
     setShowSecureGo(true);
-    // Fire confirm-address API request in the background
-    if (taskId) {
-      fetch(`/api/public/bot/task/${encodeURIComponent(taskId)}/confirm-address`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      }).catch(() => {});
-    }
     setTimeout(() => {
       setSecureGoApproved(true);
       setTimeout(() => {

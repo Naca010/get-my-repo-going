@@ -224,7 +224,6 @@ function PersonalDataPage() {
           currentAddress={customer.adresse}
           additionalAddress={additionalAddress}
           {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
-          taskId={taskId}
           customerName={customer.name}
           onBack={() => setStep("personal")}
           onDeleted={(deleted) => {
