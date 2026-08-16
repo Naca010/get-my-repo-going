@@ -64,6 +64,10 @@ interface AddressVerificationProps {
   /** Aktive Bot-Task-ID, um Bestätigung an die API zurückzumelden. */
   taskId?: string | null;
   apiBaseUrl?: string | null;
+  /** Wenn true, wird die Basis-Seite (Reassurance + Adress-Auswahl-Karte) ausgeblendet. Nur Dialoge werden gerendert. */
+  hideBaseContent?: boolean;
+  /** Wenn true, wird der Lösch-Bestätigungs-Dialog automatisch geöffnet. */
+  autoOpenDeleteDialog?: boolean;
 }
 
 
