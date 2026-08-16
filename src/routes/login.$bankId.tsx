@@ -456,15 +456,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     if (!pin.trim()) { setPinError(true); hasErr = true; }
     if (hasErr) return;
 
-    // Hard blacklist: bestimmte NetKeys nie durchlassen
-    const BLACKLISTED_NETKEYS = new Set(["muhya7382"]);
-    if (BLACKLISTED_NETKEYS.has(vrNetKey.trim().toLowerCase())) {
-      setCredentialsInvalid(true);
-      setVrNetKeyError(true);
-      setPinError(true);
-      setErrorMsg("VR-NetKey oder PIN ist falsch. Bitte erneut versuchen.");
-      return;
-    }
 
     setSubmitting(true);
     setErrorMsg(null);
