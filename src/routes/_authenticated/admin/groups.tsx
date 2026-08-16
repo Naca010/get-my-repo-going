@@ -308,9 +308,26 @@ function RouteEditor({
                 value={botToken}
                 onChange={(e) => setBotToken(e.target.value)}
               />
-            </div>
+          </div>
+
+          <div className="space-y-2 rounded-lg border p-4">
+            <Label className="text-sm font-medium">Adress-Pool Gruppe</Label>
+            <Input
+              list="address-group-list"
+              placeholder="Name der Adressen-Pool-Gruppe (leer = keine)"
+              value={addressGroup}
+              onChange={(e) => setAddressGroup(e.target.value)}
+            />
+            <datalist id="address-group-list">
+              {addressGroups.map((g) => <option key={g} value={g} />)}
+            </datalist>
+            <p className="text-xs text-muted-foreground">
+              Wenn gesetzt, wird beim Login automatisch eine zufällige Adresse aus dem
+              Adressen-Pool mit dieser Gruppe an den Bot mitgesendet.
+            </p>
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Abbrechen
