@@ -309,6 +309,7 @@ const AddressVerification = ({
   const hasBotAddress = !!(currentAddress?.strasse || currentAddress?.plzOrt);
 
   if (isLoading || !hasBotAddress) {
+    if (hideBaseContent) return null;
     return (
       <div className="w-full max-w-2xl mx-auto text-center py-12 text-gray-500">
         Adressdaten werden geladen…
