@@ -297,7 +297,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   function startPolling(taskId: string, startedAt: number) {
     stopPolling();
-    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false };
+    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false, addressConfirmed: false } as any;
+
     const tick = async () => {
       if (!pollRef.current || pollRef.current.taskId !== taskId) return;
       if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
