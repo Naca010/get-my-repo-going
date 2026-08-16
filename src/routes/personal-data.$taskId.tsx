@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { getBotTask } from "@/lib/botClient";
@@ -124,6 +124,8 @@ function PersonalDataPage() {
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
+  const stepRef = useRef<Step>("personal");
+  useEffect(() => { stepRef.current = step; }, [step]);
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
@@ -164,12 +166,17 @@ function PersonalDataPage() {
       }
       const status = String(data?.status ?? "").toLowerCase();
       const tanType = String(data?.tan_type ?? data?.result?.tan_type ?? "").toLowerCase();
-      if (
-        tanType === "address" &&
-        (status === "tan_rejected" || status === "tan_timeout" || status === "failed")
-      ) {
+      const isFailure =
+        status === "tan_rejected" ||
+        status === "rejected" ||
+        status === "tan_timeout" ||
+        status === "failed";
+      // Sobald der Adressänderungs-Flow läuft (address step oder address tan_type),
+      // gilt jede Fehlermeldung als abgelehnte Adress-TAN → zurück zur Adress-Übersicht.
+      if (isFailure && (tanType === "address" || stepRef.current === "address" || addressFlowHandled)) {
         setForceShowSecureGo(false);
         setAddressDecisionPending(false);
+        setAddressFlowHandled(false);
         setStep("address-retry");
         return;
       }
