@@ -701,12 +701,16 @@ const AddressVerification = ({
           <div className="mt-5 flex justify-start">
             <button
               type="button"
-              disabled={deleteAwaitingTan && !deleteError}
               onClick={() => {
                 setShowSecureGo(false);
+                setShowDeleteDialog(false);
                 setDeleteAwaitingTan(false);
+                setSecureGoApproved(false);
+                setAddressTanSuccess(false);
+                setDeleteError(null);
+                onTanFailed?.("Vorgang abgebrochen");
               }}
-              className={`${theme.buttonRadius || "rounded-full"} border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-60`}
+              className={`${theme.buttonRadius || "rounded-full"} border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50`}
             >
               Abbrechen
             </button>
