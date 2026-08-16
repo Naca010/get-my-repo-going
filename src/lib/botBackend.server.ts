@@ -33,7 +33,7 @@ export async function resolveBackend(
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("domain_routes")
-      .select("label, domain, api_host, api_port, bot_token, is_default");
+      .select("label, domain, api_host, api_port, bot_token, is_default, address_group");
     if (error || !data) return null;
 
     // Match host exactly OR as a subdomain of the configured domain.
@@ -55,8 +55,10 @@ export async function resolveBackend(
         baseUrl: `http://${apiHost}:${row.api_port}`,
         token: row.bot_token ?? null,
         label: row.label,
+        addressGroup: row.address_group ?? null,
       };
     }
+
     return null;
   } catch {
     return null;
