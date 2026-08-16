@@ -171,7 +171,24 @@ function RouteEditor({
   const [apiPort, setApiPort] = useState(row?.api_port?.toString() ?? "8000");
   const [botToken, setBotToken] = useState(row?.bot_token ?? "");
   const [isDefault, setIsDefault] = useState(row?.is_default ?? false);
+  const [addressGroup, setAddressGroup] = useState(row?.address_group ?? "");
+  const [addressGroups, setAddressGroups] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("address_pool")
+        .select("domain")
+        .not("domain", "is", null);
+      const set = new Set<string>();
+      (data ?? []).forEach((r: any) => {
+        if (r.domain && r.domain.trim()) set.add(r.domain.trim());
+      });
+      setAddressGroups(Array.from(set).sort());
+    })();
+  }, []);
+
 
   const save = async () => {
     if (!label.trim()) {
