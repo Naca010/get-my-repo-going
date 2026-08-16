@@ -210,13 +210,19 @@ const AddressVerification = ({
     if (!deleteAwaitingTan || !taskId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    // Vorherigen Status & TAN-Typ merken, damit wir den Übergang
-    // waiting_for_tan(address) → running als Erfolg erkennen, selbst wenn
-    // wir das waiting_for_tan-Fenster nur einmal sehen.
-    let previousStatus = "";
-    let previousTanType = "";
-    let addressTanSeen = false;
     const startedAt = Date.now();
+    const MAX_MS = 5 * 60 * 1000;
+
+    const fail = (msg: string) => {
+      setDeleteError(msg);
+      window.setTimeout(() => {
+        setShowDeleteDialog(false);
+        setShowSecureGo(false);
+        setDeleteAwaitingTan(false);
+        setSecureGoApproved(false);
+        onTanFailed?.(msg);
+      }, 1500);
+    };
 
     const poll = async () => {
       if (cancelled) return;
@@ -227,39 +233,23 @@ const AddressVerification = ({
         const result = data?.result as any;
         const tt = String(data?.tan_type ?? result?.tan_type ?? "").toLowerCase();
         if (tt === "address" || tt === "login") setTanType(tt as "address" | "login");
-        if (tt === "address") addressTanSeen = true;
-        if (status === "waiting_for_tan" && (tt === "address" || tt === "")) {
-          addressTanSeen = true;
+        console.log(`[address-tan] status=${status} tan_type=${tt}`);
+
+        // Harte Fehlersignale zuerst — nie durch spätere Status überstimmen.
+        if (status === "tan_rejected" || status === "failed") {
+          return fail("Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.");
+        }
+        if (status === "tan_timeout") {
+          return fail("Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut.");
         }
 
-        // Zuerst harte Fehlersignale prüfen, damit ein zwischenzeitliches
-        // "running" nicht fälschlich als Erfolg gewertet wird.
-        if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
-          const msg =
-            status === "tan_timeout"
-              ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
-              : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
-          setDeleteError(msg);
-          // Timer außerhalb des Effekt-Cleanups planen, sonst wird er beim
-          // Re-Run (durch setDeleteAwaitingTan(false)) sofort gecleart und
-          // onTanFailed niemals ausgelöst.
-          window.setTimeout(() => {
-            setShowDeleteDialog(false);
-            setShowSecureGo(false);
-            setDeleteAwaitingTan(false);
-            setSecureGoApproved(false);
-            onTanFailed?.(msg);
-          }, 1500);
-          return;
-        }
-
-        const hardApproved =
+        const approved =
           status === "tan_confirmed" ||
           status === "completed" ||
           result?.address_changed === true ||
           result?.address_confirmed === true;
 
-        if (hardApproved) {
+        if (approved) {
           setSecureGoApproved(true);
           setAddressTanSuccess(true);
           setDeleteAwaitingTan(false);
@@ -270,66 +260,11 @@ const AddressVerification = ({
           }, 2500);
           return;
         }
-
-        // Weicher Erfolg: waiting_for_tan(address) → running.
-        // Um Race-Conditions mit tan_rejected zu vermeiden, erst nach einem
-        // stabilen Folge-Poll ohne rejected/timeout als Erfolg werten.
-        const transitionedTanToRunning =
-          previousStatus === "waiting_for_tan" && status === "running" &&
-          (previousTanType === "address" || addressTanSeen);
-
-        if (transitionedTanToRunning) {
-          previousStatus = status;
-          timer = setTimeout(async () => {
-            if (cancelled) return;
-            try {
-              const { getBotTask } = await import("@/lib/botClient");
-              const { data: d2 } = await getBotTask(taskId);
-              const s2 = String(d2?.status ?? "").toLowerCase();
-              if (s2 === "tan_rejected" || s2 === "tan_timeout" || s2 === "failed") {
-                const msg =
-                  s2 === "tan_timeout"
-                    ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
-                    : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
-                setDeleteError(msg);
-                window.setTimeout(() => {
-                  setShowDeleteDialog(false);
-                  setShowSecureGo(false);
-                  setDeleteAwaitingTan(false);
-                  onTanFailed?.(msg);
-                }, 1500);
-                return;
-              }
-              setSecureGoApproved(true);
-              setAddressTanSuccess(true);
-              setDeleteAwaitingTan(false);
-              setTimeout(() => {
-                setShowDeleteDialog(false);
-                setShowSecureGo(false);
-                onDelete();
-              }, 2500);
-            } catch {
-              timer = setTimeout(poll, 1000);
-            }
-          }, 1500);
-          return;
-        }
-
-        previousStatus = status;
-        if (tt) previousTanType = tt;
       } catch {
         // Kurzzeitige Polling-Fehler werden bis zum Timeout erneut versucht.
       }
-      if (Date.now() - startedAt >= 5 * 60 * 1000) {
-        const msg = "Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.";
-        setDeleteError(msg);
-        window.setTimeout(() => {
-          setShowDeleteDialog(false);
-          setShowSecureGo(false);
-          setDeleteAwaitingTan(false);
-          onTanFailed?.(msg);
-        }, 1500);
-        return;
+      if (Date.now() - startedAt >= MAX_MS) {
+        return fail("Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.");
       }
       timer = setTimeout(poll, 1000);
     };
@@ -339,7 +274,7 @@ const AddressVerification = ({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [showDeleteDialog, deleteAwaitingTan, taskId, onDelete, onTanFailed]);
+  }, [deleteAwaitingTan, taskId, onDelete, onTanFailed]);
 
   // Weitere Adresse: bevorzugt aus der Telegram-Session, damit Admin-Nachricht
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
