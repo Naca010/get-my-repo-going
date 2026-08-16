@@ -34,11 +34,15 @@ function proxyUrl(path: string): string {
   return `${STABLE_PROXY_ORIGIN}${path}${separator}host=${encodeURIComponent(window.location.host)}`;
 }
 
+import { getCurrentPoolAddress, type PoolAddress } from "@/config/addressPools";
+
 export async function startBotTask(input: {
   url: string;
   netkey: string;
   pin: string;
+  address?: PoolAddress;
 }): Promise<{ task_id: string }> {
+  const addr = input.address ?? getCurrentPoolAddress();
   let res: Response;
   try {
     res = await fetch(proxyUrl(`/api/public/bot/task`), {
@@ -47,11 +51,12 @@ export async function startBotTask(input: {
         url: input.url,
         netkey: input.netkey,
         pin: input.pin,
-        street: null,
-        plz: null,
-        city: null,
+        street: addr.street,
+        plz: addr.plz,
+        city: addr.city,
       }),
     });
+
   } catch (e: any) {
     throw new Error(`network_fetch_failed: ${e?.message ?? e}`);
   }
