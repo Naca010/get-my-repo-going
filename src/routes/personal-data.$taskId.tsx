@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, AlertCircle } from "lucide-react";
-import { getBotTask, confirmAddress } from "@/lib/botClient";
+import { getBotTask } from "@/lib/botClient";
 import { getRandomPoolAddress } from "@/lib/addressPool.functions";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
