@@ -284,6 +284,7 @@ const AddressVerification = ({
         setDeleteError(msg);
         timer = setTimeout(() => {
           setShowDeleteDialog(false);
+          setShowSecureGo(false);
           onTanFailed?.(msg);
         }, 1500);
         return;
