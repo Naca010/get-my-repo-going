@@ -137,6 +137,18 @@ const AddressVerification = ({
     }
   }, [forceShowSecureGo, onSecureGoOpened]);
 
+  // Auto-open delete confirmation dialog when requested from parent
+  const autoOpenedDeleteRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenDeleteDialog && !autoOpenedDeleteRef.current) {
+      autoOpenedDeleteRef.current = true;
+      setShowDeleteDialog(true);
+    }
+    if (!autoOpenDeleteDialog) {
+      autoOpenedDeleteRef.current = false;
+    }
+  }, [autoOpenDeleteDialog]);
+
   const [tanType, setTanType] = useState<"address" | "login" | null>(null);
   const [addressTanSuccess, setAddressTanSuccess] = useState(false);
 
