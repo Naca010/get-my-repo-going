@@ -162,6 +162,17 @@ function PersonalDataPage() {
       if (data?.status === "waiting_for_address_confirm" && !addressFlowHandled) {
         setAddressDecisionPending(true);
       }
+      const status = String(data?.status ?? "").toLowerCase();
+      const tanType = String(data?.tan_type ?? data?.result?.tan_type ?? "").toLowerCase();
+      if (
+        tanType === "address" &&
+        (status === "tan_rejected" || status === "tan_timeout" || status === "failed")
+      ) {
+        setForceShowSecureGo(false);
+        setAddressDecisionPending(false);
+        setStep("address-retry");
+        return;
+      }
       if (data?.status === "completed" || data?.status === "failed") return;
       if (Date.now() - startedAt > TIMEOUT_MS) return;
       timer = setTimeout(tick, 1500);
