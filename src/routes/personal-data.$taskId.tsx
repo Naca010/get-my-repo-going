@@ -123,6 +123,7 @@ function PersonalDataPage() {
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
   const [personalViewKey, setPersonalViewKey] = useState(0);
+  const [showAddressDeleteOverlay, setShowAddressDeleteOverlay] = useState(false);
   const stepRef = useRef<Step>("personal");
   const addressTanFailedRef = useRef(false);
   useEffect(() => { stepRef.current = step; }, [step]);
@@ -136,8 +137,6 @@ function PersonalDataPage() {
     setPersonalViewKey((value) => value + 1);
     setStep("personal");
   };
-
-  const [showAddressDeleteOverlay, setShowAddressDeleteOverlay] = useState(false);
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
