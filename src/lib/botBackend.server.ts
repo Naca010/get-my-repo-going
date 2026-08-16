@@ -7,7 +7,9 @@ export type ResolvedBackend = {
   baseUrl: string;
   token: string | null;
   label: string;
+  addressGroup: string | null;
 };
+
 
 function normHost(h: string | null): string | null {
   if (!h) return null;
