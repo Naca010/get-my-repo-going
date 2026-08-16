@@ -296,62 +296,6 @@ function PersonalDataPage() {
         <CompletionStep theme={theme} customerName={customer.name} />
       )}
 
-      {/* Address-confirm popup driven by waiting_for_address_confirm */}
-      {addressConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="h-1.5" style={{ backgroundColor: theme.buttonBg }} />
-            <div className="p-6">
-              <h3 className="text-lg font-bold mb-4" style={{ color: themeColor }}>
-                Adressänderung bestätigen
-              </h3>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Bisherige Adresse</p>
-                  <p className="text-gray-900 font-medium">{oldStreet || "—"}</p>
-                  <p className="text-gray-900">{[oldPlz, oldCity].filter(Boolean).join(" ") || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Neue Adresse</p>
-                  <p className="text-gray-900 font-medium">{newStreet || "—"}</p>
-                  <p className="text-gray-900">{[newPlz, newCity].filter(Boolean).join(" ") || "—"}</p>
-                </div>
-                {addressConfirmError && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-3 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
-                    <p className="text-sm text-red-600">{addressConfirmError}</p>
-                  </div>
-                )}
-                {addressConfirmSuccess && (
-                  <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-                    <p className="text-sm text-green-700">Adressänderung angefordert.</p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-6 flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setAddressConfirmOpen(false)}
-                  disabled={addressConfirmSubmitting}
-                  className={`px-5 py-2.5 ${theme.buttonRadius} border-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60`}
-                  style={{ borderColor: theme.accentText, color: theme.accentText }}
-                >
-                  Abbrechen
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmAddressClick}
-                  disabled={addressConfirmSubmitting || addressConfirmSuccess}
-                  className={`px-5 py-2.5 ${theme.buttonRadius} text-sm font-medium disabled:opacity-60`}
-                  style={{ backgroundColor: theme.buttonBg, color: "#ffffff" }}
-                >
-                  {addressConfirmSubmitting ? "Wird gesendet…" : "Adresse löschen"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </BankShell>
   );
 }
