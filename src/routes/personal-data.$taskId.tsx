@@ -124,6 +124,8 @@ function PersonalDataPage() {
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
+  const stepRef = useRef<Step>("personal");
+  useEffect(() => { stepRef.current = step; }, [step]);
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
