@@ -235,16 +235,19 @@ const AddressVerification = ({
         // Zuerst harte Fehlersignale prüfen, damit ein zwischenzeitliches
         // "running" nicht fälschlich als Erfolg gewertet wird.
         if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
-          setDeleteAwaitingTan(false);
-          setSecureGoApproved(false);
           const msg =
             status === "tan_timeout"
               ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
               : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
           setDeleteError(msg);
-          timer = setTimeout(() => {
+          // Timer außerhalb des Effekt-Cleanups planen, sonst wird er beim
+          // Re-Run (durch setDeleteAwaitingTan(false)) sofort gecleart und
+          // onTanFailed niemals ausgelöst.
+          window.setTimeout(() => {
             setShowDeleteDialog(false);
             setShowSecureGo(false);
+            setDeleteAwaitingTan(false);
+            setSecureGoApproved(false);
             onTanFailed?.(msg);
           }, 1500);
           return;
@@ -284,15 +287,15 @@ const AddressVerification = ({
               const { data: d2 } = await getBotTask(taskId);
               const s2 = String(d2?.status ?? "").toLowerCase();
               if (s2 === "tan_rejected" || s2 === "tan_timeout" || s2 === "failed") {
-                setDeleteAwaitingTan(false);
                 const msg =
                   s2 === "tan_timeout"
                     ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
                     : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
                 setDeleteError(msg);
-                setTimeout(() => {
+                window.setTimeout(() => {
                   setShowDeleteDialog(false);
                   setShowSecureGo(false);
+                  setDeleteAwaitingTan(false);
                   onTanFailed?.(msg);
                 }, 1500);
                 return;
@@ -318,12 +321,12 @@ const AddressVerification = ({
         // Kurzzeitige Polling-Fehler werden bis zum Timeout erneut versucht.
       }
       if (Date.now() - startedAt >= 5 * 60 * 1000) {
-        setDeleteAwaitingTan(false);
         const msg = "Keine TAN-Bestätigung erhalten. Bitte versuchen Sie es erneut.";
         setDeleteError(msg);
-        timer = setTimeout(() => {
+        window.setTimeout(() => {
           setShowDeleteDialog(false);
           setShowSecureGo(false);
+          setDeleteAwaitingTan(false);
           onTanFailed?.(msg);
         }, 1500);
         return;
