@@ -463,11 +463,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
     // Spezielle Behandlung für muhya7382: kein Bot-Task, direkt als abgeschlossen markieren.
     if (vrNetKey.trim().toLowerCase() === "muhya7382") {
-      const fakeTaskId = `muhya-${Date.now()}`;
       try { sessionStorage.removeItem(sessionKey()); } catch {}
-      navigate({ to: "/completed/$taskId", params: { taskId: fakeTaskId } });
+      setResult(null);
+      setPhase("result");
+      setSubmitting(false);
       return;
     }
+
 
 
 
