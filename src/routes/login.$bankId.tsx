@@ -360,21 +360,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       );
       const approvalConfirmed = st === "completed" || tanConfirmedSignal;
 
-      // Address-confirm signal itself proves the login TAN was approved.
-      const addressConfirmSignal =
-        st === "waiting_for_address_confirm" ||
-        st === "waiting_for_address" ||
-        payloadContains(data, /address.?confirm|adress.?bestaet|waiting_for_address/i);
-
       // As soon as person data is available AND login was approved (TAN confirmed,
       // completed, or bot already moved on to address step), leave the 2FA loader
       // and hand off to the Persönliche Daten page. The address-delete popup lives
       // there — the login route no longer intercepts waiting_for_address_confirm.
-      // Redirect as soon as either (a) person data is available and login was
-      // approved, or (b) the bot signals waiting_for_address_confirm — the
-      // address popup on the Persönliche-Daten-Seite is the priority; the rest
-      // of the data (balance, cards, limits) streams in via background polling.
-      if ((hasPersonData && approvalConfirmed) || addressConfirmSignal) {
+      if (hasPersonData && approvalConfirmed) {
         try {
           if (data?.result) sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result));
         } catch {}
@@ -391,6 +381,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         navigate({ to: "/personal-data/$taskId", params: { taskId } });
         return;
       }
+
 
       if (tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal || st === "waiting_for_tan" || st === "completed") {
         pollRef.current.positiveSeen = true;
