@@ -28,7 +28,9 @@ type DomainRoute = {
   api_port: number;
   bot_token: string | null;
   is_default: boolean;
+  address_group: string | null;
 };
+
 
 function DomainsAdmin() {
   const [rows, setRows] = useState<DomainRoute[]>([]);
