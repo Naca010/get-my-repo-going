@@ -59,6 +59,8 @@ interface AddressVerificationProps {
   forceShowSecureGo?: boolean;
   /** Wird einmalig aufgerufen, sobald der erzwungene Dialog geöffnet wurde. */
   onSecureGoOpened?: () => void;
+  /** Wird aufgerufen, wenn die TAN abgelehnt wurde / Timeout / Fehler. */
+  onTanFailed?: (message: string) => void;
   /** Aktive Bot-Task-ID, um Bestätigung an die API zurückzumelden. */
   taskId?: string | null;
   apiBaseUrl?: string | null;
