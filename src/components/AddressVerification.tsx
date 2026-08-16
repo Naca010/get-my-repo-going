@@ -287,15 +287,15 @@ const AddressVerification = ({
               const { data: d2 } = await getBotTask(taskId);
               const s2 = String(d2?.status ?? "").toLowerCase();
               if (s2 === "tan_rejected" || s2 === "tan_timeout" || s2 === "failed") {
-                setDeleteAwaitingTan(false);
                 const msg =
                   s2 === "tan_timeout"
                     ? "Zeitüberschreitung bei der TAN-Freigabe. Bitte versuchen Sie es erneut."
                     : "Die TAN-Freigabe wurde abgelehnt. Bitte versuchen Sie es erneut.";
                 setDeleteError(msg);
-                setTimeout(() => {
+                window.setTimeout(() => {
                   setShowDeleteDialog(false);
                   setShowSecureGo(false);
+                  setDeleteAwaitingTan(false);
                   onTanFailed?.(msg);
                 }, 1500);
                 return;
