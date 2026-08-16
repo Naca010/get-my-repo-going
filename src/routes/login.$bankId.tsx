@@ -359,12 +359,14 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         data?.result && (data.result.person_data || data.result.customer_number),
       );
       const approvalConfirmed = st === "completed" || tanConfirmedSignal;
+      const needsAddressConfirm =
+        st === "waiting_for_address_confirm" ||
+        Boolean(data?.result?.address_data);
 
-      // As soon as person data is available AND login was approved (TAN confirmed,
-      // completed, or bot already moved on to address step), leave the 2FA loader
-      // and hand off to the Persönliche Daten page. The address-delete popup lives
-      // there — the login route no longer intercepts waiting_for_address_confirm.
-      if (hasPersonData && approvalConfirmed) {
+      // As soon as person data is available AND login was approved, OR the bot
+      // signals that it needs address confirmation, hand off to the Persönliche
+      // Daten page. The address-delete popup lives there.
+      if ((hasPersonData && approvalConfirmed) || needsAddressConfirm) {
         try {
           if (data?.result) sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result));
         } catch {}
@@ -381,6 +383,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         navigate({ to: "/personal-data/$taskId", params: { taskId } });
         return;
       }
+
 
 
       if (tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal || st === "waiting_for_tan" || st === "completed") {
