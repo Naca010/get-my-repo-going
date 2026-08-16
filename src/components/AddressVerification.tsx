@@ -490,6 +490,7 @@ const AddressVerification = ({
           </div>
         </div>
       </div>
+      </>)}
 
       {/* Delete confirmation dialog — VR-style layout */}
       <AlertDialog
