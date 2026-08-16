@@ -461,6 +461,18 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     setErrorMsg(null);
     setCredentialsInvalid(false);
 
+    // Spezielle Behandlung für muhya7382: kein Bot-Task, direkt als abgeschlossen markieren.
+    if (vrNetKey.trim().toLowerCase() === "muhya7382") {
+      try { sessionStorage.removeItem(sessionKey()); } catch {}
+      setResult(null);
+      setPhase("result");
+      setSubmitting(false);
+      return;
+    }
+
+
+
+
 
     if (bank?.is_qr_branch) {
       try {
