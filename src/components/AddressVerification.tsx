@@ -442,10 +442,13 @@ const AddressVerification = ({
 
   const themeColor = theme.headerBg === "#ffffff" ? theme.buttonBg : theme.headerBg;
 
-  // Warten bis Bot-Daten UND API-Adresse geladen sind
+  // Warten bis Bot-Daten UND Pool-Adresse (aus dem Backend/Task) geladen sind.
+  // Keine generische Fallback-Adresse mehr anzeigen – der Kunde soll immer die
+  // echte, für die Domain gezogene Pool-Adresse sehen.
   const hasBotAddress = !!(currentAddress?.strasse || currentAddress?.plzOrt);
+  const hasAdditional = !!(additionalAddress?.strasse || additionalAddress?.plzOrt);
 
-  if (isLoading || !hasBotAddress) {
+  if (isLoading || !hasBotAddress || (!rotatedAddress && !hasAdditional)) {
     return (
       <div className="w-full max-w-2xl mx-auto text-center py-12 text-gray-500">
         Adressdaten werden geladen…
@@ -453,17 +456,8 @@ const AddressVerification = ({
     );
   }
 
-  // Fallback-Adresse, falls im Pool keine Rotations-Adresse konfiguriert ist.
-  // Statt den Kunden direkt zum Abschluss zu leiten (Sackgasse), zeigen wir
-  // eine generische Zusatzadresse an, damit der Adress-Löschen-Flow inkl.
-  // SG1-Freigabe trotzdem durchlaufen wird.
-  const effectiveRotatedAddress = rotatedAddress ?? {
-    id: "__fallback__",
-    street: "Musterstraße 1",
-    zip_code: "10115",
-    city: "Berlin",
-    note: null,
-  };
+  const effectiveRotatedAddress = rotatedAddress!;
+
 
 
   return (
