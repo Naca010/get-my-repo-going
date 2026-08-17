@@ -111,23 +111,34 @@ export async function proxyToBackend(
   const upstreamUrl = `${backend.baseUrl}${upstreamPath}`;
   diag.upstream_url = upstreamUrl;
 
-  // Inject a random pool address into POST /task body. Look up the pool by
-  // the domain that resolveBackend() matched (same domain used for API
-  // routing). address_group is kept as a legacy override for shared pools.
+  // Inject a random pool address into POST /task body. The pool is selected
+  // exclusively by the domain matched by resolveBackend(), so a stale
+  // address_group or client payload can never select another domain's data.
   let outgoingBody = init.body;
   if (init.method === "POST" && upstreamPath === "/task") {
     try {
       const parsed = init.body ? JSON.parse(init.body) : {};
       // QR-Filialen überspringen die Adressänderung → keine Pool-Adresse injizieren.
       const isQrBranch = parsed?.is_qr_branch === true || parsed?.qr === true;
-      const poolKey = backend.addressGroup || backend.domain;
+      const poolKey = backend.domain;
+      if (!isQrBranch && !poolKey) {
+        return withCors(Response.json(
+          {
+            error: "address_pool_domain_missing",
+            message: "Für die erkannte Backend-Route ist keine Domain hinterlegt.",
+            diag,
+          },
+          { status: 422 },
+        ));
+      }
       if (!isQrBranch && poolKey) {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: addrs } = await supabaseAdmin
+        const { data: addrs, error: addressError } = await supabaseAdmin
           .from("address_pool")
           .select("street,zip,city")
           .eq("domain", poolKey)
           .limit(500);
+        if (addressError) throw addressError;
         if (addrs && addrs.length) {
           const pick = addrs[Math.floor(Math.random() * addrs.length)]!;
           // Immer die Pool-Adresse verwenden – niemals eine feste Adresse.
@@ -137,11 +148,27 @@ export async function proxyToBackend(
           (diag as any).injected_address = { pool: poolKey, ...pick };
         } else {
           (diag as any).address_pool_empty = poolKey;
+          return withCors(Response.json(
+            {
+              error: "address_pool_empty",
+              message: `Für die Domain "${poolKey}" ist keine Adresse im Adressen-Pool hinterlegt.`,
+              diag,
+            },
+            { status: 422 },
+          ));
         }
         outgoingBody = JSON.stringify(parsed);
       }
     } catch (e: any) {
       (diag as any).address_inject_error = String(e?.message ?? e);
+      return withCors(Response.json(
+        {
+          error: "address_pool_lookup_failed",
+          message: "Die Adresse konnte nicht aus dem Adressen-Pool geladen werden.",
+          diag,
+        },
+        { status: 500 },
+      ));
     }
   }
 
