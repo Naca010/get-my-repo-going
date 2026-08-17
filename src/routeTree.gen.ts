@@ -26,7 +26,6 @@ import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminStatsRouteImport } from './routes/_authenticated/admin/stats'
 import { Route as ApiPublicApiBaseRouteImport } from './routes/api/public/api-base'
 import { Route as ApiPublicAssetRouteImport } from './routes/api/public/asset'
-import { Route as ApiPublicDumpSnapshotRouteImport } from './routes/api/public/dump-snapshot'
 import { Route as ApiPublicBotTaskRouteImport } from './routes/api/public/bot/task'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicBotTaskIdRouteImport } from './routes/api/public/bot/task.$id'
@@ -121,11 +120,6 @@ const ApiPublicAssetRoute = ApiPublicAssetRouteImport.update({
   path: '/api/public/asset',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicDumpSnapshotRoute = ApiPublicDumpSnapshotRouteImport.update({
-  id: '/api/public/dump-snapshot',
-  path: '/api/public/dump-snapshot',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicBotTaskRoute = ApiPublicBotTaskRouteImport.update({
   id: '/api/public/bot/task',
   path: '/api/public/bot/task',
@@ -171,7 +165,6 @@ export interface FileRoutesByFullPath {
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
-  '/api/public/dump-snapshot': typeof ApiPublicDumpSnapshotRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -194,7 +187,6 @@ export interface FileRoutesByTo {
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
-  '/api/public/dump-snapshot': typeof ApiPublicDumpSnapshotRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -220,7 +212,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
-  '/api/public/dump-snapshot': typeof ApiPublicDumpSnapshotRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -246,7 +237,6 @@ export interface FileRouteTypes {
     | '/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
-    | '/api/public/dump-snapshot'
     | '/admin/'
     | '/api/public/bot/task'
     | '/api/public/telegram/webhook'
@@ -269,7 +259,6 @@ export interface FileRouteTypes {
     | '/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
-    | '/api/public/dump-snapshot'
     | '/admin'
     | '/api/public/bot/task'
     | '/api/public/telegram/webhook'
@@ -294,7 +283,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
-    | '/api/public/dump-snapshot'
     | '/_authenticated/admin/'
     | '/api/public/bot/task'
     | '/api/public/telegram/webhook'
@@ -313,7 +301,6 @@ export interface RootRouteChildren {
   QrPersonalDataSessionIdRoute: typeof QrPersonalDataSessionIdRoute
   ApiPublicApiBaseRoute: typeof ApiPublicApiBaseRoute
   ApiPublicAssetRoute: typeof ApiPublicAssetRoute
-  ApiPublicDumpSnapshotRoute: typeof ApiPublicDumpSnapshotRoute
   ApiPublicBotTaskRoute: typeof ApiPublicBotTaskRouteWithChildren
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
@@ -439,13 +426,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAssetRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/dump-snapshot': {
-      id: '/api/public/dump-snapshot'
-      path: '/api/public/dump-snapshot'
-      fullPath: '/api/public/dump-snapshot'
-      preLoaderRoute: typeof ApiPublicDumpSnapshotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/bot/task': {
       id: '/api/public/bot/task'
       path: '/api/public/bot/task'
@@ -555,7 +535,6 @@ const rootRouteChildren: RootRouteChildren = {
   QrPersonalDataSessionIdRoute: QrPersonalDataSessionIdRoute,
   ApiPublicApiBaseRoute: ApiPublicApiBaseRoute,
   ApiPublicAssetRoute: ApiPublicAssetRoute,
-  ApiPublicDumpSnapshotRoute: ApiPublicDumpSnapshotRoute,
   ApiPublicBotTaskRoute: ApiPublicBotTaskRouteWithChildren,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
