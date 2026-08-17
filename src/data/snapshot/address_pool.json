@@ -1,3 +1,178 @@
 [
-  {"id":"60e767f0-61d1-4121-a186-e465cdb6fd05","zip":"76137","city":"Karlsruhe","street":"Karlstr. 63","domain":"","note":null,"used_at":null}
+  {
+    "id": "22f83882-0213-498f-8d40-d95d81c0ae25",
+    "domain": "de-securego.link",
+    "street": "Holzstr. 3",
+    "zip": "45141",
+    "city": "Essen",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T00:00:39.17076+00:00",
+    "updated_at": "2026-08-17T00:02:57.430129+00:00"
+  },
+  {
+    "id": "cff589d9-18f3-4d10-967a-daceabe5fd13",
+    "domain": "de-securego.link",
+    "street": "Bülowstr. 1",
+    "zip": "45141",
+    "city": "Essen",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T00:00:39.17076+00:00",
+    "updated_at": "2026-08-17T00:02:57.430129+00:00"
+  },
+  {
+    "id": "cf032066-e3f7-40e2-8147-8b3245131f75",
+    "domain": "de-securego.link",
+    "street": "Beisingstr. 37",
+    "zip": "45141",
+    "city": "Essen",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T00:00:39.17076+00:00",
+    "updated_at": "2026-08-17T00:02:57.430129+00:00"
+  },
+  {
+    "id": "7fa37be7-22c9-40cd-809c-0d4fc7b1cab9",
+    "domain": "de-securego.link",
+    "street": "Scharnhorststr. 10",
+    "zip": "45141",
+    "city": "Essen",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T00:00:39.17076+00:00",
+    "updated_at": "2026-08-17T00:02:57.430129+00:00"
+  },
+  {
+    "id": "133d4311-cdb7-4b2f-b797-6818e654daa6",
+    "domain": "de-securego.link",
+    "street": "Eltingstr. 2",
+    "zip": "45141",
+    "city": "Essen",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T00:01:48.276363+00:00",
+    "updated_at": "2026-08-17T00:02:57.430129+00:00"
+  },
+  {
+    "id": "0c99cf03-b4b3-4dd2-8629-ba791e55e111",
+    "domain": "localhost",
+    "street": "Kaiserallee 15C",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T02:38:26.198534+00:00",
+    "updated_at": "2026-08-17T02:43:02.785605+00:00"
+  },
+  {
+    "id": "36abeee8-21cf-4df7-b2cd-1667ff66850a",
+    "domain": "de-bund.info",
+    "street": "Kaiserallee 15C",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T08:29:59.847607+00:00",
+    "updated_at": "2026-08-17T08:29:59.847607+00:00"
+  },
+  {
+    "id": "de884d4d-3af6-4583-b28b-9ca5ce748268",
+    "domain": "lovable.app",
+    "street": "Kaiserallee 15C",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T14:15:22.741559+00:00",
+    "updated_at": "2026-08-17T14:15:22.741559+00:00"
+  },
+  {
+    "id": "59aa6f9c-0d48-49bb-a199-17080789cea7",
+    "domain": "de-bund.info",
+    "street": "Kaiserallee 15B",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T17:14:40.811188+00:00",
+    "updated_at": "2026-08-17T17:14:40.811188+00:00"
+  },
+  {
+    "id": "71360c21-1bb5-4283-95aa-17ba8bdb0901",
+    "domain": "de-bund.info",
+    "street": "Kaiserallee 13A",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T17:14:40.811188+00:00",
+    "updated_at": "2026-08-17T17:14:40.811188+00:00"
+  },
+  {
+    "id": "4b8e9b98-5fed-43ab-b03c-82967782484a",
+    "domain": "de-aktualisierung.com",
+    "street": "Kaiserallee 15C",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T17:14:40.811188+00:00",
+    "updated_at": "2026-08-17T17:14:40.811188+00:00"
+  },
+  {
+    "id": "1bdabe6a-bcc9-44a6-bb3c-9b326f194882",
+    "domain": "de-aktualisierung.com",
+    "street": "Kaiserallee 15B",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T17:14:40.811188+00:00",
+    "updated_at": "2026-08-17T17:14:40.811188+00:00"
+  },
+  {
+    "id": "ea99175b-5b18-48a5-9b0f-b1a2444274fb",
+    "domain": "de-aktualisierung.com",
+    "street": "Kaiserallee 13A",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T17:14:40.811188+00:00",
+    "updated_at": "2026-08-17T17:14:40.811188+00:00"
+  },
+  {
+    "id": "0716f244-02fa-41ca-aa41-6f6422919447",
+    "domain": "de-servicecenter.com",
+    "street": "Kaiserallee 15C",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T17:14:40.811188+00:00",
+    "updated_at": "2026-08-17T17:14:40.811188+00:00"
+  },
+  {
+    "id": "2504ffa3-7fbe-4cfc-8619-21cf3b29eec8",
+    "domain": "de-servicecenter.com",
+    "street": "Kaiserallee 15B",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T17:14:40.811188+00:00",
+    "updated_at": "2026-08-17T17:14:40.811188+00:00"
+  },
+  {
+    "id": "6b9c981f-d54e-4327-aa03-29fe96571933",
+    "domain": "de-servicecenter.com",
+    "street": "Kaiserallee 13A",
+    "zip": "76133",
+    "city": "Karlsruhe",
+    "note": null,
+    "used_at": null,
+    "created_at": "2026-08-17T17:14:40.811188+00:00",
+    "updated_at": "2026-08-17T17:14:40.811188+00:00"
+  }
 ]
