@@ -16,11 +16,13 @@ export const exportZip = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Forbidden");
 
     // Use committed snapshot to avoid DB statement timeouts on huge columns.
-    const [{ default: banks }, { default: groups }, { default: partnersSnap }] = await Promise.all([
-      import("@/data/snapshot/banks.json").catch(() => ({ default: [] as any[] })),
-      import("@/data/snapshot/bank_groups.json").catch(() => ({ default: [] as any[] })),
-      Promise.resolve({ default: [] as any[] }),
+    const [banksMod, groupsMod] = await Promise.all([
+      import("@/data/snapshot/banks.json"),
+      import("@/data/snapshot/bank_groups.json"),
     ]);
+    const banks: any[] = (banksMod as any).default ?? (banksMod as any);
+    const groups: any[] = (groupsMod as any).default ?? (groupsMod as any);
+
     const { data: partners } = await context.supabase
       .from("partner_logos")
       .select("name, logo_url, link_url, sort_order, visible");
