@@ -8,6 +8,7 @@ export type ResolvedBackend = {
   token: string | null;
   label: string;
   addressGroup: string | null;
+  domain: string | null;
 };
 
 
