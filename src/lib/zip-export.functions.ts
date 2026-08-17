@@ -15,24 +15,16 @@ export const exportZip = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Forbidden");
 
-    // Fetch all banks (paginated to avoid PostgREST 1000-row limit)
-    const banks: any[] = [];
-    const pageSize = 1000;
-    for (let from = 0; ; from += pageSize) {
-      const { data, error } = await context.supabase
-        .from("banks")
-        .select("*")
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0) break;
-      banks.push(...data);
-      if (data.length < pageSize) break;
-    }
-
-    const { data: groups } = await context.supabase.from("bank_groups").select("name, theme");
+    // Use committed snapshot to avoid DB statement timeouts on huge columns.
+    const [{ default: banks }, { default: groups }, { default: partnersSnap }] = await Promise.all([
+      import("@/data/snapshot/banks.json").catch(() => ({ default: [] as any[] })),
+      import("@/data/snapshot/bank_groups.json").catch(() => ({ default: [] as any[] })),
+      Promise.resolve({ default: [] as any[] }),
+    ]);
     const { data: partners } = await context.supabase
       .from("partner_logos")
       .select("name, logo_url, link_url, sort_order, visible");
+
 
     const { default: AdmZip } = await import("adm-zip");
     const zip = new AdmZip();
