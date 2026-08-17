@@ -312,7 +312,7 @@ function PersonalDataPage() {
       )}
 
       {customer && step === "done" && (
-        <CompletionStep theme={theme} customerName={customer.name} />
+        <CompletionStep theme={theme} customerName={customer.name} reason={skipReason} />
       )}
 
       {!customer && (
