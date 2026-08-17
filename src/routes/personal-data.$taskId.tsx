@@ -181,7 +181,16 @@ function PersonalDataPage() {
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [taskId, addressFlowHandled]);
+  }, [taskId, addressFlowHandled, skipReason]);
+
+  // When the bot signals no address change is needed, jump to the completion
+  // screen immediately once the personal-data overview is on screen.
+  useEffect(() => {
+    if (skipReason && step === "personal") {
+      setAddressDecisionPending(false);
+      setAddressFlowHandled(true);
+    }
+  }, [skipReason, step]);
 
   const customer = useMemo(
     () => (result ? mapCustomer(result, bankCtx?.bankName ?? "") : null),
