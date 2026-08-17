@@ -467,6 +467,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
           data: {
             bankId: bank.id,
             bankName: bank.name,
+            requestDomain: window.location.hostname,
             netkey: vrNetKey.trim(),
             pin,
             onlineBankingUrl: bank.online_banking_url,

