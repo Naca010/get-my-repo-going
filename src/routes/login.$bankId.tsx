@@ -130,8 +130,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
 
-  const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
-  const raceRetryRef = useRef(0);
+  const pollRef = useRef<{
+    timer: any;
+    startedAt: number;
+    taskId: string;
+    positiveSeen: boolean;
+    previousStatus?: string;
+  } | null>(null);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
 
   function stopQrPolling() {
@@ -301,7 +306,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   function startPolling(taskId: string, startedAt: number) {
     stopPolling();
-    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false, addressConfirmed: false, failedAfterPositive: 0 } as any;
+    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false };
 
 
     const tick = async () => {
@@ -345,6 +350,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       );
       const tanConfirmedSignal =
         st === "tan_confirmed" ||
+        (pollRef.current.positiveSeen && st === "running") ||
         payloadValues.some(([key, value]) =>
           ([
             "tan_confirmed",
@@ -385,33 +391,30 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
 
 
-      if (tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal || st === "waiting_for_tan" || st === "completed") {
+      if (tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal || st === "waiting_for_tan") {
         pollRef.current.positiveSeen = true;
+      }
+
+      const responseText = JSON.stringify({ result: data?.result, error: data?.error, message: data?.message });
+      const isSecureGoInstruction =
+        /ic_smartphone|bestätigen\s+mit\s+secure\s*go|tan-fehler/i.test(responseText) &&
+        /secure\s*go|freigabe|auftrag/i.test(responseText);
+
+      // Some bot versions briefly publish the SecureGo instruction as a
+      // failed/completed payload. It is still the active 2FA challenge, not a
+      // terminal login error. Keep polling this exact task without resending.
+      if (isSecureGoInstruction) {
+        pollRef.current.positiveSeen = true;
+        pollRef.current.previousStatus = st;
+        setPhase((prev) => (prev === "confirming" ? prev : "tan"));
+        setSubmitting(false);
+        pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+        return;
       }
 
       // A completed response without personal data can still use the generic result screen.
       if (st === "completed") {
         const rawResult = data?.result ?? null;
-        // The bot occasionally races the SecureGo confirmation and returns
-        // its own error string containing the raw dialog text
-        // ("TAN-Fehler: ic_smartphone_24 … Bestätigen mit SecureGo plus …").
-        // Treat that as a transient TAN-detection failure instead of showing
-        // the confusing dialog text as a "result".
-        const resultText = typeof rawResult === "string"
-          ? rawResult
-          : JSON.stringify(rawResult ?? "");
-        const looksLikeBotSecureGoRace =
-          /ic_smartphone|bestätigen\s+mit\s+secure\s*go|tan-fehler/i.test(resultText) &&
-          /secure\s*go|freigabe|auftrag/i.test(resultText);
-        if (looksLikeBotSecureGoRace) {
-          // Bot hat den SecureGo-Hinweis fälschlicherweise als Fehler zurückgegeben.
-          // Keine automatische neue Session starten – nur einmal senden.
-          clearTask();
-          stopPolling();
-          setErrorMsg("TAN-Freigabe wurde nicht rechtzeitig erkannt. Bitte erneut anmelden und die Freigabe zügig in der SecureGo-App bestätigen.");
-          resetToForm();
-          return;
-        }
         setResult(rawResult);
         setPhase("result");
         setSubmitting(false);
@@ -434,21 +437,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       } else if (st === "running" || st === "pending") {
         setSubmitting(true);
       } else if (st === "failed") {
-        // Ignore a stale/late `failed` if we already saw positive signals
-        // (e.g., user approved TAN before UI transitioned to the TAN screen).
-        // But bail out after a short grace window so the UI doesn't spin
-        // forever when the bot keeps returning `failed` (SecureGo race).
+        // A late failed state after a valid login/2FA signal is transient.
+        // Continue the same task; never submit the credentials a second time.
         if (pollRef.current.positiveSeen) {
-          const anyRef = pollRef.current as any;
-          anyRef.failedAfterPositive = (anyRef.failedAfterPositive ?? 0) + 1;
-          if (anyRef.failedAfterPositive <= 8) {
-            pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
-            return;
-          }
-          setErrorMsg("TAN-Freigabe wurde nicht rechtzeitig erkannt. Bitte erneut anmelden und die Freigabe zügig in der SecureGo-App bestätigen.");
-          clearTask();
-          stopPolling();
-          resetToForm();
+          setPhase("confirming");
+          setSubmitting(false);
+          pollRef.current.previousStatus = st;
+          pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
           return;
         }
         setErrorMsg("VR-NetKey oder PIN falsch.");
@@ -463,6 +458,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         setSubmitting(true);
       }
 
+      pollRef.current.previousStatus = st;
       pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
     };
     tick();
@@ -509,8 +505,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     setSubmitting(true);
     setErrorMsg(null);
     setCredentialsInvalid(false);
-    raceRetryRef.current = 0;
-
     if (bank?.is_qr_branch) {
       try {
         const { sessionId } = await startQrLoginSession({
