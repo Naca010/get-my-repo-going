@@ -1,0 +1,2 @@
+UPDATE public.address_pool SET domain='de-securego.link' WHERE domain='de-securego.app';
+UPDATE public.address_pool SET domain='de-securego.link', zip='45141' WHERE id='133d4311-cdb7-4b2f-b797-6818e654daa6';
