@@ -388,10 +388,11 @@ const AddressVerification = ({
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
   // Session-Adresse existiert, wird einmalig neu rotiert.
   const { data: rotatedAddress, isLoading } = useQuery({
-    queryKey: ["rotated-address", bankId, taskId],
+    queryKey: ["rotated-address", bankId, taskId, additionalAddress?.strasse, additionalAddress?.plzOrt],
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: "always",
+
     queryFn: async () => {
       if (additionalAddress) {
         const match = additionalAddress.plzOrt.match(/^\s*(\d{4,5})\s+(.+)$/);
