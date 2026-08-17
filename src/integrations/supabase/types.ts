@@ -190,6 +190,21 @@ export type Database = {
           },
         ]
       }
+      bot_completion_notifications: {
+        Row: {
+          created_at: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          task_id?: string
+        }
+        Relationships: []
+      }
       crawl_runs: {
         Row: {
           failed: number
