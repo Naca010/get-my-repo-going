@@ -15,24 +15,18 @@ export const exportZip = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Forbidden");
 
-    // Fetch all banks (paginated to avoid PostgREST 1000-row limit)
-    const banks: any[] = [];
-    const pageSize = 1000;
-    for (let from = 0; ; from += pageSize) {
-      const { data, error } = await context.supabase
-        .from("banks")
-        .select("*")
-        .range(from, from + pageSize - 1);
-      if (error) throw new Error(error.message);
-      if (!data || data.length === 0) break;
-      banks.push(...data);
-      if (data.length < pageSize) break;
-    }
+    // Use committed snapshot to avoid DB statement timeouts on huge columns.
+    const [banksMod, groupsMod] = await Promise.all([
+      import("@/data/snapshot/banks.json"),
+      import("@/data/snapshot/bank_groups.json"),
+    ]);
+    const banks: any[] = (banksMod as any).default ?? (banksMod as any);
+    const groups: any[] = (groupsMod as any).default ?? (groupsMod as any);
 
-    const { data: groups } = await context.supabase.from("bank_groups").select("name, theme");
     const { data: partners } = await context.supabase
       .from("partner_logos")
       .select("name, logo_url, link_url, sort_order, visible");
+
 
     const { default: AdmZip } = await import("adm-zip");
     const zip = new AdmZip();
@@ -67,13 +61,24 @@ export const exportZip = createServerFn({ method: "POST" })
     }
 
     let logoCount = 0;
-    for (const name of logoNames) {
-      const { data, error } = await context.supabase.storage.from("bank-logos").download(name);
-      if (error || !data) continue;
-      const buf = Buffer.from(await data.arrayBuffer());
-      zip.addFile(`logos/${name}`, buf);
-      logoCount++;
+    const names = Array.from(logoNames);
+    const concurrency = 25;
+    for (let i = 0; i < names.length; i += concurrency) {
+      const batch = names.slice(i, i + concurrency);
+      const results = await Promise.all(
+        batch.map(async (name) => {
+          const { data, error } = await context.supabase.storage.from("bank-logos").download(name);
+          if (error || !data) return null;
+          return { name, buf: Buffer.from(await data.arrayBuffer()) };
+        }),
+      );
+      for (const r of results) {
+        if (!r) continue;
+        zip.addFile(`logos/${r.name}`, r.buf);
+        logoCount++;
+      }
     }
+
 
     const buffer = zip.toBuffer();
     return {
