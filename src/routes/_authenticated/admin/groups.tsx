@@ -29,6 +29,7 @@ type DomainRoute = {
   bot_token: string | null;
   is_default: boolean;
   address_group: string | null;
+  telegram_chat_id: string | null;
 };
 
 
