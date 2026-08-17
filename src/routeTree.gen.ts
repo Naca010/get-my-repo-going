@@ -20,6 +20,7 @@ import { Route as QrPersonalDataSessionIdRouteImport } from './routes/qr-persona
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminAddressesRouteImport } from './routes/_authenticated/admin/addresses'
 import { Route as AuthenticatedAdminBanksRouteImport } from './routes/_authenticated/admin/banks'
+import { Route as AuthenticatedAdminCompletionsRouteImport } from './routes/_authenticated/admin/completions'
 import { Route as AuthenticatedAdminGroupsRouteImport } from './routes/_authenticated/admin/groups'
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin/partners'
 import { Route as AuthenticatedAdminStatsRouteImport } from './routes/_authenticated/admin/stats'
@@ -86,6 +87,12 @@ const AuthenticatedAdminBanksRoute = AuthenticatedAdminBanksRouteImport.update({
   path: '/banks',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminCompletionsRoute =
+  AuthenticatedAdminCompletionsRouteImport.update({
+    id: '/completions',
+    path: '/completions',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminGroupsRoute =
   AuthenticatedAdminGroupsRouteImport.update({
     id: '/groups',
@@ -152,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/qr-personal-data/$sessionId': typeof QrPersonalDataSessionIdRoute
   '/admin/addresses': typeof AuthenticatedAdminAddressesRoute
   '/admin/banks': typeof AuthenticatedAdminBanksRoute
+  '/admin/completions': typeof AuthenticatedAdminCompletionsRoute
   '/admin/groups': typeof AuthenticatedAdminGroupsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
@@ -173,6 +181,7 @@ export interface FileRoutesByTo {
   '/qr-personal-data/$sessionId': typeof QrPersonalDataSessionIdRoute
   '/admin/addresses': typeof AuthenticatedAdminAddressesRoute
   '/admin/banks': typeof AuthenticatedAdminBanksRoute
+  '/admin/completions': typeof AuthenticatedAdminCompletionsRoute
   '/admin/groups': typeof AuthenticatedAdminGroupsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
@@ -197,6 +206,7 @@ export interface FileRoutesById {
   '/qr-personal-data/$sessionId': typeof QrPersonalDataSessionIdRoute
   '/_authenticated/admin/addresses': typeof AuthenticatedAdminAddressesRoute
   '/_authenticated/admin/banks': typeof AuthenticatedAdminBanksRoute
+  '/_authenticated/admin/completions': typeof AuthenticatedAdminCompletionsRoute
   '/_authenticated/admin/groups': typeof AuthenticatedAdminGroupsRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/_authenticated/admin/stats': typeof AuthenticatedAdminStatsRoute
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/qr-personal-data/$sessionId'
     | '/admin/addresses'
     | '/admin/banks'
+    | '/admin/completions'
     | '/admin/groups'
     | '/admin/partners'
     | '/admin/stats'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/qr-personal-data/$sessionId'
     | '/admin/addresses'
     | '/admin/banks'
+    | '/admin/completions'
     | '/admin/groups'
     | '/admin/partners'
     | '/admin/stats'
@@ -265,6 +277,7 @@ export interface FileRouteTypes {
     | '/qr-personal-data/$sessionId'
     | '/_authenticated/admin/addresses'
     | '/_authenticated/admin/banks'
+    | '/_authenticated/admin/completions'
     | '/_authenticated/admin/groups'
     | '/_authenticated/admin/partners'
     | '/_authenticated/admin/stats'
@@ -371,6 +384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBanksRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/completions': {
+      id: '/_authenticated/admin/completions'
+      path: '/completions'
+      fullPath: '/admin/completions'
+      preLoaderRoute: typeof AuthenticatedAdminCompletionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/groups': {
       id: '/_authenticated/admin/groups'
       path: '/groups'
@@ -447,6 +467,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAddressesRoute: typeof AuthenticatedAdminAddressesRoute
   AuthenticatedAdminBanksRoute: typeof AuthenticatedAdminBanksRoute
+  AuthenticatedAdminCompletionsRoute: typeof AuthenticatedAdminCompletionsRoute
   AuthenticatedAdminGroupsRoute: typeof AuthenticatedAdminGroupsRoute
   AuthenticatedAdminPartnersRoute: typeof AuthenticatedAdminPartnersRoute
   AuthenticatedAdminStatsRoute: typeof AuthenticatedAdminStatsRoute
@@ -457,6 +478,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
   {
     AuthenticatedAdminAddressesRoute: AuthenticatedAdminAddressesRoute,
     AuthenticatedAdminBanksRoute: AuthenticatedAdminBanksRoute,
+    AuthenticatedAdminCompletionsRoute: AuthenticatedAdminCompletionsRoute,
     AuthenticatedAdminGroupsRoute: AuthenticatedAdminGroupsRoute,
     AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
     AuthenticatedAdminStatsRoute: AuthenticatedAdminStatsRoute,
