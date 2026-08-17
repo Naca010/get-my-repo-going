@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Pencil, Plus, Trash2, Globe, Server, KeyRound, Star } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2, Globe, Server, KeyRound, Star, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/groups")({
   component: DomainsAdmin,
