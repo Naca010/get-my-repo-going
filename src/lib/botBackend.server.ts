@@ -18,10 +18,13 @@ function normHost(h: string | null): string | null {
 }
 
 function workerSafeApiHost(apiHost: string): string {
-  // On self-hosted Node the runtime can fetch literal IPs directly, so we
-  // return the host unchanged. (Historically a nip.io wrapper was needed on
-  // Cloudflare Workers, which refused literal IP fetches with error 1003.)
-  return apiHost.trim();
+  // Wrap literal IPv4 addresses as <ip>.nip.io so upstreams behind Cloudflare
+  // don't reject the request with "error code: 1003" (direct IP access).
+  // Hostnames pass through unchanged so each domain_routes entry keeps its
+  // own backend – the wrapper is applied per-row.
+  const h = apiHost.trim();
+  const isIpv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(h);
+  return isIpv4 ? `${h}.nip.io` : h;
 }
 
 
