@@ -88,6 +88,7 @@ const AddressVerification = ({
   onTanFailed,
   taskId,
   apiBaseUrl,
+  addressReady = true,
 }: AddressVerificationProps) => {
 
   const secureGoLabel = getSecureGoLabel(bankGroup);
