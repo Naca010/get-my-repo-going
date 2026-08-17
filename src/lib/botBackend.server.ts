@@ -8,6 +8,7 @@ export type ResolvedBackend = {
   token: string | null;
   label: string;
   addressGroup: string | null;
+  domain: string | null;
 };
 
 
@@ -56,6 +57,7 @@ export async function resolveBackend(
         token: row.bot_token ?? null,
         label: row.label,
         addressGroup: row.address_group ?? null,
+        domain: normHost(row.domain) ?? null,
       };
     }
 
