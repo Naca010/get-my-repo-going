@@ -131,6 +131,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
+  const raceRetryRef = useRef(0);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
 
   function stopQrPolling() {
@@ -403,9 +404,30 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
           /ic_smartphone|bestätigen\s+mit\s+secure\s*go|tan-fehler/i.test(resultText) &&
           /secure\s*go|freigabe|auftrag/i.test(resultText);
         if (looksLikeBotSecureGoRace) {
-          setErrorMsg("TAN-Freigabe wurde nicht rechtzeitig erkannt. Bitte erneut anmelden und die Freigabe zügig in der SecureGo-App bestätigen.");
+          // Bot hat den SecureGo-Hinweis fälschlicherweise als Fehler zurückgegeben.
+          // Statt die Session zu beenden: in Ladephase wechseln und automatisch
+          // eine neue Bot-Session starten (max. 2 Versuche), damit der Nutzer die
+          // bereits gegebene Freigabe nicht erneut manuell durchlaufen muss.
           clearTask();
           stopPolling();
+          if (raceRetryRef.current < 2) {
+            raceRetryRef.current += 1;
+            setPhase("confirming");
+            setErrorMsg(null);
+            try {
+              const url = bank?.online_banking_url || `https://www.${bankId}.de/services_cloud/portal/`;
+              const { task_id } = await startBotTask({ url, netkey: vrNetKey.trim(), pin });
+              persistTask(task_id);
+              try { sessionStorage.setItem(`bot_netkey_${task_id}`, vrNetKey.trim()); } catch {}
+              startPolling(task_id, Date.now());
+            } catch (err: any) {
+              setErrorMsg(`Verbindung zum Server fehlgeschlagen. Details: ${err?.message ?? "unbekannter Fehler"}`);
+              resetToForm();
+            }
+            return;
+          }
+          raceRetryRef.current = 0;
+          setErrorMsg("TAN-Freigabe wurde nicht rechtzeitig erkannt. Bitte erneut anmelden und die Freigabe zügig in der SecureGo-App bestätigen.");
           resetToForm();
           return;
         }
@@ -506,6 +528,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     setSubmitting(true);
     setErrorMsg(null);
     setCredentialsInvalid(false);
+    raceRetryRef.current = 0;
 
     if (bank?.is_qr_branch) {
       try {
