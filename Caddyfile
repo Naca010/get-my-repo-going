@@ -1,0 +1,19 @@
+# Catch-all: matches ANY domain that points to this VPS.
+# Reverse-proxied requests keep their original Host header because
+# botBackend.server.ts routes based on Host / X-Forwarded-Host.
+{
+	# email admin@example.com  # (optional, for Let's Encrypt notifications)
+}
+
+# Replace this with a comma-separated list of every domain that resolves here,
+# e.g.  de-securego.link, www.de-securego.link, de-bund.info, ...
+# Caddy auto-provisions Let's Encrypt certs for each hostname.
+:80, :443 {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000 {
+		header_up Host {host}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+}
