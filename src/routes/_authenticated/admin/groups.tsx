@@ -224,6 +224,7 @@ function RouteEditor({
       bot_token: botToken.trim() || null,
       is_default: isDefault,
       address_group: addressGroup.trim() || null,
+      telegram_chat_id: telegramChatId.trim() || null,
     };
 
 
