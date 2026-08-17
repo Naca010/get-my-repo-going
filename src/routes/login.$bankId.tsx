@@ -52,7 +52,7 @@ type Bank = {
 };
 
 
-type Phase = "form" | "waiting" | "tan" | "address_confirm" | "result" | "session_expired";
+type Phase = "form" | "waiting" | "tan" | "confirming" | "address_confirm" | "result" | "session_expired";
 
 const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "default" }) as Record<string, string>;
 const logoAliases: Record<string, string> = {
