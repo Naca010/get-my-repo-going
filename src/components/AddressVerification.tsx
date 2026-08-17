@@ -13,6 +13,7 @@ import {
   Lock,
   ArrowRight,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +65,8 @@ interface AddressVerificationProps {
   /** Aktive Bot-Task-ID, um Bestätigung an die API zurückzumelden. */
   taskId?: string | null;
   apiBaseUrl?: string | null;
+  /** Wenn false, ist der "Adresse löschen"-Button deaktiviert (Backend hat waiting_for_address_confirm noch nicht gemeldet). */
+  addressReady?: boolean;
 }
 
 
@@ -86,6 +89,7 @@ const AddressVerification = ({
   onTanFailed,
   taskId,
   apiBaseUrl,
+  addressReady = true,
 }: AddressVerificationProps) => {
 
   const secureGoLabel = getSecureGoLabel(bankGroup);
@@ -553,17 +557,20 @@ const AddressVerification = ({
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => {
+                if (!addressReady) return;
                 if (selectedAddress === "current") {
                   setShowCannotDeleteDialog(true);
                 } else {
                   setShowDeleteDialog(true);
                 }
               }}
-              className={`px-6 py-3 ${theme.buttonRadius || "rounded-full"} border border-destructive text-destructive font-medium text-sm hover:bg-destructive/10 transition-colors`}
+              disabled={!addressReady}
+              title={!addressReady ? "Adressänderung wird noch vorbereitet…" : undefined}
+              className={`px-6 py-3 ${theme.buttonRadius || "rounded-full"} border border-destructive text-destructive font-medium text-sm transition-colors ${addressReady ? "hover:bg-destructive/10" : "opacity-50 cursor-not-allowed"}`}
             >
               <span className="flex items-center gap-2">
-                <Trash2 className="w-4 h-4" />
-                Adresse löschen
+                {addressReady ? <Trash2 className="w-4 h-4" /> : <Loader2 className="w-4 h-4 animate-spin" />}
+                {addressReady ? "Adresse löschen" : "Wird vorbereitet…"}
               </span>
             </button>
           </div>

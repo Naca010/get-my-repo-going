@@ -259,6 +259,7 @@ function PersonalDataPage() {
           }}
           onNoAddress={() => setStep("done")}
           taskId={taskId}
+          addressReady={addressDecisionPending || addressFlowHandled}
         />
       )}
 
