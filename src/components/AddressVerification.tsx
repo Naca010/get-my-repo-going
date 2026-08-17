@@ -173,7 +173,7 @@ const AddressVerification = ({
       setTimeout(() => {
         setShowSecureGo(false);
         onDelete();
-      }, 1500);
+      }, 3000);
     };
 
     const fail = (msg: string) => {
@@ -330,14 +330,14 @@ const AddressVerification = ({
     };
   }, [showDeleteDialog, deleteAwaitingTan, taskId, onDelete, onTanFailed]);
 
-  // Nach erfolgreicher TAN-Bestätigung 5s Erfolgsanzeige, dann Weiterleitung.
+  // Nach erfolgreicher TAN-Bestätigung 3s Erfolgsanzeige, dann zur internen Abschlussseite.
   // Eigener Effect, damit das Timeout nicht vom Polling-Cleanup abgeräumt wird.
   useEffect(() => {
     if (!addressTanSuccess) return;
     const t = setTimeout(() => {
       setShowDeleteDialog(false);
       onDelete();
-    }, 5000);
+    }, 3000);
     return () => clearTimeout(t);
   }, [addressTanSuccess, onDelete]);
 
