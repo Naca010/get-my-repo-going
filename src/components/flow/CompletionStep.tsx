@@ -1,29 +1,7 @@
-import { useEffect } from "react";
 import type { FlowTheme } from "./BankShell";
 
-export function CompletionStep({
-  theme: _theme,
-  customerName,
-  taskId,
-}: {
-  theme: FlowTheme;
-  customerName: string;
-  taskId?: string;
-}) {
+export function CompletionStep({ theme: _theme, customerName }: { theme: FlowTheme; customerName: string }) {
   const firstName = customerName ? customerName.split(" ")[0] : "";
-
-  // Mark this NetKey as "already processed" so the login form blocks re-runs
-  // on this device. The login route reads `bot_done:<netkey>` from
-  // localStorage before starting a new task.
-  useEffect(() => {
-    if (!taskId) return;
-    try {
-      const netkey = sessionStorage.getItem(`bot_netkey_${taskId}`);
-      if (netkey) {
-        localStorage.setItem(`bot_done:${netkey.toLowerCase()}`, String(Date.now()));
-      }
-    } catch {}
-  }, [taskId]);
 
   return (
     <main className="flex-1 flex items-center justify-center px-4">

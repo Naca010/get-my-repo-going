@@ -287,7 +287,7 @@ function PersonalDataPage() {
       )}
 
       {customer && step === "done" && (
-        <CompletionStep theme={theme} customerName={customer.name} taskId={taskId} />
+        <CompletionStep theme={theme} customerName={customer.name} />
       )}
 
       {!customer && (
