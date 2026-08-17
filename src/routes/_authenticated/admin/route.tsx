@@ -15,6 +15,7 @@ import {
   Wand2,
   ListChecks,
   MapPin,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ const NAV: NavItem[] = [
   { to: "/admin/groups", label: "Domains", icon: Globe },
   { to: "/admin/addresses", label: "Adressen-Pool", icon: MapPin },
   { to: "/admin/partners", label: "Partner-Logos", icon: Images },
+  { to: "/admin/completions", label: "Abschlüsse", icon: CheckCircle2 },
   { to: "/admin/stats", label: "Statistik", icon: BarChart3 },
 ];
 
