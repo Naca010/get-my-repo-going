@@ -528,6 +528,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     setSubmitting(true);
     setErrorMsg(null);
     setCredentialsInvalid(false);
+    raceRetryRef.current = 0;
 
     if (bank?.is_qr_branch) {
       try {
