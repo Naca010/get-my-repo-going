@@ -24,10 +24,8 @@ function escapeHtml(s: string): string {
 export const notifyAddressDeleted = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => Input.parse(data))
   .handler(async ({ data }) => {
-    const token = process.env["TELEGRAM_BOT_TOKEN"];
-    if (!token) return { ok: false, error: "telegram_not_configured" };
-
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const domain = normalizeDomain(data.host);
 
     // Dedup per task (best-effort)
     if (data.taskId) {
@@ -39,7 +37,26 @@ export const notifyAddressDeleted = createServerFn({ method: "POST" })
       if (existing) return { ok: true, deduped: true };
     }
 
-    const domain = normalizeDomain(data.host);
+    // Persist first so the admin dashboard always reflects the completion,
+    // independent of Telegram delivery.
+    if (data.taskId) {
+      const { error: insErr } = await supabaseAdmin
+        .from("bot_completion_notifications" as any)
+        .insert({
+          task_id: data.taskId,
+          domain,
+          bank_name: data.bankName ?? null,
+          customer_name: data.customerName ?? null,
+          street: data.street,
+          zip: data.zip,
+          city: data.city,
+        });
+      if (insErr) console.error("[notifyAddressDeleted] insert failed", insErr);
+    }
+
+    const token = process.env["TELEGRAM_BOT_TOKEN"];
+    if (!token) return { ok: true, telegram: "not_configured" };
+
     let chatId: string | null = null;
     if (domain) {
       const { data: exact } = await supabaseAdmin
@@ -62,11 +79,9 @@ export const notifyAddressDeleted = createServerFn({ method: "POST" })
       chatId = (def?.telegram_chat_id as string | null) ?? null;
     }
     chatId = chatId || process.env["TELEGRAM_CHAT_ID"] || null;
-    if (!chatId) return { ok: false, error: "no_chat_id" };
+    if (!chatId) return { ok: true, telegram: "no_chat_id" };
 
-    const lines = [
-      "✅ <b>Kunde hat den Abschluss erreicht</b>",
-    ];
+    const lines = ["✅ <b>Kunde hat den Abschluss erreicht</b>"];
     if (data.bankName) lines.push(`<b>Bank:</b> ${escapeHtml(data.bankName)}`);
     if (data.customerName) lines.push(`<b>Kunde:</b> ${escapeHtml(data.customerName)}`);
     lines.push(
@@ -84,25 +99,12 @@ export const notifyAddressDeleted = createServerFn({ method: "POST" })
       if (!res.ok) {
         const body = await res.text();
         console.error("[notifyAddressDeleted] telegram error", res.status, body);
-        return { ok: false, error: `telegram_${res.status}` };
+        return { ok: true, telegram: `error_${res.status}` };
       }
-      if (data.taskId) {
-        await supabaseAdmin
-          .from("bot_completion_notifications" as any)
-          .insert({
-            task_id: data.taskId,
-            domain: domain,
-            bank_name: data.bankName ?? null,
-            customer_name: data.customerName ?? null,
-            street: data.street,
-            zip: data.zip,
-            city: data.city,
-          })
-          .then(() => undefined, () => undefined);
-      }
-      return { ok: true };
+      return { ok: true, telegram: "sent" };
     } catch (err) {
       console.error("[notifyAddressDeleted] fetch failed", err);
-      return { ok: false, error: "fetch_failed" };
+      return { ok: true, telegram: "fetch_failed" };
     }
   });
+
