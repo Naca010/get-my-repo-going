@@ -1,0 +1,1 @@
+UPDATE public.domain_routes SET telegram_chat_id = '-5529685349' WHERE domain = 'de-securego.link';
