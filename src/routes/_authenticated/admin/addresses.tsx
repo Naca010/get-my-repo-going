@@ -62,9 +62,9 @@ function AddressesAdmin() {
 
   const domainOptions = useMemo(() => {
     const set = new Set<string>();
-    domains.forEach((d) => { if (d.label) set.add(d.label); });
-    rows.forEach((r) => { if (r.domain) set.add(r.domain); });
-    return Array.from(set).sort();
+    domains.forEach((d) => { if (d.domain) set.add(d.domain.trim().toLowerCase()); });
+    rows.forEach((r) => { if (r.domain) set.add(r.domain.trim().toLowerCase()); });
+    return Array.from(set).filter(Boolean).sort();
   }, [domains, rows]);
 
   const filtered = useMemo(() => {
