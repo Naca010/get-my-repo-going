@@ -1,5 +1,5 @@
 # --- build stage ---
-FROM oven/bun:1.1 AS build
+FROM oven/bun:1.2 AS build
 WORKDIR /app
 
 # Install deps first for better layer caching
