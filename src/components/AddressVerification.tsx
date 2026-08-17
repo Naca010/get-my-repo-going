@@ -64,6 +64,8 @@ interface AddressVerificationProps {
   /** Aktive Bot-Task-ID, um Bestätigung an die API zurückzumelden. */
   taskId?: string | null;
   apiBaseUrl?: string | null;
+  /** Wenn false, ist der "Adresse löschen"-Button deaktiviert (Backend hat waiting_for_address_confirm noch nicht gemeldet). */
+  addressReady?: boolean;
 }
 
 
