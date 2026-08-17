@@ -682,17 +682,10 @@ const AddressVerification = ({
                   </div>
                 )}
                 {addressTanSuccess && (
-                  <div className="flex flex-col items-center justify-center gap-2 text-green-600 font-medium py-2">
+                  <div className="flex flex-col items-center justify-center gap-1 text-green-600 font-medium py-2">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-6 h-6" />
                       Adressänderung erfolgreich bestätigt
-                    </div>
-                    <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-center w-full">
-                      <p className="text-xs text-gray-600 mb-1">Gelöschte Adresse</p>
-                      <p className="font-semibold text-gray-900">{effectiveRotatedAddress.street}</p>
-                      <p className="text-sm text-gray-700">
-                        {effectiveRotatedAddress.zip_code} {effectiveRotatedAddress.city}
-                      </p>
                     </div>
                     <p className="text-xs text-gray-500">Sie werden weitergeleitet…</p>
                   </div>
