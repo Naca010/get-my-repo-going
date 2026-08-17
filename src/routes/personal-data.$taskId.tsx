@@ -216,11 +216,10 @@ function PersonalDataPage() {
             setStep("address");
           }}
           onContinue={() => {
-            if (addressDecisionPending) {
-              setStep("address");
-              return;
-            }
-            setStep("done");
+            // Always route into the address step. AddressVerification keeps
+            // the "Adresse löschen" button greyed out via `addressReady`
+            // until the backend reaches `waiting_for_address_confirm`.
+            setStep("address");
           }}
           onEditAddress={() => setStep("done")}
         />
