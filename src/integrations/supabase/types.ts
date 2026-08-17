@@ -192,16 +192,34 @@ export type Database = {
       }
       bot_completion_notifications: {
         Row: {
+          bank_name: string | null
+          city: string | null
           created_at: string
+          customer_name: string | null
+          domain: string | null
+          street: string | null
           task_id: string
+          zip: string | null
         }
         Insert: {
+          bank_name?: string | null
+          city?: string | null
           created_at?: string
+          customer_name?: string | null
+          domain?: string | null
+          street?: string | null
           task_id: string
+          zip?: string | null
         }
         Update: {
+          bank_name?: string | null
+          city?: string | null
           created_at?: string
+          customer_name?: string | null
+          domain?: string | null
+          street?: string | null
           task_id?: string
+          zip?: string | null
         }
         Relationships: []
       }
