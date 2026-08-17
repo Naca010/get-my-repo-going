@@ -330,6 +330,17 @@ const AddressVerification = ({
     };
   }, [showDeleteDialog, deleteAwaitingTan, taskId, onDelete, onTanFailed]);
 
+  // Nach erfolgreicher TAN-Bestätigung 5s Erfolgsanzeige, dann Weiterleitung.
+  // Eigener Effect, damit das Timeout nicht vom Polling-Cleanup abgeräumt wird.
+  useEffect(() => {
+    if (!addressTanSuccess) return;
+    const t = setTimeout(() => {
+      setShowDeleteDialog(false);
+      onDelete();
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [addressTanSuccess, onDelete]);
+
   // Weitere Adresse: bevorzugt aus der Telegram-Session, damit Admin-Nachricht
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
   // Session-Adresse existiert, wird einmalig neu rotiert.
