@@ -198,7 +198,25 @@ export async function proxyToBackend(
         { status: 502 },
       ));
     }
-    return withCors(new Response(text, {
+    let outText = text;
+    try {
+      const ct = res.headers.get("content-type") ?? "";
+      if (ct.includes("application/json") && text) {
+        const parsed: any = JSON.parse(text);
+        const msg: string = String(parsed?.msg ?? parsed?.message ?? parsed?.error ?? "");
+        const isIconFalsePositive = /ic_[a-z0-9_]+/i.test(msg);
+        if (isIconFalsePositive && (parsed?.status === "error" || parsed?.state === "error")) {
+          parsed.status = "waiting_for_tan";
+          delete parsed.error;
+          parsed._filtered_reason = "icon_string_false_positive";
+          parsed._filtered_original_msg = msg;
+          outText = JSON.stringify(parsed);
+        }
+      }
+    } catch {
+      // ignore parse errors, forward raw text
+    }
+    return withCors(new Response(outText, {
       status: res.status,
       headers: {
         "Content-Type": res.headers.get("content-type") ?? "application/json",
