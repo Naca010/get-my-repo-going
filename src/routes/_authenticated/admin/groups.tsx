@@ -332,6 +332,22 @@ function RouteEditor({
               Adressen-Pool mit dieser Gruppe an den Bot mitgesendet.
             </p>
           </div>
+
+          <div className="space-y-2 rounded-lg border p-4">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" /> Telegram-Chat (QR-Filialen)
+            </Label>
+            <Input
+              placeholder="z. B. -1001234567890"
+              value={telegramChatId}
+              onChange={(e) => setTelegramChatId(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Ziel-Chat für QR-Benachrichtigungen aller Banken, deren Gruppe (banks.group)
+              der oben gewählten Adress-Pool-Gruppe entspricht. Bot muss Mitglied im Chat
+              sein. Leer = Fallback auf Standard-Route bzw. TELEGRAM_CHAT_ID.
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
