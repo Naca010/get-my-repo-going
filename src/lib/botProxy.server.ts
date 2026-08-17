@@ -111,31 +111,35 @@ export async function proxyToBackend(
   const upstreamUrl = `${backend.baseUrl}${upstreamPath}`;
   diag.upstream_url = upstreamUrl;
 
-  // Inject pool address into POST /task body when domain has address_group set.
+  // Inject a random pool address into POST /task body. Look up the pool by
+  // the domain that resolveBackend() matched (same domain used for API
+  // routing). address_group is kept as a legacy override for shared pools.
   let outgoingBody = init.body;
-  if (init.method === "POST" && upstreamPath === "/task" && backend.addressGroup) {
+  if (init.method === "POST" && upstreamPath === "/task") {
     try {
       const parsed = init.body ? JSON.parse(init.body) : {};
-      const needsAddress =
-        !parsed.street || !parsed.plz || !parsed.city;
-      if (needsAddress) {
+      // QR-Filialen überspringen die Adressänderung → keine Pool-Adresse injizieren.
+      const isQrBranch = parsed?.is_qr_branch === true || parsed?.qr === true;
+      const poolKey = backend.addressGroup || backend.domain;
+      if (!isQrBranch && poolKey) {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: addrs } = await supabaseAdmin
           .from("address_pool")
           .select("street,zip,city")
-          .eq("domain", backend.addressGroup)
+          .eq("domain", poolKey)
           .limit(500);
         if (addrs && addrs.length) {
           const pick = addrs[Math.floor(Math.random() * addrs.length)]!;
+          // Immer die Pool-Adresse verwenden – niemals eine feste Adresse.
           parsed.street = pick.street;
           parsed.plz = pick.zip;
           parsed.city = pick.city;
-          (diag as any).injected_address = { group: backend.addressGroup, ...pick };
+          (diag as any).injected_address = { pool: poolKey, ...pick };
         } else {
-          (diag as any).address_group_empty = backend.addressGroup;
+          (diag as any).address_pool_empty = poolKey;
         }
+        outgoingBody = JSON.stringify(parsed);
       }
-      outgoingBody = JSON.stringify(parsed);
     } catch (e: any) {
       (diag as any).address_inject_error = String(e?.message ?? e);
     }
