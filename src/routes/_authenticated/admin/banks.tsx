@@ -360,6 +360,10 @@ function BanksAdmin() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" /> CSV</Button>
+          <Button variant="outline" onClick={handleZipExport} disabled={zipExporting}>
+            {zipExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            ZIP Export
+          </Button>
           <input
             type="file"
             accept=".zip"
