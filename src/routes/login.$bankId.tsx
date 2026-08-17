@@ -300,8 +300,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
   function startPolling(taskId: string, startedAt: number) {
     stopPolling();
-    const prevRetries = (pollRef.current as any)?.raceRetries ?? 0;
-    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false, addressConfirmed: false, failedAfterPositive: 0, raceRetries: prevRetries } as any;
+    pollRef.current = { timer: null, startedAt, taskId, positiveSeen: false, addressConfirmed: false, failedAfterPositive: 0 } as any;
 
 
     const tick = async () => {
