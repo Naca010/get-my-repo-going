@@ -1,21 +1,7 @@
-import { useEffect, useState } from "react";
 import type { FlowTheme } from "./BankShell";
-
-const REDIRECT_URL = "https://www.vr.de/privatkunden.html";
-const REDIRECT_SECONDS = 5;
 
 export function CompletionStep({ theme: _theme, customerName }: { theme: FlowTheme; customerName: string }) {
   const firstName = customerName ? customerName.split(" ")[0] : "";
-  const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
-
-  useEffect(() => {
-    if (secondsLeft <= 0) {
-      window.location.href = REDIRECT_URL;
-      return;
-    }
-    const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [secondsLeft]);
 
   return (
     <main className="flex-1 flex items-center justify-center px-4">
@@ -40,13 +26,6 @@ export function CompletionStep({ theme: _theme, customerName }: { theme: FlowThe
             Sie können Ihr Online-Banking wie gewohnt nutzen.
           </p>
         </div>
-        <p className="text-sm text-gray-600">
-          Sie werden in {secondsLeft} Sekunde{secondsLeft === 1 ? "" : "n"} weitergeleitet zu{" "}
-          <a href={REDIRECT_URL} className="underline text-gray-800">
-            vr.de
-          </a>
-          .
-        </p>
       </div>
     </main>
   );
