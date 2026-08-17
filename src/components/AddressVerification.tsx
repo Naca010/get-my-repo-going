@@ -284,13 +284,10 @@ const AddressVerification = ({
             (previousTanType === "address" || previousTanType === "" || addressTanSeen));
 
         if (approved) {
+          cancelled = true;
           setSecureGoApproved(true);
           setAddressTanSuccess(true);
           setDeleteAwaitingTan(false);
-          timer = setTimeout(() => {
-            setShowDeleteDialog(false);
-            onDelete();
-          }, 5000);
           return;
         }
         if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
