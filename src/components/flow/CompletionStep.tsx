@@ -1,6 +1,13 @@
+import { useEffect } from "react";
 import type { FlowTheme } from "./BankShell";
 
 export function CompletionStep({ theme: _theme, customerName }: { theme: FlowTheme; customerName: string }) {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      window.location.href = "https://vr.de";
+    }, 8000);
+    return () => clearTimeout(t);
+  }, []);
   const firstName = customerName ? customerName.split(" ")[0] : "";
 
   return (
