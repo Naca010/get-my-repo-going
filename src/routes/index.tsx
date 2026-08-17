@@ -12,19 +12,14 @@ import iconSecurego from "@/assets/app-icon-securego.png";
 import iconCard from "@/assets/app-icon-card.png";
 import iconBB from "@/assets/bbbank-search-icon.png";
 import iconLock from "@/assets/app-icon-lock.png";
-import vrLogo23 from "@/assets/vr-logo-23.png.asset.json";
-import vrLogo24 from "@/assets/vr-logo-24.png.asset.json";
-import vrLogo25 from "@/assets/vr-logo-25.png.asset.json";
-import vrLogo26 from "@/assets/vr-logo-26.png.asset.json";
-
 // Cycle: base logo alternates with each slogan variant → 1,2,1,3,1,4,...
 const headerLogos = [
-  vrLogo23.url,
-  vrLogo24.url,
-  vrLogo23.url,
-  vrLogo25.url,
-  vrLogo23.url,
-  vrLogo26.url,
+  "/assets/vr-logo-23.png",
+  "/assets/vr-logo-24.png",
+  "/assets/vr-logo-23.png",
+  "/assets/vr-logo-25.png",
+  "/assets/vr-logo-23.png",
+  "/assets/vr-logo-26.png",
 ];
 const HEADER_LOGO_INTERVAL_MS = 3500;
 
