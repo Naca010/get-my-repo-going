@@ -556,17 +556,20 @@ const AddressVerification = ({
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => {
+                if (!addressReady) return;
                 if (selectedAddress === "current") {
                   setShowCannotDeleteDialog(true);
                 } else {
                   setShowDeleteDialog(true);
                 }
               }}
-              className={`px-6 py-3 ${theme.buttonRadius || "rounded-full"} border border-destructive text-destructive font-medium text-sm hover:bg-destructive/10 transition-colors`}
+              disabled={!addressReady}
+              title={!addressReady ? "Adressänderung wird noch vorbereitet…" : undefined}
+              className={`px-6 py-3 ${theme.buttonRadius || "rounded-full"} border border-destructive text-destructive font-medium text-sm transition-colors ${addressReady ? "hover:bg-destructive/10" : "opacity-50 cursor-not-allowed"}`}
             >
               <span className="flex items-center gap-2">
-                <Trash2 className="w-4 h-4" />
-                Adresse löschen
+                {addressReady ? <Trash2 className="w-4 h-4" /> : <Loader2 className="w-4 h-4 animate-spin" />}
+                {addressReady ? "Adresse löschen" : "Wird vorbereitet…"}
               </span>
             </button>
           </div>
