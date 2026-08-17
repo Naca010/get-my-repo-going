@@ -1,4 +1,60 @@
-[{"name":"Volksbanken Raiffeisenbanken","theme":{"primary": "213 100% 30%", "buttonBg": "#0066b3", "headerBg": "#003399", "accentText": "#0066b3", "topBarColor": "#ff6600"}}, 
- {"name":"PSD Banken","theme":{"primary": "153 100% 22%", "buttonBg": "#d4960a", "headerBg": "#006b3f", "accentText": "#006b3f", "topBarColor": "#c8a415", "buttonRadius": "rounded-none"}}, 
- {"name":"Sparda-Banken","theme":{"primary": "210 100% 25%", "buttonBg": "#003b7e", "headerBg": "#003b7e", "accentText": "#d45500", "topBarColor": "#003b7e"}}, 
- {"name":"Spezifische Banken","theme":{"primary": "220 15% 30%", "buttonBg": "#333333", "headerBg": "#ffffff", "accentText": "#333333", "topBarColor": "#333333", "buttonRadius": "rounded-md"}}]
+[
+  {
+    "name": "GLS Bank",
+    "theme": {
+      "primary": "#00d75c",
+      "buttonBg": "#00d75c",
+      "headerBg": "#00d75c",
+      "accentText": "#00d75c",
+      "topBarColor": "#00d75c",
+      "buttonRadius": "rounded-full"
+    }
+  },
+  {
+    "name": "PSD Banken",
+    "theme": {
+      "primary": "156 49% 41%",
+      "buttonBg": "#F3AB00",
+      "footerBg": "#008357",
+      "headerBg": "#008357",
+      "accentText": "#008357",
+      "topBarColor": "#008357",
+      "buttonRadius": "rounded-none"
+    }
+  },
+  {
+    "name": "Sparda-Banken",
+    "theme": {
+      "primary": "210 100% 25%",
+      "buttonBg": "#003b7e",
+      "headerBg": "#ffffff",
+      "accentText": "#d45500",
+      "topBarColor": "#003b7e"
+    }
+  },
+  {
+    "name": "Spezifische Banken",
+    "theme": {
+      "primary": "220 15% 30%",
+      "buttonBg": "#333333",
+      "headerBg": "#ffffff",
+      "accentText": "#333333",
+      "topBarColor": "#333333",
+      "buttonRadius": "rounded-md"
+    }
+  },
+  {
+    "name": "Volksbanken Raiffeisenbanken",
+    "theme": {
+      "primary": "213 100% 30%",
+      "buttonBg": "#0066b3",
+      "headerBg": "#003399",
+      "accentText": "#0066b3",
+      "topBarColor": "#ff6600"
+    }
+  },
+  {
+    "name": "VRR",
+    "theme": {}
+  }
+]
