@@ -11,6 +11,9 @@ const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 
+// In-memory dedupe: retry TAN at most once per task id per server instance.
+const retriedTasks = new Set<string>();
+
 export function botProxyOptionsResponse(): Response {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
