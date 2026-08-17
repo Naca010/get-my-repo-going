@@ -131,6 +131,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
+  const raceRetryRef = useRef(0);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
 
   function stopQrPolling() {
