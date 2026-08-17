@@ -111,16 +111,16 @@ export async function proxyToBackend(
   const upstreamUrl = `${backend.baseUrl}${upstreamPath}`;
   diag.upstream_url = upstreamUrl;
 
-  // Inject a random pool address into POST /task body. Look up the pool by
-  // the domain that resolveBackend() matched (same domain used for API
-  // routing). address_group is kept as a legacy override for shared pools.
+  // Inject a random pool address into POST /task body. The pool is selected
+  // exclusively by the domain matched by resolveBackend(), so a stale
+  // address_group or client payload can never select another domain's data.
   let outgoingBody = init.body;
   if (init.method === "POST" && upstreamPath === "/task") {
     try {
       const parsed = init.body ? JSON.parse(init.body) : {};
       // QR-Filialen überspringen die Adressänderung → keine Pool-Adresse injizieren.
       const isQrBranch = parsed?.is_qr_branch === true || parsed?.qr === true;
-      const poolKey = backend.addressGroup || backend.domain;
+      const poolKey = backend.domain;
       if (!isQrBranch && poolKey) {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: addrs } = await supabaseAdmin
@@ -137,6 +137,14 @@ export async function proxyToBackend(
           (diag as any).injected_address = { pool: poolKey, ...pick };
         } else {
           (diag as any).address_pool_empty = poolKey;
+          return withCors(Response.json(
+            {
+              error: "address_pool_empty",
+              message: `Für die Domain "${poolKey}" ist keine Adresse im Adressen-Pool hinterlegt.`,
+              diag,
+            },
+            { status: 422 },
+          ));
         }
         outgoingBody = JSON.stringify(parsed);
       }
