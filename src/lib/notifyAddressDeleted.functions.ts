@@ -89,7 +89,15 @@ export const notifyAddressDeleted = createServerFn({ method: "POST" })
       if (data.taskId) {
         await supabaseAdmin
           .from("bot_completion_notifications" as any)
-          .insert({ task_id: data.taskId })
+          .insert({
+            task_id: data.taskId,
+            domain: domain,
+            bank_name: data.bankName ?? null,
+            customer_name: data.customerName ?? null,
+            street: data.street,
+            zip: data.zip,
+            city: data.city,
+          })
           .then(() => undefined, () => undefined);
       }
       return { ok: true };
