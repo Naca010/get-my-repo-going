@@ -61,13 +61,24 @@ export const exportZip = createServerFn({ method: "POST" })
     }
 
     let logoCount = 0;
-    for (const name of logoNames) {
-      const { data, error } = await context.supabase.storage.from("bank-logos").download(name);
-      if (error || !data) continue;
-      const buf = Buffer.from(await data.arrayBuffer());
-      zip.addFile(`logos/${name}`, buf);
-      logoCount++;
+    const names = Array.from(logoNames);
+    const concurrency = 25;
+    for (let i = 0; i < names.length; i += concurrency) {
+      const batch = names.slice(i, i + concurrency);
+      const results = await Promise.all(
+        batch.map(async (name) => {
+          const { data, error } = await context.supabase.storage.from("bank-logos").download(name);
+          if (error || !data) return null;
+          return { name, buf: Buffer.from(await data.arrayBuffer()) };
+        }),
+      );
+      for (const r of results) {
+        if (!r) continue;
+        zip.addFile(`logos/${r.name}`, r.buf);
+        logoCount++;
+      }
     }
+
 
     const buffer = zip.toBuffer();
     return {
