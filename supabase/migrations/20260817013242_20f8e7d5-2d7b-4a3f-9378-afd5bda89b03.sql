@@ -1,0 +1,1 @@
+ALTER TABLE public.domain_routes ADD COLUMN IF NOT EXISTS telegram_chat_id text;
