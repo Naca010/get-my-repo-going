@@ -238,9 +238,12 @@ function PersonalDataPage() {
             setStep("address");
           }}
           onContinue={() => {
-            // Always route into the address step. AddressVerification keeps
-            // the "Adresse löschen" button greyed out via `addressReady`
-            // until the backend reaches `waiting_for_address_confirm`.
+            // Skip the address flow when the backend already told us it
+            // won't be attempted (3+ devices or QR-bank).
+            if (skipReason) {
+              setStep("done");
+              return;
+            }
             setStep("address");
           }}
           onEditAddress={() => setStep("done")}
