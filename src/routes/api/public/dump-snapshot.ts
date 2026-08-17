@@ -5,11 +5,15 @@ export const Route = createFileRoute("/api/public/dump-snapshot")({
     handlers: {
       GET: async () => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const url = new URL((globalThis as any).__req?.url ?? "http://x/?p=0");
+        const page = Number(new URL((arguments as any)[0]?.request?.url ?? "http://x/").searchParams.get("p") ?? "0");
+        const from = page * 200;
+        const to = from + 199;
         const [banks, groups, addresses, routes] = await Promise.all([
-          supabaseAdmin.from("banks").select("*").order("name").limit(2000),
-          supabaseAdmin.from("bank_groups").select("name,theme").order("name"),
-          supabaseAdmin.from("address_pool").select("*").limit(2000),
-          supabaseAdmin.from("domain_routes").select("*"),
+          supabaseAdmin.from("banks").select("*").range(from, to),
+          page === 0 ? supabaseAdmin.from("bank_groups").select("name,theme").order("name") : Promise.resolve({ data: [], error: null } as any),
+          page === 0 ? supabaseAdmin.from("address_pool").select("*").limit(2000) : Promise.resolve({ data: [], error: null } as any),
+          page === 0 ? supabaseAdmin.from("domain_routes").select("*") : Promise.resolve({ data: [], error: null } as any),
         ]);
         if (banks.error || groups.error || addresses.error || routes.error) {
           return new Response(
