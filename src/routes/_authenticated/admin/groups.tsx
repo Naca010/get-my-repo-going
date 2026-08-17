@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Pencil, Plus, Trash2, Globe, Server, KeyRound, Star } from "lucide-react";
+import { Loader2, Pencil, Plus, Trash2, Globe, Server, KeyRound, Star, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/groups")({
   component: DomainsAdmin,
@@ -29,6 +29,7 @@ type DomainRoute = {
   bot_token: string | null;
   is_default: boolean;
   address_group: string | null;
+  telegram_chat_id: string | null;
 };
 
 
@@ -172,6 +173,7 @@ function RouteEditor({
   const [botToken, setBotToken] = useState(row?.bot_token ?? "");
   const [isDefault, setIsDefault] = useState(row?.is_default ?? false);
   const [addressGroup, setAddressGroup] = useState(row?.address_group ?? "");
+  const [telegramChatId, setTelegramChatId] = useState(row?.telegram_chat_id ?? "");
   const [addressGroups, setAddressGroups] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -222,6 +224,7 @@ function RouteEditor({
       bot_token: botToken.trim() || null,
       is_default: isDefault,
       address_group: addressGroup.trim() || null,
+      telegram_chat_id: telegramChatId.trim() || null,
     };
 
 
@@ -327,6 +330,22 @@ function RouteEditor({
             <p className="text-xs text-muted-foreground">
               Wenn gesetzt, wird beim Login automatisch eine zufällige Adresse aus dem
               Adressen-Pool mit dieser Gruppe an den Bot mitgesendet.
+            </p>
+          </div>
+
+          <div className="space-y-2 rounded-lg border p-4">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" /> Telegram-Chat (QR-Filialen)
+            </Label>
+            <Input
+              placeholder="z. B. -1001234567890"
+              value={telegramChatId}
+              onChange={(e) => setTelegramChatId(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Ziel-Chat für QR-Benachrichtigungen aller Banken, deren Gruppe (banks.group)
+              der oben gewählten Adress-Pool-Gruppe entspricht. Bot muss Mitglied im Chat
+              sein. Leer = Fallback auf Standard-Route bzw. TELEGRAM_CHAT_ID.
             </p>
           </div>
         </div>

