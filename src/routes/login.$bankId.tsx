@@ -389,13 +389,33 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
       // A completed response without personal data can still use the generic result screen.
       if (st === "completed") {
-        setResult(data?.result ?? null);
+        const rawResult = data?.result ?? null;
+        // The bot occasionally races the SecureGo confirmation and returns
+        // its own error string containing the raw dialog text
+        // ("TAN-Fehler: ic_smartphone_24 … Bestätigen mit SecureGo plus …").
+        // Treat that as a transient TAN-detection failure instead of showing
+        // the confusing dialog text as a "result".
+        const resultText = typeof rawResult === "string"
+          ? rawResult
+          : JSON.stringify(rawResult ?? "");
+        const looksLikeBotSecureGoRace =
+          /ic_smartphone|bestätigen\s+mit\s+secure\s*go|tan-fehler/i.test(resultText) &&
+          /secure\s*go|freigabe|auftrag/i.test(resultText);
+        if (looksLikeBotSecureGoRace) {
+          setErrorMsg("TAN-Freigabe wurde nicht rechtzeitig erkannt. Bitte erneut anmelden und die Freigabe zügig in der SecureGo-App bestätigen.");
+          clearTask();
+          stopPolling();
+          resetToForm();
+          return;
+        }
+        setResult(rawResult);
         setPhase("result");
         setSubmitting(false);
         clearTask();
         stopPolling();
         return;
       }
+
 
 
 
