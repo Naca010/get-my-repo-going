@@ -213,10 +213,16 @@ export const requestDeviceApproval = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (!/^[0-9a-f-]{10,}$/i.test(data.sessionId)) throw new Error("invalid_session");
     const token = process.env["TELEGRAM_BOT_TOKEN"];
-    const chatId = process.env["TELEGRAM_CHAT_ID"];
-    if (!token || !chatId) throw new Error("telegram_not_configured");
+    if (!token) throw new Error("telegram_not_configured");
 
     const sb = admin();
+    const { data: sess } = await sb
+      .from("telegram_sessions")
+      .select("telegram_chat_id")
+      .eq("id", data.sessionId)
+      .maybeSingle();
+    const chatId = (sess as any)?.telegram_chat_id as string | null | undefined;
+    if (!chatId) throw new Error("no_chat_for_session");
     // reset any prior decision so polling picks up the new one
     await sb.from("telegram_sessions").update({ decision: "device_pending" }).eq("id", data.sessionId);
 
