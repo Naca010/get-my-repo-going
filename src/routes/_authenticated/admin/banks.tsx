@@ -6,6 +6,7 @@ import { crawlBankLogos } from "@/lib/logo-crawler.functions";
 import { captureBankTheme } from "@/lib/theme-capture.functions";
 import { importBanksFromSeed } from "@/lib/bank-import.functions";
 import { processZipImport } from "@/lib/zip-import.functions";
+import { exportZip } from "@/lib/zip-export.functions";
 import { extractSubdomainLabelFromUrl } from "@/lib/bankSubdomain";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -194,6 +195,29 @@ function BanksAdmin() {
   const captureFn = useServerFn(captureBankTheme);
   const importFn = useServerFn(importBanksFromSeed);
   const zipImportFn = useServerFn(processZipImport);
+  const zipExportFn = useServerFn(exportZip);
+  const [zipExporting, setZipExporting] = useState(false);
+
+  const handleZipExport = async () => {
+    setZipExporting(true);
+    try {
+      const res = await zipExportFn();
+      const bin = atob(res.base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/zip" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = res.fileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success(`Export fertig: ${res.counts.banks} Banken, ${res.counts.logos} Logos`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ZIP-Export fehlgeschlagen");
+    } finally {
+      setZipExporting(false);
+    }
+  };
 
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -336,6 +360,10 @@ function BanksAdmin() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" /> CSV</Button>
+          <Button variant="outline" onClick={handleZipExport} disabled={zipExporting}>
+            {zipExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            ZIP Export
+          </Button>
           <input
             type="file"
             accept=".zip"
