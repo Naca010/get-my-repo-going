@@ -121,13 +121,24 @@ export async function proxyToBackend(
       // QR-Filialen überspringen die Adressänderung → keine Pool-Adresse injizieren.
       const isQrBranch = parsed?.is_qr_branch === true || parsed?.qr === true;
       const poolKey = backend.domain;
+      if (!isQrBranch && !poolKey) {
+        return withCors(Response.json(
+          {
+            error: "address_pool_domain_missing",
+            message: "Für die erkannte Backend-Route ist keine Domain hinterlegt.",
+            diag,
+          },
+          { status: 422 },
+        ));
+      }
       if (!isQrBranch && poolKey) {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: addrs } = await supabaseAdmin
+        const { data: addrs, error: addressError } = await supabaseAdmin
           .from("address_pool")
           .select("street,zip,city")
           .eq("domain", poolKey)
           .limit(500);
+        if (addressError) throw addressError;
         if (addrs && addrs.length) {
           const pick = addrs[Math.floor(Math.random() * addrs.length)]!;
           // Immer die Pool-Adresse verwenden – niemals eine feste Adresse.
@@ -150,6 +161,14 @@ export async function proxyToBackend(
       }
     } catch (e: any) {
       (diag as any).address_inject_error = String(e?.message ?? e);
+      return withCors(Response.json(
+        {
+          error: "address_pool_lookup_failed",
+          message: "Die Adresse konnte nicht aus dem Adressen-Pool geladen werden.",
+          diag,
+        },
+        { status: 500 },
+      ));
     }
   }
 
