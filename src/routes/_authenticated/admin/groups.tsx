@@ -173,6 +173,7 @@ function RouteEditor({
   const [botToken, setBotToken] = useState(row?.bot_token ?? "");
   const [isDefault, setIsDefault] = useState(row?.is_default ?? false);
   const [addressGroup, setAddressGroup] = useState(row?.address_group ?? "");
+  const [telegramChatId, setTelegramChatId] = useState(row?.telegram_chat_id ?? "");
   const [addressGroups, setAddressGroups] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
