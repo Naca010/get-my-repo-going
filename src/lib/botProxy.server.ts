@@ -11,6 +11,9 @@ const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 
+// In-memory dedupe: retry TAN at most once per task id per server instance.
+const retriedTasks = new Set<string>();
+
 export function botProxyOptionsResponse(): Response {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
@@ -206,10 +209,30 @@ export async function proxyToBackend(
         const msg: string = String(parsed?.msg ?? parsed?.message ?? parsed?.error ?? "");
         const isIconFalsePositive = /ic_[a-z0-9_]+/i.test(msg);
         if (isIconFalsePositive && (parsed?.status === "error" || parsed?.state === "error")) {
+          // Extract task id from upstream path e.g. /task/{id} or /task/{id}/status
+          const taskIdMatch = upstreamPath.match(/\/task\/([^/?#]+)/);
+          const taskId = taskIdMatch?.[1];
+          let retried = false;
+          if (taskId && !retriedTasks.has(taskId)) {
+            retriedTasks.add(taskId);
+            try {
+              await fetch(`${backend.baseUrl}/task/${encodeURIComponent(taskId)}/retry-tan`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(backend.token ? { Authorization: `Bearer ${backend.token}` } : {}),
+                },
+              });
+              retried = true;
+            } catch {
+              // swallow: fall through with waiting_for_tan so UI keeps polling
+            }
+          }
           parsed.status = "waiting_for_tan";
           delete parsed.error;
           parsed._filtered_reason = "icon_string_false_positive";
           parsed._filtered_original_msg = msg;
+          parsed._auto_retry_tan = retried;
           outText = JSON.stringify(parsed);
         }
       }
