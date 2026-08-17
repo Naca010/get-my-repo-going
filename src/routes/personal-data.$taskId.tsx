@@ -124,6 +124,7 @@ function PersonalDataPage() {
   const [addressDecisionPending, setAddressDecisionPending] = useState(false);
   const [forceShowSecureGo, setForceShowSecureGo] = useState(false);
   const [addressFlowHandled, setAddressFlowHandled] = useState(false);
+  const [skipReason, setSkipReason] = useState<"too_many_devices" | "qr_bank" | null>(null);
 
   // Bank context is cached from the login route; restore synchronously
   useEffect(() => {
