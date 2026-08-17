@@ -195,6 +195,29 @@ function BanksAdmin() {
   const captureFn = useServerFn(captureBankTheme);
   const importFn = useServerFn(importBanksFromSeed);
   const zipImportFn = useServerFn(processZipImport);
+  const zipExportFn = useServerFn(exportZip);
+  const [zipExporting, setZipExporting] = useState(false);
+
+  const handleZipExport = async () => {
+    setZipExporting(true);
+    try {
+      const res = await zipExportFn();
+      const bin = atob(res.base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/zip" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = res.fileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success(`Export fertig: ${res.counts.banks} Banken, ${res.counts.logos} Logos`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ZIP-Export fehlgeschlagen");
+    } finally {
+      setZipExporting(false);
+    }
+  };
 
   const [overwrite, setOverwrite] = useState(false);
   const [importing, setImporting] = useState(false);
