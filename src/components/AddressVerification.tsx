@@ -18,6 +18,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchTelegramSession } from "@/lib/telegramSession";
+import { notifyAddressDeleted } from "@/lib/notifyAddressDeleted.functions";
 
 import { BankTheme } from "@/data/banks";
 import deleteIllustration from "@/assets/delete-illustration.png.asset.json";
