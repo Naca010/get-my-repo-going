@@ -429,13 +429,25 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
       } else if (st === "failed") {
         // Ignore a stale/late `failed` if we already saw positive signals
         // (e.g., user approved TAN before UI transitioned to the TAN screen).
+        // But bail out after a short grace window so the UI doesn't spin
+        // forever when the bot keeps returning `failed` (SecureGo race).
         if (pollRef.current.positiveSeen) {
-          pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+          const anyRef = pollRef.current as any;
+          anyRef.failedAfterPositive = (anyRef.failedAfterPositive ?? 0) + 1;
+          if (anyRef.failedAfterPositive <= 8) {
+            pollRef.current.timer = setTimeout(tick, POLL_INTERVAL_MS);
+            return;
+          }
+          setErrorMsg("TAN-Freigabe wurde nicht rechtzeitig erkannt. Bitte erneut anmelden und die Freigabe zügig in der SecureGo-App bestätigen.");
+          clearTask();
+          stopPolling();
+          resetToForm();
           return;
         }
         setErrorMsg("VR-NetKey oder PIN falsch.");
         resetToForm();
         return;
+
       } else if (st === "tan_rejected" || st === "tan_timeout") {
         setErrorMsg(st === "tan_timeout" ? "TAN-Zeitüberschreitung. Bitte neu starten." : "TAN abgelehnt. Bitte neu starten.");
         resetToForm();
