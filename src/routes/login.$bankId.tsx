@@ -504,7 +504,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   if (initialLoading) {
     const showLogo = !loading && bank;
     const splashLogo = bank
-      ? (crawledLogo || getLogo(groupLogoName[bank.group]) || getLogo(bank.logo) || vrLogoGeneric)
+      ? (crawledLogo || getLogo(bank.logo) || getLogo(groupLogoName[bank.group]) || vrLogoGeneric)
       : null;
     const isRenault = (bankId?.toLowerCase().includes("renault") ?? false) || (bank?.slug?.toLowerCase().includes("renault") ?? false) || (bank?.name?.toLowerCase().includes("renault") ?? false);
     return (
@@ -514,7 +514,16 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
         {showLogo && (
           <div>
             {isVR ? (
-              <VRSplashReveal alt={bank?.name || "Volksbank"} className="w-40 sm:w-48 aspect-[4/5]" />
+              <>
+                <img
+                  src={splashLogo || vrLogoGeneric}
+                  alt={bank?.name || "Volksbank"}
+                  className="block h-16 max-w-[80vw] object-contain animate-fade-in sm:h-20 md:hidden"
+                  decoding="async"
+                  fetchPriority="high"
+                />
+                <VRSplashReveal alt={bank?.name || "Volksbank"} className="hidden w-48 aspect-[4/5] md:block" />
+              </>
             ) : (
               <img
                 src={splashLogo!}

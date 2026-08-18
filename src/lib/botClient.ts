@@ -29,9 +29,9 @@ function proxyUrl(path: string): string {
   const host = window.location.hostname.toLowerCase();
   const isLocal = host === "localhost" || host === "127.0.0.1";
   const isLovable = host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com");
-  if (isLocal || isLovable) return path;
   const separator = path.includes("?") ? "&" : "?";
-  return `${STABLE_PROXY_ORIGIN}${path}${separator}host=${encodeURIComponent(window.location.host)}`;
+  const target = isLocal || isLovable ? path : `${STABLE_PROXY_ORIGIN}${path}`;
+  return `${target}${separator}host=${encodeURIComponent(window.location.host)}`;
 }
 
 export async function startBotTask(input: {

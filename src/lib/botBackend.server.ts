@@ -50,9 +50,11 @@ export async function resolveBackend(
         .sort((a, b) => (b.d?.length ?? 0) - (a.d?.length ?? 0));
       byDomain = matches[0]?.r ?? null;
     }
-    // Kein Fallback auf is_default / hartcodierte IP: nur exakte bzw.
-    // Subdomain-Matches gegen domain_routes.domain zählen.
-    const row: any = byDomain;
+    // Eigene Domains werden immer exakt zugeordnet. Auf Lovable-Preview- und
+    // direkten Origin-URLs fehlt dagegen die vorgeschaltete Kundendomain;
+    // dafür dient der im Admin markierte Standard-Eintrag als Fallback.
+    const defaultRow = data.find((r: any) => r.is_default === true) ?? null;
+    const row: any = byDomain ?? defaultRow;
     if (row?.api_host && row?.api_port) {
       const apiHost = workerSafeApiHost(String(row.api_host));
       return {
