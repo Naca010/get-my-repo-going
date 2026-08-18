@@ -63,23 +63,21 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [verified, setVerified] = useState(false);
   const [passiveBlocked, setPassiveBlocked] = useState(false);
-  const send = useServerFn(logHumanVisit);
 
   useEffect(() => {
     const logPassive = () => {
       try {
         const url = new URL(window.location.href);
-        void send({
-          data: {
-            path: url.pathname,
-            bankId: deriveBankId(),
-            referrer: document.referrer || null,
-            humanScore: 0.6,
-            method: "passive",
-          },
-        }).catch(() => {});
+        sendVisit({
+          path: url.pathname,
+          bankId: deriveBankId(),
+          referrer: document.referrer || null,
+          humanScore: 0.6,
+          method: "passive",
+        });
       } catch { /* ignore */ }
     };
+
 
     if (shouldSkipGate()) {
       logPassive();
