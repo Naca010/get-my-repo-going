@@ -313,14 +313,11 @@ function StatsAdmin() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <StatCard label="Besuche im Zeitraum" value={filteredRows.length} />
             <StatCard label="Wartende Nutzer (aktiv)" value={waitingByPath.reduce((a, [, n]) => a + n, 0)} />
-            <StatCard
-              label="Aktive Domains"
-              value={activeDomain === "__all" ? domainList.filter((d) => (domainCounts.get(d) ?? 0) > 0).length : 1}
-            />
           </div>
+
 
           <Card>
             <CardHeader>
