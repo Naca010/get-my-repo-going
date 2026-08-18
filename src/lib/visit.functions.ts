@@ -25,6 +25,14 @@ export const logHumanVisit = createServerFn({ method: "POST" })
     const secret = process.env["VISIT_HASH_SECRET"] || "vr-fallback-salt";
     const netKey = createHash("sha256").update(`${ip}|${ua}|${secret}`).digest("hex").slice(0, 32);
 
+    // Effektiven Host bestimmen (Reverse-Proxy-freundlich).
+    const rawHost =
+      getRequestHeader("x-forwarded-host") ||
+      getRequestHeader("x-effective-host") ||
+      getRequestHeader("host") ||
+      "";
+    const host = (rawHost.split(",")[0] ?? "").trim().split(":")[0]?.toLowerCase() || null;
+
     const url = process.env["SUPABASE_URL"];
     const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
     if (!url || !key) return { ok: false, reason: "no_env" };
@@ -47,7 +55,8 @@ export const logHumanVisit = createServerFn({ method: "POST" })
       referrer: (data.referrer || null)?.slice(0, 500) ?? null,
       user_agent: `HUMAN|${data.method}|${data.humanScore.toFixed(2)}|${ua}`.slice(0, 500),
       ip_hash: netKey,
-    });
+      host,
+    } as never);
 
     return { ok: true };
   });
