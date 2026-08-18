@@ -100,7 +100,7 @@ export async function proxyToBackend(
     return withCors(Response.json(
       {
         error: "no_route",
-        message: `Keine domain_routes-Konfiguration für Host "${diag.incoming_host}" gefunden (und kein is_default). Prüfe Admin → Domain-Routing.`,
+        message: `Keine domain_routes-Konfiguration für Host "${diag.incoming_host}" gefunden und kein Standard-Eintrag hinterlegt. Prüfe Admin → Domain-Routing.`,
         diag,
       },
       { status: 404 },

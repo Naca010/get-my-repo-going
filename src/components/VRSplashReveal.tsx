@@ -1,6 +1,3 @@
-import topAsset from "@/assets/vr-splash-top.png.asset.json";
-import bottomAsset from "@/assets/vr-splash-bottom.png.asset.json";
-
 interface Props {
   alt: string;
   className?: string;
@@ -11,13 +8,13 @@ const VRSplashReveal = ({ alt, className = "w-40 sm:w-48 aspect-[4/5]" }: Props)
     <div className={`vr-splash-impact relative ${className}`} aria-label={alt}>
       <div className="flex h-full w-full flex-col">
         <img
-          src={topAsset.url}
+          src="/assets/vr-splash-top.png"
           alt={alt}
           draggable={false}
           className="vr-splash-top block h-auto w-full shrink-0"
         />
         <img
-          src={bottomAsset.url}
+          src="/assets/vr-splash-bottom.png"
           alt=""
           aria-hidden
           draggable={false}
