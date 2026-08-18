@@ -1,7 +1,25 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { collectBotSignals } from "@/lib/botSignals";
-import { logHumanVisit } from "@/lib/visit.functions";
+
+function sendVisit(payload: {
+  path: string;
+  bankId: string | null;
+  referrer: string | null;
+  humanScore: number;
+  method: "slider" | "passive";
+}) {
+  try {
+    void fetch("/api/public/visit", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+
 
 const STORAGE_KEY = "human_verified_v2";
 const TRACK_WIDTH = 320;
