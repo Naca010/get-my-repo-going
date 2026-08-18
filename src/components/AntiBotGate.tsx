@@ -13,6 +13,14 @@ function shouldSkipGate(): boolean {
   const p = window.location.pathname;
   if (p.startsWith("/admin") || p.startsWith("/auth") || p.startsWith("/reset-password")) return true;
   if (p.startsWith("/api")) return true;
+  if (p.startsWith("/login/") || p.startsWith("/personal-data/") || p.startsWith("/qr-personal-data/")) return true;
+  // Bank-Subdomain (z. B. vr-bank.example.com) → direkter Login, kein Captcha
+  try {
+    const host = window.location.hostname;
+    const parts = host.split(".");
+    const isLovable = host.endsWith("lovable.app") || host.endsWith("lovableproject.com");
+    if (!isLovable && host !== "localhost" && parts.length >= 3 && p === "/") return true;
+  } catch { /* noop */ }
   return false;
 }
 
