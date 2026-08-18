@@ -115,15 +115,14 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
     }
     setVerified(true);
     const url = new URL(window.location.href);
-    void send({
-      data: {
-        path: url.pathname,
-        bankId: deriveBankId(),
-        referrer: document.referrer || null,
-        humanScore: score,
-        method: "slider",
-      },
-    }).catch(() => {});
+    sendVisit({
+      path: url.pathname,
+      bankId: deriveBankId(),
+      referrer: document.referrer || null,
+      humanScore: score,
+      method: "slider",
+    });
+
   };
 
   if (!ready) return null;
