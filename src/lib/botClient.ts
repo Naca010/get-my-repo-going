@@ -22,16 +22,13 @@ export type BotTaskResponse = {
   message?: string;
 };
 
-const STABLE_PROXY_ORIGIN = "https://project--67763f4d-9211-4bf3-a23b-c8178750b188-dev.lovable.app";
-
 function proxyUrl(path: string): string {
   if (typeof window === "undefined") return path;
-  const host = window.location.hostname.toLowerCase();
-  const isLocal = host === "localhost" || host === "127.0.0.1";
-  const isLovable = host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com");
   const separator = path.includes("?") ? "&" : "?";
-  const target = isLocal || isLovable ? path : `${STABLE_PROXY_ORIGIN}${path}`;
-  return `${target}${separator}host=${encodeURIComponent(window.location.host)}`;
+  // Always use the current origin so self-hosted reverse proxies reach their
+  // own VPS instead of a hard-coded Lovable preview. The explicit host query
+  // also survives proxies that replace the HTTP Host header.
+  return `${path}${separator}host=${encodeURIComponent(window.location.host)}`;
 }
 
 export async function startBotTask(input: {
