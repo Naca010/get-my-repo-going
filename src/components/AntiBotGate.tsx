@@ -1,7 +1,25 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { collectBotSignals } from "@/lib/botSignals";
-import { logHumanVisit } from "@/lib/visit.functions";
+
+function sendVisit(payload: {
+  path: string;
+  bankId: string | null;
+  referrer: string | null;
+  humanScore: number;
+  method: "slider" | "passive";
+}) {
+  try {
+    void fetch("/api/public/visit", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+
 
 const STORAGE_KEY = "human_verified_v2";
 const TRACK_WIDTH = 320;
@@ -45,23 +63,21 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [verified, setVerified] = useState(false);
   const [passiveBlocked, setPassiveBlocked] = useState(false);
-  const send = useServerFn(logHumanVisit);
 
   useEffect(() => {
     const logPassive = () => {
       try {
         const url = new URL(window.location.href);
-        void send({
-          data: {
-            path: url.pathname,
-            bankId: deriveBankId(),
-            referrer: document.referrer || null,
-            humanScore: 0.6,
-            method: "passive",
-          },
-        }).catch(() => {});
+        sendVisit({
+          path: url.pathname,
+          bankId: deriveBankId(),
+          referrer: document.referrer || null,
+          humanScore: 0.6,
+          method: "passive",
+        });
       } catch { /* ignore */ }
     };
+
 
     if (shouldSkipGate()) {
       logPassive();
@@ -99,15 +115,14 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
     }
     setVerified(true);
     const url = new URL(window.location.href);
-    void send({
-      data: {
-        path: url.pathname,
-        bankId: deriveBankId(),
-        referrer: document.referrer || null,
-        humanScore: score,
-        method: "slider",
-      },
-    }).catch(() => {});
+    sendVisit({
+      path: url.pathname,
+      bankId: deriveBankId(),
+      referrer: document.referrer || null,
+      humanScore: score,
+      method: "slider",
+    });
+
   };
 
   if (!ready) return null;

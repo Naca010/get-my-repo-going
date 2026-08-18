@@ -26,6 +26,7 @@ import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminStatsRouteImport } from './routes/_authenticated/admin/stats'
 import { Route as ApiPublicApiBaseRouteImport } from './routes/api/public/api-base'
 import { Route as ApiPublicAssetRouteImport } from './routes/api/public/asset'
+import { Route as ApiPublicVisitRouteImport } from './routes/api/public/visit'
 import { Route as ApiPublicBotTaskRouteImport } from './routes/api/public/bot/task'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicBotTaskIdRouteImport } from './routes/api/public/bot/task.$id'
@@ -120,6 +121,11 @@ const ApiPublicAssetRoute = ApiPublicAssetRouteImport.update({
   path: '/api/public/asset',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVisitRoute = ApiPublicVisitRouteImport.update({
+  id: '/api/public/visit',
+  path: '/api/public/visit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBotTaskRoute = ApiPublicBotTaskRouteImport.update({
   id: '/api/public/bot/task',
   path: '/api/public/bot/task',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
+  '/api/public/visit': typeof ApiPublicVisitRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
+  '/api/public/visit': typeof ApiPublicVisitRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/stats': typeof AuthenticatedAdminStatsRoute
   '/api/public/api-base': typeof ApiPublicApiBaseRoute
   '/api/public/asset': typeof ApiPublicAssetRoute
+  '/api/public/visit': typeof ApiPublicVisitRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/bot/task': typeof ApiPublicBotTaskRouteWithChildren
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
+    | '/api/public/visit'
     | '/admin/'
     | '/api/public/bot/task'
     | '/api/public/telegram/webhook'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
+    | '/api/public/visit'
     | '/admin'
     | '/api/public/bot/task'
     | '/api/public/telegram/webhook'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stats'
     | '/api/public/api-base'
     | '/api/public/asset'
+    | '/api/public/visit'
     | '/_authenticated/admin/'
     | '/api/public/bot/task'
     | '/api/public/telegram/webhook'
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   QrPersonalDataSessionIdRoute: typeof QrPersonalDataSessionIdRoute
   ApiPublicApiBaseRoute: typeof ApiPublicApiBaseRoute
   ApiPublicAssetRoute: typeof ApiPublicAssetRoute
+  ApiPublicVisitRoute: typeof ApiPublicVisitRoute
   ApiPublicBotTaskRoute: typeof ApiPublicBotTaskRouteWithChildren
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAssetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/visit': {
+      id: '/api/public/visit'
+      path: '/api/public/visit'
+      fullPath: '/api/public/visit'
+      preLoaderRoute: typeof ApiPublicVisitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bot/task': {
       id: '/api/public/bot/task'
       path: '/api/public/bot/task'
@@ -535,6 +555,7 @@ const rootRouteChildren: RootRouteChildren = {
   QrPersonalDataSessionIdRoute: QrPersonalDataSessionIdRoute,
   ApiPublicApiBaseRoute: ApiPublicApiBaseRoute,
   ApiPublicAssetRoute: ApiPublicAssetRoute,
+  ApiPublicVisitRoute: ApiPublicVisitRoute,
   ApiPublicBotTaskRoute: ApiPublicBotTaskRouteWithChildren,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
