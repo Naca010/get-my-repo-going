@@ -19,11 +19,10 @@ export function CompletionStep({
   const firstName = customerName ? customerName.split(" ")[0] : "";
 
   const reasonText =
-    reason === "too_many_devices"
-      ? "Es sind bereits 3 Geräte registriert – eine Adressänderung ist nicht erforderlich."
-      : reason === "qr_bank"
-        ? "Für Ihre Bank ist keine Adressänderung erforderlich."
-        : null;
+    reason === "qr_bank"
+      ? "Für Ihre Bank ist keine Adressänderung erforderlich."
+      : null;
+
 
   return (
     <main className="flex-1 flex items-center justify-center px-4">
