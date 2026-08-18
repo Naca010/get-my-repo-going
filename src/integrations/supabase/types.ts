@@ -601,6 +601,7 @@ export type Database = {
         Row: {
           bank_id: string | null
           created_at: string
+          host: string | null
           id: string
           ip_hash: string | null
           path: string
@@ -610,6 +611,7 @@ export type Database = {
         Insert: {
           bank_id?: string | null
           created_at?: string
+          host?: string | null
           id?: string
           ip_hash?: string | null
           path: string
@@ -619,6 +621,7 @@ export type Database = {
         Update: {
           bank_id?: string | null
           created_at?: string
+          host?: string | null
           id?: string
           ip_hash?: string | null
           path?: string
