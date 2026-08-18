@@ -48,13 +48,30 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
   const send = useServerFn(logHumanVisit);
 
   useEffect(() => {
+    const logPassive = () => {
+      try {
+        const url = new URL(window.location.href);
+        void send({
+          data: {
+            path: url.pathname,
+            bankId: deriveBankId(),
+            referrer: document.referrer || null,
+            humanScore: 0.6,
+            method: "passive",
+          },
+        }).catch(() => {});
+      } catch { /* ignore */ }
+    };
+
     if (shouldSkipGate()) {
+      logPassive();
       setVerified(true);
       setReady(true);
       return;
     }
     try {
       if (sessionStorage.getItem(STORAGE_KEY) === "1") {
+        logPassive();
         setVerified(true);
         setReady(true);
         return;
@@ -72,6 +89,7 @@ export function AntiBotGate({ children }: { children: ReactNode }) {
     }
     setReady(true);
   }, []);
+
 
   const onSolved = (score: number) => {
     try {
