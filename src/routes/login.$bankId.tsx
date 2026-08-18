@@ -708,7 +708,22 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
                 <div className="flex gap-4 pt-2">
                   <button
                     type="button"
-                    onClick={() => navigate({ to: "/" })}
+                    onClick={() => {
+                      // Auf Bank-Subdomains rendert "/" wieder den Bank-Login,
+                      // deshalb immer per full reload zur Landing wechseln.
+                      try {
+                        const host = window.location.hostname;
+                        const parts = host.split(".");
+                        const isLovable = host.endsWith("lovable.app") || host.endsWith("lovableproject.com");
+                        const isBankSub = !isLovable && host !== "localhost" && parts.length >= 3;
+                        if (isBankSub) {
+                          const rootHost = parts.slice(-2).join(".");
+                          window.location.href = `${window.location.protocol}//${rootHost}/`;
+                          return;
+                        }
+                      } catch { /* noop */ }
+                      window.location.href = "/";
+                    }}
                     className={`px-8 py-3 ${theme.buttonRadius} border-2 font-medium hover:bg-gray-50 transition-colors text-sm`}
                     style={{ borderColor: theme.accentText, color: theme.accentText }}
                   >
