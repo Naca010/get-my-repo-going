@@ -342,6 +342,33 @@ export type Database = {
           },
         ]
       }
+      netkey_completions: {
+        Row: {
+          bank_id: string | null
+          bank_name: string | null
+          created_at: string
+          customer_data: Json
+          netkey_hash: string
+          updated_at: string
+        }
+        Insert: {
+          bank_id?: string | null
+          bank_name?: string | null
+          created_at?: string
+          customer_data?: Json
+          netkey_hash: string
+          updated_at?: string
+        }
+        Update: {
+          bank_id?: string | null
+          bank_name?: string | null
+          created_at?: string
+          customer_data?: Json
+          netkey_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       partner_logos: {
         Row: {
           created_at: string
