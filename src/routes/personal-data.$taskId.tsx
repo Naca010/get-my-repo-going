@@ -313,7 +313,10 @@ function PersonalDataPage() {
       )}
 
       {customer && step === "done" && (
-        <CompletionStep theme={theme} customerName={customer.name} reason={skipReason} />
+        <>
+          <NetkeyCompletionMarker refId={taskId} />
+          <CompletionStep theme={theme} customerName={customer.name} reason={skipReason} />
+        </>
       )}
 
       {!customer && (
