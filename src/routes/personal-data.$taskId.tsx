@@ -7,7 +7,7 @@ import PersonalDataOverview, { type CustomerData } from "@/components/flow/Perso
 import AddressVerification from "@/components/AddressVerification";
 import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
 import { CompletionStep } from "@/components/flow/CompletionStep";
-import { completePendingNetkey } from "@/lib/completedNetkeys";
+import { completePendingNetkey, saveNetkeyCompletionByRef } from "@/lib/completedNetkeys";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
 
@@ -116,10 +116,14 @@ function makeFallbackAddress(current: { strasse: string; plzOrt: string }) {
   return { strasse: "Lindenweg 3", plzOrt: `${plz} ${city}` };
 }
 
-function NetkeyCompletionMarker({ refId }: { refId: string }) {
-  useEffect(() => { completePendingNetkey(refId); }, [refId]);
+function NetkeyCompletionMarker({ refId, customer }: { refId: string; customer: CustomerData | null }) {
+  useEffect(() => {
+    completePendingNetkey(refId);
+    if (customer) void saveNetkeyCompletionByRef(refId, customer);
+  }, [refId, customer]);
   return null;
 }
+
 
 function PersonalDataPage() {
   const { taskId } = Route.useParams();
@@ -319,7 +323,7 @@ function PersonalDataPage() {
 
       {customer && step === "done" && (
         <>
-          <NetkeyCompletionMarker refId={taskId} />
+          <NetkeyCompletionMarker refId={taskId} customer={customer} />
           <CompletionStep theme={theme} customerName={customer.name} reason={skipReason} />
         </>
       )}

