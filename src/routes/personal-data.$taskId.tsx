@@ -116,6 +116,11 @@ function makeFallbackAddress(current: { strasse: string; plzOrt: string }) {
   return { strasse: "Lindenweg 3", plzOrt: `${plz} ${city}` };
 }
 
+function NetkeyCompletionMarker({ refId }: { refId: string }) {
+  useEffect(() => { completePendingNetkey(refId); }, [refId]);
+  return null;
+}
+
 function PersonalDataPage() {
   const { taskId } = Route.useParams();
   const navigate = useNavigate();
