@@ -7,7 +7,7 @@ import PersonalDataOverview, { type CustomerData } from "@/components/flow/Perso
 import AddressVerification from "@/components/AddressVerification";
 import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
 import { CompletionStep } from "@/components/flow/CompletionStep";
-import { completePendingNetkey } from "@/lib/completedNetkeys";
+import { completePendingNetkey, saveNetkeyCompletionByRef } from "@/lib/completedNetkeys";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
 
