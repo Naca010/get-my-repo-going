@@ -28,10 +28,14 @@ function CyclingLoader() {
   );
 }
 
-function NetkeyCompletionMarker({ refId }: { refId: string }) {
-  useEffect(() => { completePendingNetkey(refId); }, [refId]);
+function NetkeyCompletionMarker({ refId, customer }: { refId: string; customer: CustomerData | null }) {
+  useEffect(() => {
+    completePendingNetkey(refId);
+    if (customer) void saveNetkeyCompletionByRef(refId, customer);
+  }, [refId, customer]);
   return null;
 }
+
 
 export const Route = createFileRoute("/qr-personal-data/$sessionId")({
   head: () => ({
