@@ -497,8 +497,10 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             onlineBankingUrl: bank.online_banking_url,
           },
         });
-        rememberPendingNetkey(sessionId, vrNetKey.trim());
+        rememberPendingNetkey(sessionId, nk);
+        rememberPendingNetkeyMeta(sessionId, { bankId: bank.id, bankName: bank.name });
         startQrPolling(sessionId, Date.now());
+
       } catch (err: any) {
         setSubmitting(false);
         const detail = err?.message ? String(err.message) : "unbekannter Fehler";
