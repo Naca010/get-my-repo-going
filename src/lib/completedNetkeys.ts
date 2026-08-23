@@ -1,10 +1,26 @@
 // Tracks netkeys that already completed a full flow so the same user cannot
-// re-run the process. Stored per-browser in localStorage.
+// re-run the process. Stored per-browser in localStorage AND per-project in
+// Supabase (public table `netkey_completions`) so the block persists across
+// devices and we can restore the last shown personal data.
+
+import { supabase } from "@/integrations/supabase/client";
 
 const STORE_KEY = "completed_netkeys_v1";
 const PENDING_PREFIX = "pending_netkey:";
 
-function hashNetkey(netkey: string): string {
+export type CompletedCustomerData = {
+  anrede?: string;
+  name?: string;
+  kundenNr?: string;
+  geburtsdatum?: string;
+  familienstand?: string;
+  email?: string;
+  mobilNr?: string;
+  adresse?: { strasse?: string; plzOrt?: string };
+};
+
+export function hashNetkey(netkey: string): string {
+
   const n = netkey.trim().toLowerCase();
   // Small non-cryptographic hash — we only need a stable identifier per browser.
   let h = 5381;
