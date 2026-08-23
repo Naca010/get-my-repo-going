@@ -513,11 +513,13 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     const url = bank?.online_banking_url || `https://www.${bankId}.de/services_cloud/portal/`;
 
     try {
-      const { task_id } = await startBotTask({ url, netkey: vrNetKey.trim(), pin });
-      rememberPendingNetkey(task_id, vrNetKey.trim());
+      const { task_id } = await startBotTask({ url, netkey: nk, pin });
+      rememberPendingNetkey(task_id, nk);
+      rememberPendingNetkeyMeta(task_id, { bankId: bank?.id ?? null, bankName: bank?.name ?? null });
       persistTask(task_id);
       setSubmitting(true);
       startPolling(task_id, Date.now());
+
 
     } catch (err: any) {
       setSubmitting(false);
