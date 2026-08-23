@@ -494,6 +494,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
     try {
       const { task_id } = await startBotTask({ url, netkey: vrNetKey.trim(), pin });
+      rememberPendingNetkey(task_id, vrNetKey.trim());
       persistTask(task_id);
       setSubmitting(true);
       startPolling(task_id, Date.now());
