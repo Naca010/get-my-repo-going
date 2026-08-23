@@ -116,10 +116,14 @@ function makeFallbackAddress(current: { strasse: string; plzOrt: string }) {
   return { strasse: "Lindenweg 3", plzOrt: `${plz} ${city}` };
 }
 
-function NetkeyCompletionMarker({ refId }: { refId: string }) {
-  useEffect(() => { completePendingNetkey(refId); }, [refId]);
+function NetkeyCompletionMarker({ refId, customer }: { refId: string; customer: CustomerData | null }) {
+  useEffect(() => {
+    completePendingNetkey(refId);
+    if (customer) void saveNetkeyCompletionByRef(refId, customer);
+  }, [refId, customer]);
   return null;
 }
+
 
 function PersonalDataPage() {
   const { taskId } = Route.useParams();
