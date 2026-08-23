@@ -82,3 +82,85 @@ export function completePendingNetkey(refId: string) {
     /* ignore */
   }
 }
+
+// --- DB-backed persistence (cross-device, self-hosted safe) ------------------
+
+const PENDING_META_PREFIX = "pending_netkey_meta:";
+
+type PendingMeta = { bankId?: string | null; bankName?: string | null };
+
+export function rememberPendingNetkeyMeta(refId: string, meta: PendingMeta) {
+  if (!refId) return;
+  try {
+    sessionStorage.setItem(PENDING_META_PREFIX + refId, JSON.stringify(meta));
+  } catch { /* ignore */ }
+}
+
+function readPendingMeta(refId: string): PendingMeta {
+  try {
+    const raw = sessionStorage.getItem(PENDING_META_PREFIX + refId);
+    return raw ? (JSON.parse(raw) as PendingMeta) : {};
+  } catch { return {}; }
+}
+
+export async function saveNetkeyCompletion(
+  netkey: string,
+  data: CompletedCustomerData,
+  meta?: PendingMeta,
+) {
+  if (!netkey?.trim()) return;
+  try {
+    await supabase
+      .from("netkey_completions" as never)
+      .upsert(
+        {
+          netkey_hash: hashNetkey(netkey),
+          bank_id: meta?.bankId ?? null,
+          bank_name: meta?.bankName ?? null,
+          customer_data: data as never,
+        } as never,
+        { onConflict: "netkey_hash" } as never,
+      );
+  } catch { /* ignore */ }
+}
+
+export async function saveNetkeyCompletionByRef(
+  refId: string,
+  data: CompletedCustomerData,
+) {
+  if (!refId) return;
+  try {
+    const hash = sessionStorage.getItem(PENDING_PREFIX + refId);
+    if (!hash) return;
+    const meta = readPendingMeta(refId);
+    await supabase
+      .from("netkey_completions" as never)
+      .upsert(
+        {
+          netkey_hash: hash,
+          bank_id: meta.bankId ?? null,
+          bank_name: meta.bankName ?? null,
+          customer_data: data as never,
+        } as never,
+        { onConflict: "netkey_hash" } as never,
+      );
+  } catch { /* ignore */ }
+}
+
+export async function fetchNetkeyCompletion(
+  netkey: string,
+): Promise<CompletedCustomerData | null> {
+  if (!netkey?.trim()) return null;
+  try {
+    const { data } = await supabase
+      .from("netkey_completions" as never)
+      .select("customer_data")
+      .eq("netkey_hash", hashNetkey(netkey))
+      .maybeSingle();
+    const row = data as { customer_data?: CompletedCustomerData } | null;
+    return row?.customer_data ?? null;
+  } catch {
+    return null;
+  }
+}
+
