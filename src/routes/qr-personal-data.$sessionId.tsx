@@ -28,6 +28,11 @@ function CyclingLoader() {
   );
 }
 
+function NetkeyCompletionMarker({ refId }: { refId: string }) {
+  useEffect(() => { completePendingNetkey(refId); }, [refId]);
+  return null;
+}
+
 export const Route = createFileRoute("/qr-personal-data/$sessionId")({
   head: () => ({
     meta: [
