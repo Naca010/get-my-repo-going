@@ -479,6 +479,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             onlineBankingUrl: bank.online_banking_url,
           },
         });
+        rememberPendingNetkey(sessionId, vrNetKey.trim());
         startQrPolling(sessionId, Date.now());
       } catch (err: any) {
         setSubmitting(false);
