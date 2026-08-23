@@ -14,7 +14,14 @@ import { AddressVerificationStep } from "@/components/flow/AddressVerificationSt
 import { startBotTask, getBotTask, confirmAddress } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
-import { isNetkeyCompleted, rememberPendingNetkey } from "@/lib/completedNetkeys";
+import {
+  isNetkeyCompleted,
+  rememberPendingNetkey,
+  rememberPendingNetkeyMeta,
+  fetchNetkeyCompletion,
+  type CompletedCustomerData,
+} from "@/lib/completedNetkeys";
+
 import type { BankTheme } from "@/data/banks";
 
 
