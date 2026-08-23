@@ -807,6 +807,14 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
           </div>
         </div>
       </div>
+      {alreadyDone && (
+        <AlreadyCompletedDialog
+          state={alreadyDone}
+          onShowDetails={() => setAlreadyDone((cur) => (cur ? { ...cur, stage: "details" } : cur))}
+          onClose={() => { window.location.href = "https://vr.de/"; }}
+        />
+      )}
     </BankShell>
+
   );
 }
