@@ -167,6 +167,7 @@ function QrPersonalDataPage() {
   if (stage === "done") {
     return (
       <BankShell {...shellProps}>
+        <NetkeyCompletionMarker refId={sessionId} />
         <CompletionStep theme={theme} customerName={row.customer_name ?? ""} />
       </BankShell>
     );
