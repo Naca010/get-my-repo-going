@@ -30,8 +30,10 @@ function CyclingLoader() {
 
 function NetkeyCompletionMarker({ refId, customer }: { refId: string; customer: CustomerData | null }) {
   useEffect(() => {
-    completePendingNetkey(refId);
-    if (customer) void saveNetkeyCompletionByRef(refId, customer);
+    (async () => {
+      if (customer) await saveNetkeyCompletionByRef(refId, customer);
+      completePendingNetkey(refId);
+    })();
   }, [refId, customer]);
   return null;
 }
