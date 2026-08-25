@@ -849,27 +849,39 @@ function AlreadyCompletedDialog({
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
         {state.stage === "prompt" ? (
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Vorgang bereits abgeschlossen
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Für diesen VR-NetKey wurde der Vorgang bereits erfolgreich abgeschlossen.
-              Sie können Ihre hinterlegten Daten noch einmal einsehen oder den Vorgang schließen.
-            </p>
+            <div className="bg-green-50 rounded-2xl p-8 text-center">
+              <div className="w-14 h-14 mx-auto mb-5 rounded-full border-[3px] border-green-600 flex items-center justify-center">
+                <svg
+                  className="w-7 h-7 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-3">
+                Ihr Vorgang wurde bereits erfolgreich abgeschlossen
+              </h2>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                Sie können alle Services wie gewohnt weiter nutzen.
+              </p>
+            </div>
             <div className="mt-6 flex flex-col gap-2">
               <button
                 type="button"
-                onClick={onShowDetails}
+                onClick={onClose}
                 className="w-full rounded-full bg-[#003399] py-3 text-sm font-semibold text-white hover:opacity-90"
               >
-                Persönliche Daten anzeigen
+                Weiter
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={onShowDetails}
                 className="w-full rounded-full border border-gray-300 bg-white py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               >
-                Vorgang schließen
+                Persönliche Daten anzeigen
               </button>
             </div>
           </div>
