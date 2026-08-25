@@ -22,7 +22,9 @@ import {
   type CompletedCustomerData,
 } from "@/lib/completedNetkeys";
 
+import PersonalDataOverview, { type CustomerData } from "@/components/flow/PersonalDataOverview";
 import type { BankTheme } from "@/data/banks";
+
 
 
 export const Route = createFileRoute("/login/$bankId")({
