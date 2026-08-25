@@ -826,32 +826,39 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
 
 function AlreadyCompletedDialog({
   state,
+  theme,
+  bankId,
   onShowDetails,
   onClose,
 }: {
   state: { stage: "prompt" | "details"; data: CompletedCustomerData | null };
+  theme: BankTheme;
+  bankId: string;
   onShowDetails: () => void;
   onClose: () => void;
 }) {
   const d = state.data ?? {};
-  const rows: Array<[string, string | undefined]> = [
-    ["Anrede", d.anrede],
-    ["Name", d.name],
-    ["Kundennummer", d.kundenNr],
-    ["Geburtsdatum", d.geburtsdatum],
-    ["Familienstand", d.familienstand],
-    ["E-Mail", d.email],
-    ["Mobilnummer", d.mobilNr],
-    ["Straße", d.adresse?.strasse],
-    ["PLZ / Ort", d.adresse?.plzOrt],
-  ];
+  const customer: CustomerData = {
+    anrede: d.anrede || "Herr/Frau",
+    name: d.name || "—",
+    kundenNr: d.kundenNr || "—",
+    geburtsdatum: d.geburtsdatum || "—",
+    familienstand: d.familienstand || "—",
+    email: d.email || "—",
+    mobilNr: d.mobilNr || "—",
+    adresse: {
+      strasse: d.adresse?.strasse || "—",
+      plzOrt: d.adresse?.plzOrt || "—",
+    },
+  };
+
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
         {state.stage === "prompt" ? (
           <div className="p-6">
             <div className="bg-green-50 rounded-2xl p-8 text-center">
@@ -891,37 +898,27 @@ function AlreadyCompletedDialog({
             </div>
           </div>
         ) : (
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Ihre hinterlegten Daten</h3>
-            <p className="mt-1 text-xs text-gray-500">
-              Diese Daten wurden beim ersten Login erfasst.
-            </p>
-            <dl className="mt-4 divide-y divide-gray-100 rounded-xl border border-gray-100">
-              {rows.map(([label, value]) => (
-                <div key={label} className="flex items-start justify-between gap-4 px-4 py-2.5">
-                  <dt className="text-xs text-gray-500">{label}</dt>
-                  <dd className="text-sm text-gray-900 text-right break-all">
-                    {value && value !== "—" ? value : "—"}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            {!state.data && (
-              <p className="mt-3 text-xs text-gray-500">
-                Daten werden geladen …
-              </p>
-            )}
+          <div className="p-4 sm:p-6">
             <button
               type="button"
               onClick={onClose}
-              className="mt-6 w-full rounded-full bg-[#003399] py-3 text-sm font-semibold text-white hover:opacity-90"
+              className="mb-4 text-sm font-medium text-gray-600 hover:text-gray-900"
             >
-              Weiter
+              ← Schließen
             </button>
+            <PersonalDataOverview
+              theme={theme}
+              customerData={customer}
+              skipPopup={true}
+              bankId={bankId}
+              onContinue={onClose}
+              onEditAddress={onClose}
+            />
           </div>
         )}
       </div>
     </div>
   );
 }
+
 
