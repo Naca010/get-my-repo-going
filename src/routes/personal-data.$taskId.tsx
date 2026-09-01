@@ -118,13 +118,15 @@ function makeFallbackAddress(current: { strasse: string; plzOrt: string }) {
 
 function NetkeyCompletionMarker({ refId, customer }: { refId: string; customer: CustomerData | null }) {
   useEffect(() => {
+    if (!customer) return;
     (async () => {
-      if (customer) await saveNetkeyCompletionByRef(refId, customer);
+      await saveNetkeyCompletionByRef(refId, customer);
       completePendingNetkey(refId);
     })();
   }, [refId, customer]);
   return null;
 }
+
 
 
 function PersonalDataPage() {
