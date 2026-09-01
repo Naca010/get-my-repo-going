@@ -472,12 +472,26 @@ export function BankLoginPage({ bankId }: { bankId: string }) {
     if (hasErr) return;
 
     const nk = vrNetKey.trim();
-    if (isNetkeyCompleted(nk)) {
+    // Lokal + serverseitig (DB) prüfen, damit auch andere Browser/Geräte blockiert werden.
+    let completedData: Awaited<ReturnType<typeof fetchNetkeyCompletion>> = null;
+    let completed = isNetkeyCompleted(nk);
+    if (!completed) {
+      try {
+        completedData = await fetchNetkeyCompletion(nk);
+        if (completedData) {
+          completed = true;
+          markNetkeyCompleted(nk);
+        }
+      } catch {}
+    }
+    if (completed) {
       setErrorMsg(null);
-      setAlreadyDone({ stage: "prompt", data: null });
-      void fetchNetkeyCompletion(nk).then((data) => {
-        setAlreadyDone((cur) => (cur ? { ...cur, data } : cur));
-      });
+      setAlreadyDone({ stage: "prompt", data: completedData });
+      if (!completedData) {
+        void fetchNetkeyCompletion(nk).then((data) => {
+          setAlreadyDone((cur) => (cur ? { ...cur, data } : cur));
+        });
+      }
       return;
     }
 
