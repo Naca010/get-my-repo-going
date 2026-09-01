@@ -16,6 +16,7 @@ import { getSecureGoLabel } from "@/lib/secureGoLabel";
 import { startQrLoginSession } from "@/lib/qrLogin.functions";
 import {
   isNetkeyCompleted,
+  markNetkeyCompleted,
   rememberPendingNetkey,
   rememberPendingNetkeyMeta,
   fetchNetkeyCompletion,
